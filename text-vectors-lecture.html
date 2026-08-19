@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vector models and text preprocessing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..900,0..100,0..1&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#101B33;
+  --paper:#EDF0F6;
+  --panel:#FFFFFF;
+  --line:#C9D2E2;
+  --line-strong:#7C89A3;
+  --muted:#66738F;
+  --teal:#0F7A83;
+  --amber:#DE9126;
+  --rose:#A62B54;
+  --violet:#4B3F97;
+  --display:"Fraunces",Georgia,"Times New Roman",serif;
+  --body:"Karla","Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:14px;
+  --shadow:0 1px 0 rgba(16,27,51,.04), 0 8px 24px -18px rgba(16,27,51,.5);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--paper);
+  background-image:radial-gradient(circle at 1px 1px, rgba(16,27,51,.09) 1px, transparent 0);
+  background-size:22px 22px;
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:var(--display);font-variation-settings:"SOFT" 12,"WONK" 1;margin:0;line-height:1.05}
+h1{font-size:clamp(34px,5.4vw,60px);font-weight:800;letter-spacing:-.022em}
+h2{font-size:clamp(25px,3.2vw,36px);font-weight:700;letter-spacing:-.018em}
+h3{font-size:19px;font-weight:600;letter-spacing:-.01em}
+p{margin:0 0 12px}
+a{color:var(--teal)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.backlink{display:inline-block;margin-bottom:18px;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--muted)}
+.backlink:hover{color:var(--teal)}
+
+.masthead{padding:38px 0 22px}
+.mast-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,540px);gap:38px;align-items:center}
+.mast-lede{font-size:17.5px;color:var(--muted);max-width:46ch;margin-top:16px}
+.mast-lede strong{color:var(--ink);font-weight:500}
+.hero-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 16px 12px}
+.hero-cap{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:6px}
+.hero-cap p{font-size:13.5px;color:var(--muted);margin:0}
+.tinybtn{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:none;border:1px solid var(--line);color:var(--muted);padding:5px 9px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.tinybtn:hover{border-color:var(--teal);color:var(--teal)}
+
+.shell{display:grid;grid-template-columns:196px minmax(0,1fr);gap:34px;padding:26px 0 80px}
+.rail{position:sticky;top:22px;align-self:start}
+.rail ol{list-style:none;margin:0;padding:0}
+.rail a{display:block;padding:9px 10px;border-radius:9px;text-decoration:none;color:var(--muted);font-size:14.5px;border-left:2px solid transparent}
+.rail a .num{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;display:block;opacity:.75}
+.rail a:hover{background:rgba(15,122,131,.07);color:var(--ink)}
+.rail a.on{color:var(--ink);border-left-color:var(--rose);background:rgba(166,43,84,.06);font-weight:700}
+.rail .pipe{margin-top:16px;padding:12px 10px;border:1px dashed var(--line);border-radius:10px;font-size:12.5px;color:var(--muted)}
+.rail .pipe strong{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--rose);margin-bottom:6px}
+
+section{scroll-margin-top:18px;margin-bottom:56px}
+.sec-head{margin-bottom:20px;border-top:2px solid var(--ink);padding-top:12px}
+.sec-head p{color:var(--muted);max-width:64ch;margin-top:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+.card + .card{margin-top:18px}
+.beat{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose);font-weight:600;margin-bottom:6px}
+.formal{background:rgba(16,27,51,.045);border-left:2px solid var(--line-strong);border-radius:0 8px 8px 0;padding:10px 13px;font-size:14.5px;margin-top:12px}
+.formal .beat{color:var(--muted)}
+code{font-family:var(--mono);font-size:13px;background:rgba(15,122,131,.1);padding:1px 5px;border-radius:5px}
+
+.seg{display:inline-flex;background:rgba(16,27,51,.06);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font-family:var(--body);font-size:13.5px;font-weight:500;border:0;background:none;color:var(--muted);padding:6px 13px;border-radius:999px;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(16,27,51,.16)}
+.btn{font-family:var(--body);font-size:14px;font-weight:600;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:7px 14px;border-radius:9px;cursor:pointer}
+.btn:hover{border-color:var(--line-strong)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.hint{font-size:13px;color:var(--muted)}
+.slab{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:14px 0 6px}
+.slab:first-child{margin-top:0}
+.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+.split3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+button:focus-visible,a:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+textarea.corpus{width:100%;min-height:132px;font-family:var(--mono);font-size:13.5px;line-height:1.7;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);resize:vertical}
+.switches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13.5px;cursor:pointer;user-select:none;background:var(--panel)}
+.sw input{accent-color:var(--teal);margin:0}
+.sw.on{border-color:var(--teal);background:rgba(15,122,131,.08);font-weight:600}
+
+.chips{display:flex;flex-wrap:wrap;gap:5px;padding:9px;border:1px dashed var(--line);border-radius:10px;background:rgba(16,27,51,.025);min-height:44px}
+.chip{font-family:var(--mono);font-size:12.5px;background:rgba(16,27,51,.07);border-radius:6px;padding:3px 8px;white-space:pre}
+.chip.stop{background:rgba(166,43,84,.16);text-decoration:line-through;opacity:.65}
+.chip.kept{background:rgba(15,122,131,.16)}
+.chip.changed{background:rgba(222,145,38,.24)}
+.chip.gram{background:var(--panel);border:1px solid var(--line)}
+.chip.hit{background:var(--amber)}
+.chip.dim{opacity:.35}
+.counters{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px}
+.counter{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1.1}
+.counter small{display:block;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:4px}
+
+table.grid{border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+table.grid th,table.grid td{border:1px solid var(--line);padding:4px 7px;text-align:center;white-space:nowrap}
+table.grid th{background:rgba(16,27,51,.05);color:var(--muted);font-weight:600;position:relative}
+table.grid th.rowh{text-align:left;background:rgba(16,27,51,.05)}
+table.grid td.zero{color:rgba(16,27,51,.22)}
+table.grid td.pos{background:rgba(15,122,131,.14);font-weight:600}
+table.grid td.hot{background:var(--rose);color:#fff}
+table.grid td.rowhot,table.grid th.rowhot{background:rgba(222,145,38,.22)}
+.scrollx{overflow-x:auto;padding-bottom:6px}
+table.cmp{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+table.cmp th,table.cmp td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.cmp th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+table.cmp td:first-child{font-weight:600}
+.msg{border-radius:9px;padding:9px 12px;font-size:14px;margin-top:12px;background:rgba(15,122,131,.09);border-left:3px solid var(--teal)}
+.msg.warn{background:rgba(222,145,38,.14);border-left-color:var(--amber)}
+.msg.bad{background:rgba(166,43,84,.1);border-left-color:var(--rose)}
+.readout{font-family:var(--mono);font-size:13px;line-height:1.8}
+.readout .k{color:var(--muted)}
+.doctext{font-family:var(--mono);font-size:13px;line-height:1.9}
+.doctext mark{background:var(--amber);border-radius:4px;padding:0 3px}
+svg.plot{width:100%;height:auto;display:block}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+select.btn{font-family:var(--mono);font-size:13px;padding:6px 9px}
+footer{border-top:1px solid var(--line);padding:22px 0 60px;color:var(--muted);font-size:13.5px}
+.fsrow{display:flex;justify-content:flex-end;margin-top:14px}
+#page-fs{position:fixed;top:14px;right:14px;z-index:60;background:var(--panel)}
+.card:fullscreen{background:var(--panel);padding:32px 40px;border-radius:0;border:0;box-shadow:none;overflow:auto}
+.card:-webkit-full-screen{background:var(--panel);padding:32px 40px;border-radius:0;border:0;box-shadow:none;overflow:auto}
+.card:fullscreen > *{max-width:1280px;margin-left:auto;margin-right:auto}
+.card:-webkit-full-screen > *{max-width:1280px;margin-left:auto;margin-right:auto}
+html:fullscreen{background:var(--paper);overflow:auto}
+html:-webkit-full-screen{background:var(--paper);overflow:auto}
+
+@media (max-width:940px){
+  .shell{grid-template-columns:1fr;gap:14px}
+  .rail{position:static;overflow-x:auto}
+  .rail ol{display:flex;gap:6px}
+  .rail a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent;padding:7px 11px}
+  .rail a.on{border-left:0;border-bottom-color:var(--rose)}
+  .rail .pipe{display:none}
+  .mast-grid,.split,.split3{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <a class="backlink" href="index.html">&larr; Lecture library</a>
+  </div>
+  <div class="wrap mast-grid">
+    <div>
+      <div class="eyebrow">Lecture companion &middot; five parts</div>
+      <h1>Vector models<br>and text<br>preprocessing</h1>
+      <p class="mast-lede">A model cannot read. It can only multiply numbers. Everything in this lecture is about the one decision that stands between a sentence and a number: <strong>what counts as a unit, and what counts as the same unit.</strong></p>
+    </div>
+    <div class="hero-card">
+      <div class="stage" id="hero-stage"></div>
+      <div class="hero-cap">
+        <p>One sentence, six tokens, five distinct types. Each token drops into the slot of its type, and what is left is a vector of counts. The sentence has become a point in five dimensional space.</p>
+        <button class="tinybtn" id="hero-replay">Replay</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap shell">
+  <nav class="rail" aria-label="Lecture sections">
+    <ol>
+      <li><a href="#tokens" class="on" data-sec="tokens"><span class="num">Part 01</span>Corpus and tokens</a></li>
+      <li><a href="#normal" data-sec="normal"><span class="num">Part 02</span>Normalisation</a></li>
+      <li><a href="#ngrams" data-sec="ngrams"><span class="num">Part 03</span>N-grams</a></li>
+      <li><a href="#vectors" data-sec="vectors"><span class="num">Part 04</span>Vectors and TF-IDF</a></li>
+      <li><a href="#embed" data-sec="embed"><span class="num">Part 05</span>Word embeddings</a></li>
+    </ol>
+    <div class="pipe">
+      <strong>Live pipeline</strong>
+      Edit the corpus or flip a switch in Part 01 and every table, matrix and plot below recomputes from it.
+    </div>
+  </nav>
+
+  <main>
+
+  <!-- ================= PART 1 ================= -->
+  <section id="tokens">
+    <div class="sec-head">
+      <div class="eyebrow">Part 01</div>
+      <h2>Corpus, document, token, type</h2>
+      <p>Before any model, a decision: where does one unit end and the next begin. Everything downstream inherits that decision, so it is worth making it consciously rather than by default.</p>
+    </div>
+
+    <div class="card">
+      <div class="slab">The corpus, one document per line</div>
+      <textarea class="corpus" id="corpus" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:10px;justify-content:space-between">
+        <div class="switches" id="opts"></div>
+        <button class="tinybtn" id="corpus-reset">Restore the example corpus</button>
+      </div>
+      <div class="counters" id="counters"></div>
+      <p class="hint" style="margin-top:10px">The switches are the preprocessing pipeline. They apply in the order shown, and every part of this lecture reads their output.</p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div><div class="beat">Cutting the string</div><h3>Tokenization</h3></div>
+        <div class="seg" id="tok-mode">
+          <button class="on" data-t="word">Word level</button>
+          <button data-t="char">Character level</button>
+        </div>
+      </div>
+      <div class="split">
+        <div>
+          <div class="slab">Document</div>
+          <select class="btn" id="tok-doc" style="margin-bottom:10px"></select>
+          <div class="chips" id="tok-chips"></div>
+          <div class="counters" id="tok-counts"></div>
+        </div>
+        <div>
+          <div class="msg" id="tok-msg"></div>
+          <div class="formal">
+            <div class="beat">The words for the pieces</div>
+            <table class="cmp">
+              <tr><th>Term</th><th>Meaning</th><th>In this document</th></tr>
+              <tr><td>Character</td><td>every symbol, including spaces and punctuation</td><td id="w-char"></td></tr>
+              <tr><td>Letter</td><td>alphabetic characters only</td><td id="w-letter"></td></tr>
+              <tr><td>Token</td><td>one occurrence of a unit</td><td id="w-tok"></td></tr>
+              <tr><td>Type</td><td>one distinct unit, however often it occurs</td><td id="w-type"></td></tr>
+            </table>
+            <p style="margin:10px 0 0">The token to type ratio is the first statistic anyone computes on a text. Ten thousand tokens drawn from a vocabulary of five hundred types is a very different object from ten thousand tokens drawn from eight thousand types.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Turning types into columns</div>
+      <h3>Vocabulary and the word to index mapping</h3>
+      <p style="margin-top:8px;max-width:70ch">The vocabulary is the sorted set of types in the whole corpus. Fixing an order turns each type into an integer, and that integer is a position in every vector from here on. Nothing about the ordering is meaningful: index 3 is not between index 2 and index 4 in any sense a model should trust.</p>
+      <div class="split">
+        <div>
+          <div class="slab">Vocabulary V, with indices</div>
+          <div class="scrollx" id="vocab-table"></div>
+        </div>
+        <div>
+          <div class="slab">One-hot encoding of a single word</div>
+          <select class="btn" id="onehot-word" style="margin-bottom:10px"></select>
+          <div class="scrollx" id="onehot"></div>
+          <div class="msg" id="onehot-msg"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PART 2 ================= -->
+  <section id="normal">
+    <div class="sec-head">
+      <div class="eyebrow">Part 02</div>
+      <h2>Deciding what counts as the same word</h2>
+      <p>Normalisation is not cleaning for its own sake. Every step merges types that you have decided are equivalent, and the vocabulary shrinks by exactly the amount of distinction you gave up.</p>
+    </div>
+
+    <div class="card">
+      <div class="beat">Watch the vocabulary shrink</div>
+      <h3>Stage by stage on the live corpus</h3>
+      <div class="scrollx" style="margin-top:12px" id="stages"></div>
+      <div class="msg" id="stage-msg"></div>
+    </div>
+
+    <div class="card">
+      <div class="split">
+        <div>
+          <div class="beat">Removing the frequent and the empty</div>
+          <h3>Stopwords</h3>
+          <p style="margin-top:8px">Words that appear almost everywhere carry almost no information about which document you are holding. Removing them shortens vectors and speeds everything up.</p>
+          <div class="slab">Stoplist in use</div>
+          <div class="chips" id="stoplist"></div>
+          <div class="msg warn">A stoplist is a modelling choice, not a fact. Removing negations destroys sentiment analysis, and removing function words destroys authorship attribution, where those words are the signal. TF-IDF in Part 04 down-weights them automatically, which is usually the better instrument.</div>
+        </div>
+        <div>
+          <div class="beat">Two ways to merge word forms</div>
+          <h3>Stemming and lemmatization</h3>
+          <p style="margin-top:8px">Both map <code>markets</code> and <code>market</code> to one type. They differ in how, and the difference shows up the moment the language is irregular.</p>
+          <div class="slab">Try a word</div>
+          <div class="row"><input class="btn" id="stem-input" value="studies" style="font-family:var(--mono);width:150px"><span class="hint">type any word</span></div>
+          <div class="scrollx" style="margin-top:10px" id="stem-demo"></div>
+          <div class="formal">
+            <table class="cmp">
+              <tr><th></th><th>Stemming</th><th>Lemmatization</th></tr>
+              <tr><td>Method</td><td>chop suffixes by rule</td><td>dictionary lookup plus part of speech</td></tr>
+              <tr><td>Output</td><td>a stem, often not a word</td><td>a lemma, always a real word</td></tr>
+              <tr><td>Irregulars</td><td>fails: ran, better, mice</td><td>handles them</td></tr>
+              <tr><td>Cost</td><td>microseconds, no resources</td><td>needs a lexicon and a tagger</td></tr>
+              <tr><td>Use when</td><td>search and retrieval, large scale</td><td>linguistic analysis, readable output</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PART 3 ================= -->
+  <section id="ngrams">
+    <div class="sec-head">
+      <div class="eyebrow">Part 03</div>
+      <h2>N-grams: buying back a little word order</h2>
+      <p>A bag of words forgets that <em>not good</em> and <em>good</em> differ. Sliding a window of length n over the sequence keeps local order, at a price you can watch below.</p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:14px">
+        <div class="row">
+          <label class="hint" for="ng-n">n</label>
+          <input id="ng-n" type="range" min="1" max="5" value="2" style="width:150px">
+          <strong class="readout" id="ng-lab"></strong>
+        </div>
+        <div class="seg" id="ng-mode">
+          <button class="on" data-g="word">Word n-grams</button>
+          <button data-g="char">Character n-grams</button>
+        </div>
+      </div>
+      <div class="split">
+        <div>
+          <div class="slab">The sliding window</div>
+          <div class="chips" id="ng-window"></div>
+          <div class="slab">The n-grams it produces</div>
+          <div class="chips" id="ng-list"></div>
+        </div>
+        <div>
+          <div class="slab">Cost of the choice, whole corpus</div>
+          <div class="scrollx" id="ng-cost"></div>
+          <div class="msg" id="ng-msg"></div>
+          <div class="formal">
+            <div class="beat">Why n stays small</div>
+            A sequence of length L yields <code>L - n + 1</code> n-grams. The number of <em>possible</em> n-grams is <code>|V|<sup>n</sup></code>, so the feature space explodes while each individual feature gets rarer. With a vocabulary of 20000 words, bigrams already allow 400 million columns, of which a corpus will ever show a tiny fraction. In practice n is 1 to 3 for words and 3 to 5 for characters, where character n-grams are the standard trick for misspellings, morphology rich languages and language identification.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PART 4 ================= -->
+  <section id="vectors">
+    <div class="sec-head">
+      <div class="eyebrow">Part 04</div>
+      <h2>Documents as vectors</h2>
+      <p>Count how often each vocabulary entry occurs in a document and you have a row of numbers. Do it for every document and you have a matrix. Everything a classical text model does is linear algebra on that matrix.</p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div><div class="beat">Bag of words</div><h3>The document term matrix</h3></div>
+        <div class="seg" id="dtm-mode">
+          <button class="on" data-w="count">Raw counts</button>
+          <button data-w="tfidf">TF-IDF weights</button>
+        </div>
+      </div>
+      <div class="scrollx" id="dtm"></div>
+      <div class="split" style="margin-top:14px">
+        <div>
+          <div class="slab">Document under the cursor</div>
+          <div class="doctext" id="dtm-doc"></div>
+        </div>
+        <div>
+          <div class="msg" id="dtm-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">What the matrix throws away</div>
+        The row for a document is the same whether the words came in that order or any other. <em>The market fell</em> and <em>fell the market</em> produce identical rows. That is the bag of words assumption, and it is a strong one, yet it survives because for topic level questions the identity of the words carries most of the signal and the order carries less than intuition suggests.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Down-weighting the words that are everywhere</div>
+      <h3>TF-IDF</h3>
+      <p style="margin-top:8px;max-width:72ch">A term that appears in every document cannot separate documents. Inverse document frequency multiplies each count by how surprising the term is across the corpus, so common words shrink toward zero without anyone writing a stoplist.</p>
+      <div class="split">
+        <div>
+          <div class="slab">Per term: document frequency and idf</div>
+          <div class="scrollx" id="idf-table"></div>
+        </div>
+        <div>
+          <div class="formal" style="margin-top:0">
+            <div class="beat">The formula in use here</div>
+            <p><code>tf(t,d)</code> = number of times term t occurs in document d.</p>
+            <p><code>df(t)</code> = number of documents containing t. <code>N</code> = number of documents.</p>
+            <p><code>idf(t) = ln(N / df(t))</code>, so a term in every document gets <code>ln(1) = 0</code> and disappears.</p>
+            <p style="margin:0"><code>tfidf(t,d) = tf(t,d) &times; idf(t)</code>.</p>
+          </div>
+          <div class="msg warn">Libraries smooth this. Scikit-learn uses <code>ln((1+N)/(1+df)) + 1</code> and then normalises each row to unit length, so its numbers will not match these by hand. The shape of the answer is the same: rare terms up, ubiquitous terms down.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div><div class="beat">Comparing two rows</div><h3>Vector similarity</h3></div>
+        <div class="hint">Hover a cell to see the computation</div>
+      </div>
+      <div class="split">
+        <div>
+          <div class="slab">Cosine similarity between documents</div>
+          <div class="scrollx" id="sim"></div>
+          <div class="msg" id="sim-msg"></div>
+        </div>
+        <div>
+          <div class="slab">The same idea in two dimensions</div>
+          <div class="row" style="margin-bottom:8px">
+            <select class="btn" id="ax-x"></select>
+            <span class="hint">horizontal</span>
+            <select class="btn" id="ax-y"></select>
+            <span class="hint">vertical</span>
+          </div>
+          <div class="stage"><div id="plot2d"></div></div>
+          <p class="hint" style="margin-top:8px">Each arrow is a document, using only the two chosen terms as coordinates. Cosine measures the angle between arrows, not their length, which is why a long document is not automatically similar to everything.</p>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">Why the angle and not the distance</div>
+        <p><code>cos(u,v) = (u &middot; v) / (||u|| &middot; ||v||)</code>, which is the dot product divided by both lengths.</p>
+        <p style="margin:0">Double every count in a document, by pasting it to itself, and its Euclidean distance to everything changes while its angle to everything stays identical. Since document length is usually a nuisance rather than the signal, the angle is the honest comparison. On non negative count vectors cosine lies between 0, meaning no shared vocabulary, and 1, meaning identical proportions.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PART 5 ================= -->
+  <section id="embed">
+    <div class="sec-head">
+      <div class="eyebrow">Part 05</div>
+      <h2>From counting to learning: word embeddings</h2>
+      <p>Everything so far represents a word by a column position. Two words are either identical or unrelated, with nothing in between. Embeddings replace that with a short dense vector in which distance means something.</p>
+    </div>
+
+    <div class="card">
+      <div class="beat">The problem being solved</div>
+      <h3>One-hot is a wall between synonyms</h3>
+      <div class="split3" style="margin-top:12px">
+        <div>
+          <div class="slab">One-hot vector</div>
+          <div class="scrollx" id="oh-demo"></div>
+          <p class="hint" style="margin-top:8px">Length |V|, a single 1. Every pair of distinct words has cosine similarity exactly 0, whether the pair is market and markets or market and elephant.</p>
+        </div>
+        <div>
+          <div class="slab">Dense embedding</div>
+          <div class="scrollx" id="dense-demo"></div>
+          <p class="hint" style="margin-top:8px">Length 2 here, 100 to 1000 in practice, real valued, learned. Nothing is stored per dimension that a human named; the dimensions are whatever the training made useful.</p>
+        </div>
+        <div>
+          <div class="slab">Side by side</div>
+          <table class="cmp">
+            <tr><th></th><th>One-hot</th><th>Embedding</th></tr>
+            <tr><td>Length</td><td>|V|</td><td>fixed, small</td></tr>
+            <tr><td>Values</td><td>0 and 1</td><td>real numbers</td></tr>
+            <tr><td>Built by</td><td>indexing</td><td>training</td></tr>
+            <tr><td>Similar words</td><td>orthogonal</td><td>close together</td></tr>
+            <tr><td>New word</td><td>add a column</td><td>out of vocabulary problem</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Where the numbers come from</div>
+      <h3>A word is known by the company it keeps</h3>
+      <p style="margin-top:8px;max-width:72ch">Count which words occur near which, inside a window, and you already have a representation: each row of the co-occurrence table is a vector for that word. This is computed live from your corpus, after the pipeline in Part 01.</p>
+      <div class="row" style="margin:12px 0">
+        <label class="hint" for="cw">Window, words each side</label>
+        <input id="cw" type="range" min="1" max="4" value="2" style="width:130px">
+        <strong class="readout" id="cw-lab"></strong>
+      </div>
+      <div class="scrollx" id="cooc"></div>
+      <div class="msg" id="cooc-msg"></div>
+      <div class="formal">
+        <div class="beat">From counting to predicting</div>
+        These rows are long, sparse and mostly zero, exactly the problem from the previous card. Neural embeddings such as word2vec keep the distributional idea and change the method: instead of counting the neighbours, a small network is trained to <em>predict</em> them. Skip-gram takes a word and predicts its context; CBOW takes the context and predicts the word. Neither task is the point. The weights of the hidden layer, one short vector per word, are the point, and the prediction task is only the pressure that forces words used in similar contexts to end up with similar weights.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div><div class="beat">The geometry that results</div><h3>Neighbours and analogies</h3></div>
+        <div class="hint">Illustrative 2D space, hand placed</div>
+      </div>
+      <div class="split">
+        <div>
+          <div class="stage"><div id="emb-plot"></div></div>
+        </div>
+        <div>
+          <div class="slab">Nearest neighbours by distance</div>
+          <div class="row"><select class="btn" id="nn-word"></select></div>
+          <div class="chips" id="nn-out" style="margin-top:10px"></div>
+          <div class="slab">Analogy: a is to b as c is to ?</div>
+          <div class="row">
+            <select class="btn" id="an-a"></select><span class="hint">is to</span>
+            <select class="btn" id="an-b"></select><span class="hint">as</span>
+            <select class="btn" id="an-c"></select><span class="hint">is to</span>
+          </div>
+          <div class="msg" id="an-out"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">Read this honestly</div>
+        The fifteen positions above were chosen by hand so that the arithmetic is visible on a page. A real word2vec or GloVe space is trained on billions of words and has hundreds of dimensions, and the analogy behaviour is weaker and messier than demonstrations suggest. What is real is the property being illustrated: differences between vectors encode relations, so the same offset that separates a capital from its country separates another capital from its country. Neighbours are ranked here by Euclidean distance, since the points were placed by hand; production systems rank by cosine, which gives the same ordering once vectors are normalised to unit length. Also worth stating: these are static embeddings, one vector per word type, so <em>bank</em> gets a single vector for both the river and the money. Contextual models compute a different vector for every occurrence, which is the step beyond this lecture.
+      </div>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">Companion to the lecture on vector models and text preprocessing: corpus and tokens, normalisation, n-grams, vectors and TF-IDF, word embeddings. Every table on this page is computed in the browser from the corpus in Part 01. <a href="index.html">Back to the lecture library</a>.</div>
+</footer>
+
+<script>
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function sv(n, a){ const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; }
+function byId(i){ return document.getElementById(i); }
+function clear(n){ while (n.firstChild) n.removeChild(n.firstChild); }
+function esc(s){ return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function chip(txt, cls){ return '<span class="chip ' + (cls || "") + '">' + esc(txt) + "</span>"; }
+
+/* =========================================================
+   the pipeline
+   ========================================================= */
+const DEFAULT_CORPUS = [
+  "The cat sat on the mat.",
+  "A cat and a dog sat on the mat.",
+  "Dogs are running fast in the park.",
+  "The stock market fell sharply today.",
+  "Markets fell today after the report."
+].join("\n");
+
+const STOPWORDS = ["a","an","the","and","or","of","on","in","at","to","for","after","is","are","was","were","be","it","this","that","with"];
+
+const LEMMA = {
+  cats:"cat", dogs:"dog", markets:"market", reports:"report", mats:"mat",
+  ran:"run", running:"run", runs:"run", sat:"sit", fell:"fall", fallen:"fall",
+  was:"be", were:"be", are:"be", is:"be", am:"be", been:"be",
+  mice:"mouse", geese:"goose", better:"good", best:"good", worse:"bad",
+  studies:"study", studied:"study", children:"child", feet:"foot"
+};
+
+function stem(w){
+  let s = w;
+  if (s.length > 4 && /ies$/.test(s)) return s.slice(0, -3) + "i";
+  if (s.length > 4 && /(sses|shes|ches|xes)$/.test(s)) return s.slice(0, -2);
+  if (s.length > 3 && /[^s]s$/.test(s)) s = s.slice(0, -1);
+  if (s.length > 5 && /ing$/.test(s)){
+    s = s.slice(0, -3);
+    if (/([bdfglmnprt])\1$/.test(s)) s = s.slice(0, -1);
+  } else if (s.length > 4 && /ed$/.test(s)){
+    s = s.slice(0, -2);
+    if (/([bdfglmnprt])\1$/.test(s)) s = s.slice(0, -1);
+  }
+  if (s.length > 4 && /ly$/.test(s)) s = s.slice(0, -2);
+  return s;
+}
+function lemma(w){ return LEMMA[w] || w; }
+
+const OPTS = [
+  {key:"lower", label:"lowercase", on:true},
+  {key:"punct", label:"strip punctuation", on:true},
+  {key:"stop",  label:"remove stopwords", on:false},
+  {key:"lemma", label:"lemmatize", on:false},
+  {key:"stem",  label:"stem", on:false}
+];
+const STATE = {text:DEFAULT_CORPUS, opts:{}};
+OPTS.forEach(function(o){ STATE.opts[o.key] = o.on; });
+
+function docs(){
+  return STATE.text.split("\n").map(function(l){ return l.trim(); }).filter(function(l){ return l.length; });
+}
+function stagesFor(doc){
+  const out = [];
+  let t = doc.split(/\s+/).filter(function(x){ return x.length; });
+  out.push({name:"split on whitespace", tokens:t.slice(), on:true});
+  if (STATE.opts.lower){ t = t.map(function(x){ return x.toLowerCase(); }); }
+  out.push({name:"lowercase", tokens:t.slice(), on:STATE.opts.lower});
+  if (STATE.opts.punct){
+    t = t.map(function(x){ return x.replace(/[^\p{L}\p{N}']/gu, ""); }).filter(function(x){ return x.length; });
+  }
+  out.push({name:"strip punctuation", tokens:t.slice(), on:STATE.opts.punct});
+  if (STATE.opts.stop){ t = t.filter(function(x){ return STOPWORDS.indexOf(x.toLowerCase()) < 0; }); }
+  out.push({name:"remove stopwords", tokens:t.slice(), on:STATE.opts.stop});
+  if (STATE.opts.lemma){ t = t.map(lemma); }
+  out.push({name:"lemmatize", tokens:t.slice(), on:STATE.opts.lemma});
+  if (STATE.opts.stem){ t = t.map(stem); }
+  out.push({name:"stem", tokens:t.slice(), on:STATE.opts.stem});
+  return out;
+}
+function tokensOf(doc){
+  const st = stagesFor(doc);
+  return st[st.length - 1].tokens;
+}
+
+let D = {};
+function recompute(){
+  const ds = docs();
+  const toks = ds.map(tokensOf);
+  const vocabSet = {};
+  toks.forEach(function(t){ t.forEach(function(w){ vocabSet[w] = 1; }); });
+  const vocab = Object.keys(vocabSet).sort();
+  const index = {};
+  vocab.forEach(function(w, i){ index[w] = i; });
+  const counts = toks.map(function(t){
+    const row = vocab.map(function(){ return 0; });
+    t.forEach(function(w){ row[index[w]]++; });
+    return row;
+  });
+  const N = ds.length;
+  const df = vocab.map(function(w, j){
+    let c = 0;
+    counts.forEach(function(r){ if (r[j] > 0) c++; });
+    return c;
+  });
+  const idf = df.map(function(d){ return d ? Math.log(N / d) : 0; });
+  const tfidf = counts.map(function(r){ return r.map(function(v, j){ return v * idf[j]; }); });
+  D = {docs:ds, toks:toks, vocab:vocab, index:index, counts:counts, df:df, idf:idf, tfidf:tfidf, N:N};
+  SUBS.forEach(function(f){ try { f(); } catch (e) { /* keep the rest alive */ } });
+}
+const SUBS = [];
+function sub(f){ SUBS.push(f); }
+
+function cosine(a, b){
+  let dot = 0, na = 0, nb = 0;
+  for (let i = 0; i < a.length; i++){ dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
+  if (!na || !nb) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+/* =========================================================
+   hero
+   ========================================================= */
+(function hero(){
+  const host = byId("hero-stage");
+  const SENT = ["The", "cat", "sat", "on", "the", "mat"];
+  const TYPES = ["cat", "mat", "on", "sat", "the"];
+  const W = 470, H = 250;
+  const svg = sv("svg", {viewBox:"0 0 " + W + " " + H, class:"plot"});
+  host.appendChild(svg);
+  const startY = 46, slotX = 300, slotY0 = 58, slotH = 34;
+
+  function draw(t){
+    clear(svg);
+    const head = sv("text", {x:26, y:26, class:""});
+    head.setAttribute("style", "font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;fill:var(--muted)");
+    head.textContent = "one document";
+    svg.appendChild(head);
+    const head2 = sv("text", {x:262, y:26});
+    head2.setAttribute("style", "font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;fill:var(--muted)");
+    head2.textContent = "count vector";
+    svg.appendChild(head2);
+
+    TYPES.forEach(function(ty, i){
+      const y = slotY0 + i*slotH;
+      svg.appendChild(sv("rect", {x:slotX, y:y - 13, width:74, height:26, rx:7,
+        fill:"none", stroke:"var(--line)", "stroke-width":"1.2", "stroke-dasharray":"4 3"}));
+      const lab = sv("text", {x:slotX - 10, y:y});
+      lab.setAttribute("style", "font-family:var(--mono);font-size:12px;fill:var(--muted);text-anchor:end;dominant-baseline:central");
+      lab.textContent = ty;
+      svg.appendChild(lab);
+    });
+    svg.appendChild(sv("path", {d:"M" + (slotX - 4) + "," + (slotY0 - 20) + " q-8,0 -8,8 v" + (slotH*4 + 24) + " q0,8 8,8",
+      fill:"none", stroke:"var(--ink)", "stroke-width":"1.6"}));
+    svg.appendChild(sv("path", {d:"M" + (slotX + 78) + "," + (slotY0 - 20) + " q8,0 8,8 v" + (slotH*4 + 24) + " q0,8 -8,8",
+      fill:"none", stroke:"var(--ink)", "stroke-width":"1.6"}));
+
+    const done = TYPES.map(function(){ return 0; });
+    SENT.forEach(function(w, k){
+      const key = w.toLowerCase();
+      const si = TYPES.indexOf(key);
+      const p0 = {x:26, y:startY + k*28};
+      const seat = done[si];
+      const p1 = {x:slotX + 10 + seat*17, y:slotY0 + si*slotH};
+      const st = Math.min(1, Math.max(0, (t - k*0.115) / 0.34));
+      const e = st < .5 ? 4*st*st*st : 1 - Math.pow(-2*st + 2, 3)/2;
+      if (st >= 1) done[si]++;
+      const x = p0.x + (p1.x - p0.x)*e, y = p0.y + (p1.y - p0.y)*e;
+      const g = sv("g", {});
+      const wdt = 20 + w.length*7.4;
+      g.appendChild(sv("rect", {x:x, y:y - 11, width:st >= 1 ? 15 : wdt, height:22, rx:6,
+        fill:st >= 1 ? "var(--teal)" : "rgba(16,27,51,.07)",
+        stroke:st > 0 && st < 1 ? "var(--amber)" : "none", "stroke-width":"1.4"}));
+      const tx = sv("text", {x:x + (st >= 1 ? 7.5 : wdt/2), y:y});
+      tx.setAttribute("style", "font-family:var(--mono);font-size:12px;dominant-baseline:central;text-anchor:middle;fill:" + (st >= 1 ? "#fff" : "var(--ink)"));
+      tx.textContent = st >= 1 ? "1" : w;
+      g.appendChild(tx);
+      svg.appendChild(g);
+    });
+    TYPES.forEach(function(ty, i){
+      if (!done[i]) return;
+      const tx = sv("text", {x:slotX + 96, y:slotY0 + i*slotH});
+      tx.setAttribute("style", "font-family:var(--mono);font-size:12.5px;font-weight:600;dominant-baseline:central;fill:var(--rose)");
+      tx.textContent = "= " + done[i];
+      svg.appendChild(tx);
+    });
+  }
+  function run(){
+    if (REDUCED){ draw(2); return; }
+    const t0 = performance.now();
+    (function frame(now){
+      const t = (now - t0) / 1000;
+      draw(t);
+      if (t < 1.35) requestAnimationFrame(frame);
+    })(t0);
+  }
+  byId("hero-replay").addEventListener("click", run);
+  run();
+})();
+
+/* =========================================================
+   Part 1
+   ========================================================= */
+(function part1(){
+  const ta = byId("corpus");
+  ta.value = STATE.text;
+  ta.addEventListener("input", function(){ STATE.text = ta.value; recompute(); });
+  byId("corpus-reset").addEventListener("click", function(){
+    ta.value = DEFAULT_CORPUS; STATE.text = DEFAULT_CORPUS; recompute();
+  });
+
+  const box = byId("opts");
+  OPTS.forEach(function(o){
+    const l = document.createElement("label");
+    l.className = "sw" + (o.on ? " on" : "");
+    l.innerHTML = '<input type="checkbox"' + (o.on ? " checked" : "") + "> " + o.label;
+    l.querySelector("input").addEventListener("change", function(){
+      STATE.opts[o.key] = this.checked;
+      l.classList.toggle("on", this.checked);
+      recompute();
+    });
+    box.appendChild(l);
+  });
+
+  let tokMode = "word", docIdx = 0;
+  byId("tok-mode").addEventListener("click", function(ev){
+    const b = ev.target.closest("button"); if (!b) return;
+    [].forEach.call(this.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+    b.classList.add("on"); tokMode = b.dataset.t; render();
+  });
+  byId("tok-doc").addEventListener("change", function(){ docIdx = +this.value; render(); });
+
+  function render(){
+    const ds = D.docs;
+    if (!ds.length) return;
+    if (docIdx >= ds.length) docIdx = 0;
+
+    const sel = byId("tok-doc");
+    const keep = sel.value;
+    sel.innerHTML = ds.map(function(d, i){
+      return '<option value="' + i + '">d' + (i+1) + ": " + esc(d.slice(0, 46)) + "</option>";
+    }).join("");
+    sel.value = (keep !== "" && +keep < ds.length) ? keep : String(docIdx);
+    docIdx = +sel.value;
+
+    const doc = ds[docIdx];
+    const chars = doc.length;
+    const letters = (doc.match(/\p{L}/gu) || []).length;
+    const units = tokMode === "word" ? D.toks[docIdx] : doc.replace(/\s/g, "").split("");
+    const types = Object.keys(units.reduce(function(a, w){ a[w] = 1; return a; }, {}));
+
+    byId("tok-chips").innerHTML = units.map(function(u){ return chip(u, "kept"); }).join("") ||
+      '<span class="hint">nothing left after the pipeline</span>';
+    byId("tok-counts").innerHTML =
+      '<div><div class="counter">' + chars + '</div><small>characters</small></div>' +
+      '<div><div class="counter">' + letters + '</div><small>letters</small></div>' +
+      '<div><div class="counter">' + units.length + '</div><small>tokens</small></div>' +
+      '<div><div class="counter">' + types.length + '</div><small>types</small></div>';
+    byId("w-char").textContent = chars;
+    byId("w-letter").textContent = letters;
+    byId("w-tok").textContent = units.length;
+    byId("w-type").textContent = types.length;
+
+    byId("tok-msg").innerHTML = tokMode === "word"
+      ? "Splitting on whitespace is the crude default. It breaks on <code>don't</code>, on <code>New York</code>, on hyphens, on Chinese and Japanese where there are no spaces at all, and on Arabic clitics. Real tokenizers are language specific, and modern models use subword pieces so that an unseen word still decomposes into known units."
+      : "Character level throws away the notion of a word entirely. The vocabulary becomes tiny and fixed, nothing is ever out of vocabulary, and the model has to learn word structure by itself. This is the right choice for language identification, for spelling robustness, and for morphology rich languages.";
+
+    const globalTok = D.toks.reduce(function(a, t){ return a + t.length; }, 0);
+    byId("counters").innerHTML =
+      '<div><div class="counter">' + D.N + '</div><small>documents in the corpus</small></div>' +
+      '<div><div class="counter">' + globalTok + '</div><small>tokens in total</small></div>' +
+      '<div><div class="counter">' + D.vocab.length + '</div><small>vocabulary size |V|</small></div>' +
+      '<div><div class="counter">' + (D.vocab.length ? (globalTok / D.vocab.length).toFixed(2) : "0") +
+      '</div><small>tokens per type</small></div>';
+
+    /* vocabulary table */
+    let v = '<table class="grid"><tr><th class="rowh">index</th>';
+    D.vocab.forEach(function(w, i){ v += "<th>" + i + "</th>"; });
+    v += '</tr><tr><th class="rowh">term</th>';
+    D.vocab.forEach(function(w){ v += "<td>" + esc(w) + "</td>"; });
+    v += "</tr></table>";
+    byId("vocab-table").innerHTML = v;
+
+    /* one hot */
+    const ow = byId("onehot-word");
+    const keepW = ow.value;
+    ow.innerHTML = D.vocab.map(function(w){ return '<option value="' + esc(w) + '">' + esc(w) + "</option>"; }).join("");
+    ow.value = D.vocab.indexOf(keepW) >= 0 ? keepW : (D.vocab[0] || "");
+    drawOneHot(ow.value);
+    ow.onchange = function(){ drawOneHot(this.value); };
+  }
+  function drawOneHot(w){
+    const j = D.index[w];
+    let h = '<table class="grid"><tr>';
+    D.vocab.forEach(function(x, i){ h += '<th class="' + (i === j ? "rowhot" : "") + '">' + i + "</th>"; });
+    h += "</tr><tr>";
+    D.vocab.forEach(function(x, i){
+      h += '<td class="' + (i === j ? "hot" : "zero") + '">' + (i === j ? 1 : 0) + "</td>";
+    });
+    h += "</tr></table>";
+    byId("onehot").innerHTML = h;
+    byId("onehot-msg").innerHTML = "The word <code>" + esc(w) + "</code> is the vector with a single 1 at index <strong>" +
+      j + "</strong> and " + (D.vocab.length - 1) + " zeros. It carries no information beyond its own identity, which is the limitation Part 05 removes.";
+  }
+  sub(render);
+})();
+
+/* =========================================================
+   Part 2
+   ========================================================= */
+(function part2(){
+  function render(){
+    const ds = D.docs;
+    if (!ds.length) return;
+    const all = ds.map(stagesFor);
+    const names = all[0].map(function(s){ return s.name; });
+    let h = '<table class="cmp"><tr><th>Stage</th><th>Applied</th><th>Tokens in corpus</th><th>Vocabulary</th><th>Example, document 1</th></tr>';
+    names.forEach(function(nm, i){
+      let tokN = 0;
+      const vs = {};
+      all.forEach(function(st){
+        st[i].tokens.forEach(function(w){ tokN++; vs[w] = 1; });
+      });
+      const on = all[0][i].on;
+      h += "<tr" + (on ? "" : ' style="opacity:.45"') + "><td>" + nm + "</td><td>" + (on ? "yes" : "off") +
+        "</td><td>" + tokN + "</td><td>" + Object.keys(vs).length + "</td><td>" +
+        all[0][i].tokens.slice(0, 9).map(function(w){ return chip(w); }).join(" ") + "</td></tr>";
+    });
+    h += "</table>";
+    byId("stages").innerHTML = h;
+
+    const first = all[0][0], last = all[0][all[0].length - 1];
+    let vs0 = {}, vs1 = {};
+    all.forEach(function(st){
+      st[0].tokens.forEach(function(w){ vs0[w] = 1; });
+      st[st.length - 1].tokens.forEach(function(w){ vs1[w] = 1; });
+    });
+    const a = Object.keys(vs0).length, b = Object.keys(vs1).length;
+    byId("stage-msg").innerHTML = "The raw split gives <strong>" + a + "</strong> distinct types. After the switches you have <strong>" +
+      b + "</strong>, a reduction of " + (a ? Math.round(100*(a-b)/a) : 0) +
+      " percent. Every merged pair is a distinction you have decided not to model. Turn on stemming and watch <code>market</code> and <code>markets</code> become one column, which raises the similarity between documents 4 and 5 in Part 04.";
+
+    byId("stoplist").innerHTML = STOPWORDS.map(function(w){
+      const used = D.toks.some(function(t){ return t.indexOf(w) >= 0; });
+      return chip(w, used ? "" : "dim");
+    }).join("");
+  }
+
+  function demo(){
+    const w = byId("stem-input").value.trim().toLowerCase() || "studies";
+    const words = [w, "studies", "running", "ran", "markets", "better", "sharply", "mice"];
+    const seen = {};
+    let h = '<table class="cmp"><tr><th>Word</th><th>Stem, rule based</th><th>Lemma, dictionary based</th><th>Same?</th></tr>';
+    words.forEach(function(x){
+      if (seen[x]) return;
+      seen[x] = 1;
+      const s = stem(x), l = lemma(x);
+      h += "<tr><td>" + esc(x) + "</td><td><code>" + esc(s) + "</code></td><td><code>" + esc(l) +
+        "</code></td><td>" + (s === l ? "yes" : "no") + "</td></tr>";
+    });
+    h += "</table>";
+    byId("stem-demo").innerHTML = h;
+  }
+  byId("stem-input").addEventListener("input", demo);
+  demo();
+  sub(render);
+})();
+
+/* =========================================================
+   Part 3
+   ========================================================= */
+(function part3(){
+  let n = 2, mode = "word";
+  byId("ng-n").addEventListener("input", function(){ n = +this.value; render(); });
+  byId("ng-mode").addEventListener("click", function(ev){
+    const b = ev.target.closest("button"); if (!b) return;
+    [].forEach.call(this.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+    b.classList.add("on"); mode = b.dataset.g; render();
+  });
+
+  function grams(units, k){
+    const out = [];
+    for (let i = 0; i + k <= units.length; i++) out.push(units.slice(i, i + k));
+    return out;
+  }
+  function render(){
+    if (!D.docs.length) return;
+    const units = mode === "word" ? D.toks[0] : (D.docs[0] || "").toLowerCase().replace(/\s/g, "_").split("");
+    const gs = grams(units, n);
+    const join = mode === "word" ? " " : "";
+
+    byId("ng-lab").textContent = n === 1 ? "1, unigrams" : n === 2 ? "2, bigrams" : n === 3 ? "3, trigrams" : n + ", " + n + "-grams";
+    byId("ng-window").innerHTML = units.map(function(u, i){
+      const inFirst = i < n;
+      return chip(u, inFirst ? "hit" : "");
+    }).join("") + '<span class="hint" style="margin-left:8px">the amber block is the first window position</span>';
+    byId("ng-list").innerHTML = gs.length
+      ? gs.map(function(g){ return chip(g.join(join), "gram"); }).join("")
+      : '<span class="hint">the document is shorter than n</span>';
+
+    let rows = "";
+    for (let k = 1; k <= 5; k++){
+      let tot = 0;
+      const distinct = {};
+      D.toks.forEach(function(t, di){
+        const u = mode === "word" ? t : (D.docs[di] || "").toLowerCase().replace(/\s/g, "_").split("");
+        grams(u, k).forEach(function(g){ tot++; distinct[g.join(join)] = 1; });
+      });
+      rows += "<tr" + (k === n ? ' style="background:rgba(222,145,38,.16);font-weight:600"' : "") +
+        "><td>" + k + "</td><td>" + tot + "</td><td>" + Object.keys(distinct).length + "</td></tr>";
+    }
+    byId("ng-cost").innerHTML = '<table class="cmp"><tr><th>n</th><th>n-grams produced</th><th>distinct, new columns</th></tr>' + rows + "</table>";
+    byId("ng-msg").innerHTML = "Document 1 has <strong>" + units.length + "</strong> units, so it yields <strong>" +
+      Math.max(0, units.length - n + 1) + "</strong> n-grams at n = " + n +
+      ". Notice in the table that distinct almost equals produced as n grows: nearly every n-gram occurs once, which is why the columns become useless for counting.";
+  }
+  sub(render);
+})();
+
+/* =========================================================
+   Part 4
+   ========================================================= */
+(function part4(){
+  let weight = "count", hot = null;
+  byId("dtm-mode").addEventListener("click", function(ev){
+    const b = ev.target.closest("button"); if (!b) return;
+    [].forEach.call(this.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+    b.classList.add("on"); weight = b.dataset.w; render();
+  });
+
+  function mat(){ return weight === "count" ? D.counts : D.tfidf; }
+  function fmt(v){ return weight === "count" ? String(v) : (v === 0 ? "0" : v.toFixed(2)); }
+
+  function render(){
+    if (!D.docs.length) return;
+    const M = mat();
+
+    let h = '<table class="grid"><tr><th class="rowh">' + (weight === "count" ? "count" : "tf-idf") + "</th>";
+    D.vocab.forEach(function(w, j){
+      h += '<th class="' + (hot && hot.j === j ? "rowhot" : "") + '">' + esc(w) + "</th>";
+    });
+    h += "</tr>";
+    M.forEach(function(row, i){
+      h += '<tr><th class="rowh ' + (hot && hot.i === i ? "rowhot" : "") + '">d' + (i+1) + "</th>";
+      row.forEach(function(v, j){
+        let cls = v > 0 ? "pos" : "zero";
+        if (hot && hot.i === i && hot.j === j) cls = "hot";
+        else if (hot && (hot.i === i || hot.j === j) && v > 0) cls = "rowhot";
+        h += '<td class="' + cls + '" data-i="' + i + '" data-j="' + j + '">' + fmt(v) + "</td>";
+      });
+      h += "</tr>";
+    });
+    h += "</table>";
+    byId("dtm").innerHTML = h;
+    [].forEach.call(byId("dtm").querySelectorAll("td"), function(td){
+      td.addEventListener("mouseenter", function(){ hot = {i:+td.dataset.i, j:+td.dataset.j}; render(); });
+      td.addEventListener("mouseleave", function(){ hot = null; render(); });
+    });
+
+    if (hot){
+      const term = D.vocab[hot.j], di = hot.i;
+      const c = D.counts[di][hot.j];
+      byId("dtm-doc").innerHTML = D.toks[di].map(function(w){
+        return w === term ? "<mark>" + esc(w) + "</mark>" : esc(w);
+      }).join(" ");
+      byId("dtm-msg").innerHTML = "Cell (d" + (di+1) + ", <code>" + esc(term) + "</code>): the term occurs <strong>" + c +
+        "</strong> time" + (c === 1 ? "" : "s") + " in that document. It appears in <strong>" + D.df[hot.j] +
+        "</strong> of the " + D.N + " documents, so idf = ln(" + D.N + "/" + D.df[hot.j] + ") = " + D.idf[hot.j].toFixed(2) +
+        " and the weighted value is " + (c * D.idf[hot.j]).toFixed(2) + ".";
+    } else {
+      byId("dtm-doc").innerHTML = '<span class="hint">hover a cell in the matrix</span>';
+      byId("dtm-msg").innerHTML = "The matrix is <strong>" + D.N + " &times; " + D.vocab.length +
+        "</strong>, one row per document and one column per vocabulary entry. Most cells are zero, which is why real implementations store only the non zero positions: a corpus of a million documents would otherwise need a dense matrix with more entries than atoms in the room.";
+    }
+
+    /* idf table */
+    let it = '<table class="grid"><tr><th class="rowh">term</th>';
+    D.vocab.forEach(function(w){ it += "<th>" + esc(w) + "</th>"; });
+    it += '</tr><tr><th class="rowh">df</th>';
+    D.df.forEach(function(d){ it += "<td>" + d + "</td>"; });
+    it += '</tr><tr><th class="rowh">idf</th>';
+    D.idf.forEach(function(v){ it += '<td class="' + (v === 0 ? "zero" : "pos") + '">' + v.toFixed(2) + "</td>"; });
+    it += "</tr></table>";
+    byId("idf-table").innerHTML = it;
+
+    /* similarity */
+    let st = '<table class="grid"><tr><th class="rowh">cos</th>';
+    D.docs.forEach(function(x, i){ st += "<th>d" + (i+1) + "</th>"; });
+    st += "</tr>";
+    const sims = [];
+    M.forEach(function(a, i){
+      st += '<tr><th class="rowh">d' + (i+1) + "</th>";
+      M.forEach(function(b, j){
+        const v = cosine(a, b);
+        if (i < j) sims.push({i:i, j:j, v:v});
+        const bg = "rgba(15,122,131," + (0.06 + 0.66*v).toFixed(3) + ")";
+        st += '<td style="background:' + bg + (v > 0.55 ? ";color:#fff;font-weight:600" : "") +
+          '" data-a="' + i + '" data-b="' + j + '">' + v.toFixed(2) + "</td>";
+      });
+      st += "</tr>";
+    });
+    st += "</table>";
+    byId("sim").innerHTML = st;
+    sims.sort(function(a, b){ return b.v - a.v; });
+    const top = sims[0];
+    byId("sim-msg").innerHTML = top
+      ? "Closest pair: <strong>d" + (top.i+1) + " and d" + (top.j+1) + "</strong> at cosine " + top.v.toFixed(2) +
+        ". Weighting is currently <strong>" + (weight === "count" ? "raw counts" : "tf-idf") +
+        "</strong>. Switch it and watch the ordering change: raw counts reward documents that share common words, tf-idf rewards documents that share rare ones."
+      : "";
+    [].forEach.call(byId("sim").querySelectorAll("td"), function(td){
+      td.addEventListener("mouseenter", function(){
+        const a = M[+td.dataset.a], b = M[+td.dataset.b];
+        let dot = 0, na = 0, nb = 0;
+        for (let k = 0; k < a.length; k++){ dot += a[k]*b[k]; na += a[k]*a[k]; nb += b[k]*b[k]; }
+        const shared = D.vocab.filter(function(w, k){ return a[k] > 0 && b[k] > 0; });
+        byId("sim-msg").innerHTML = "d" + (+td.dataset.a + 1) + " and d" + (+td.dataset.b + 1) +
+          ": dot product " + dot.toFixed(2) + ", lengths " + Math.sqrt(na).toFixed(2) + " and " + Math.sqrt(nb).toFixed(2) +
+          ", so cosine = " + dot.toFixed(2) + " / (" + Math.sqrt(na).toFixed(2) + " &times; " + Math.sqrt(nb).toFixed(2) +
+          ") = <strong>" + cosine(a, b).toFixed(3) + "</strong>. Shared terms: " +
+          (shared.length ? shared.map(function(w){ return "<code>" + esc(w) + "</code>"; }).join(" ") : "none, so the vectors are orthogonal");
+      });
+    });
+
+    plot();
+  }
+
+  function plot(){
+    const xs = byId("ax-x"), ys = byId("ax-y");
+    const kx = xs.value, ky = ys.value;
+    const opts = D.vocab.map(function(w){ return '<option value="' + esc(w) + '">' + esc(w) + "</option>"; }).join("");
+    xs.innerHTML = opts; ys.innerHTML = opts;
+    xs.value = D.vocab.indexOf(kx) >= 0 ? kx : (D.vocab.indexOf("cat") >= 0 ? "cat" : D.vocab[0]);
+    ys.value = D.vocab.indexOf(ky) >= 0 ? ky : (D.vocab.indexOf("fell") >= 0 ? "fell" : D.vocab[1] || D.vocab[0]);
+    const jx = D.index[xs.value], jy = D.index[ys.value];
+    const M = mat();
+    const W = 340, H = 260, pad = 34;
+    let mx = 1, my = 1;
+    M.forEach(function(r){ mx = Math.max(mx, r[jx]); my = Math.max(my, r[jy]); });
+    const X = function(v){ return pad + (v / mx) * (W - pad - 18); };
+    const Y = function(v){ return H - pad - (v / my) * (H - pad - 18); };
+
+    const svg = sv("svg", {viewBox:"0 0 " + W + " " + H, class:"plot"});
+    svg.appendChild(sv("line", {x1:pad, y1:H-pad, x2:W-8, y2:H-pad, stroke:"var(--line-strong)", "stroke-width":"1"}));
+    svg.appendChild(sv("line", {x1:pad, y1:H-pad, x2:pad, y2:8, stroke:"var(--line-strong)", "stroke-width":"1"}));
+    const lx = sv("text", {x:W-8, y:H-pad+16});
+    lx.setAttribute("style", "font-family:var(--mono);font-size:11px;fill:var(--muted);text-anchor:end");
+    lx.textContent = xs.value;
+    svg.appendChild(lx);
+    const ly = sv("text", {x:pad-6, y:14});
+    ly.setAttribute("style", "font-family:var(--mono);font-size:11px;fill:var(--muted);text-anchor:end");
+    ly.textContent = ys.value;
+    svg.appendChild(ly);
+
+    const COL = ["var(--teal)", "var(--amber)", "var(--rose)", "var(--violet)", "var(--ink)"];
+    M.forEach(function(r, i){
+      const x = X(r[jx]), y = Y(r[jy]);
+      const c = COL[i % COL.length];
+      svg.appendChild(sv("line", {x1:pad, y1:H-pad, x2:x, y2:y, stroke:c, "stroke-width":"2"}));
+      svg.appendChild(sv("circle", {cx:x, cy:y, r:5, fill:c}));
+      const t = sv("text", {x:x + 8, y:y - 6});
+      t.setAttribute("style", "font-family:var(--mono);font-size:11px;fill:" + c);
+      t.textContent = "d" + (i+1);
+      svg.appendChild(t);
+    });
+    const host = byId("plot2d");
+    clear(host); host.appendChild(svg);
+    xs.onchange = plot; ys.onchange = plot;
+  }
+  sub(render);
+})();
+
+/* =========================================================
+   Part 5
+   ========================================================= */
+(function part5(){
+  /* one-hot vs dense demo */
+  function demos(){
+    if (!D.vocab.length) return;
+    const w = D.vocab[0];
+    let h = '<table class="grid"><tr>';
+    D.vocab.slice(0, 12).forEach(function(x, i){ h += "<th>" + i + "</th>"; });
+    h += "</tr><tr>";
+    D.vocab.slice(0, 12).forEach(function(x, i){
+      h += '<td class="' + (i === 0 ? "hot" : "zero") + '">' + (i === 0 ? 1 : 0) + "</td>";
+    });
+    h += "</tr></table><p class='hint' style='margin-top:6px'>vector for <code>" + esc(w) + "</code>, first 12 of " + D.vocab.length + " columns</p>";
+    byId("oh-demo").innerHTML = h;
+
+    let d = '<table class="grid"><tr><th class="rowh">word</th><th>dim 1</th><th>dim 2</th></tr>';
+    ["king", "queen", "man", "woman", "cat", "dog"].forEach(function(x){
+      d += '<tr><th class="rowh">' + x + "</th><td>" + EMB[x][0].toFixed(2) + "</td><td>" + EMB[x][1].toFixed(2) + "</td></tr>";
+    });
+    d += "</table>";
+    byId("dense-demo").innerHTML = d;
+  }
+
+  /* co-occurrence */
+  let win = 2;
+  byId("cw").addEventListener("input", function(){ win = +this.value; cooc(); });
+  function cooc(){
+    byId("cw-lab").textContent = "\u00b1" + win;
+    if (!D.vocab.length) return;
+    const freq = {};
+    D.toks.forEach(function(t){ t.forEach(function(w){ freq[w] = (freq[w] || 0) + 1; }); });
+    const terms = D.vocab.slice().sort(function(a, b){ return freq[b] - freq[a] || (a < b ? -1 : 1); }).slice(0, 9).sort();
+    const ix = {};
+    terms.forEach(function(w, i){ ix[w] = i; });
+    const M = terms.map(function(){ return terms.map(function(){ return 0; }); });
+    D.toks.forEach(function(t){
+      t.forEach(function(w, i){
+        if (ix[w] === undefined) return;
+        for (let k = Math.max(0, i - win); k <= Math.min(t.length - 1, i + win); k++){
+          if (k === i) continue;
+          const v = t[k];
+          if (ix[v] === undefined) continue;
+          M[ix[w]][ix[v]]++;
+        }
+      });
+    });
+    let h = '<table class="grid"><tr><th class="rowh">counts</th>';
+    terms.forEach(function(w){ h += "<th>" + esc(w) + "</th>"; });
+    h += "</tr>";
+    let best = null;
+    terms.forEach(function(w, i){
+      h += '<tr><th class="rowh">' + esc(w) + "</th>";
+      terms.forEach(function(v, j){
+        h += '<td class="' + (M[i][j] > 0 ? "pos" : "zero") + '">' + M[i][j] + "</td>";
+      });
+      h += "</tr>";
+    });
+    h += "</table>";
+    byId("cooc").innerHTML = h;
+
+    for (let i = 0; i < terms.length; i++)
+      for (let j = i+1; j < terms.length; j++){
+        const c = cosine(M[i], M[j]);
+        if (!best || c > best.c) best = {a:terms[i], b:terms[j], c:c};
+      }
+    byId("cooc-msg").innerHTML = best
+      ? "Each row is a vector for that word, built only from its neighbours. The two most similar rows here are <code>" +
+        esc(best.a) + "</code> and <code>" + esc(best.b) + "</code> at cosine " + best.c.toFixed(2) +
+        ". Widen the window and the notion of similarity drifts from syntactic, meaning words that fill the same slot, to topical, meaning words about the same subject."
+      : "";
+  }
+
+  /* toy embedding space */
+  const EMB = {
+    man:[0.15, 0.55], woman:[0.15, 0.15], king:[0.85, 0.55], queen:[0.85, 0.15],
+    paris:[-0.55, 0.80], france:[-0.80, 0.80], rome:[-0.55, 0.45], italy:[-0.80, 0.45],
+    cat:[0.45, -0.75], kitten:[0.45, -0.55], dog:[0.75, -0.75], puppy:[0.75, -0.55],
+    market:[-0.30, -0.60], stock:[-0.45, -0.70], report:[-0.15, -0.80]
+  };
+  const WORDS = Object.keys(EMB);
+  function dist(a, b){ return Math.sqrt((a[0]-b[0])*(a[0]-b[0]) + (a[1]-b[1])*(a[1]-b[1])); }
+  function nearest(vec, exclude, k){
+    return WORDS.filter(function(w){ return exclude.indexOf(w) < 0; })
+      .map(function(w){ return {w:w, s:dist(vec, EMB[w])}; })
+      .sort(function(a, b){ return a.s - b.s; }).slice(0, k);
+  }
+  function fillSelect(id, def){
+    const s = byId(id);
+    s.innerHTML = WORDS.map(function(w){ return '<option value="' + w + '">' + w + "</option>"; }).join("");
+    s.value = def;
+  }
+  fillSelect("nn-word", "king");
+  fillSelect("an-a", "man"); fillSelect("an-b", "king"); fillSelect("an-c", "woman");
+
+  let arrows = null;
+  function nn(){
+    const w = byId("nn-word").value;
+    const res = nearest(EMB[w], [w], 4);
+    byId("nn-out").innerHTML = res.map(function(r){
+      return chip(r.w + "  " + r.s.toFixed(2), r.s < 0.35 ? "kept" : "");
+    }).join("");
+    arrows = null;
+    plotEmb(w, res.map(function(r){ return r.w; }));
+  }
+  function analogy(){
+    const a = byId("an-a").value, b = byId("an-b").value, c = byId("an-c").value;
+    const v = [EMB[b][0] - EMB[a][0] + EMB[c][0], EMB[b][1] - EMB[a][1] + EMB[c][1]];
+    const res = nearest(v, [a, b, c], 3);
+    byId("an-out").innerHTML = "<strong>" + a + " is to " + b + " as " + c + " is to " +
+      (res[0] ? "<code>" + res[0].w + "</code>" : "?") + "</strong>. The computation is vector(" + b + ") - vector(" + a +
+      ") + vector(" + c + ") = [" + v[0].toFixed(2) + ", " + v[1].toFixed(2) + "], and the nearest words to that point are " +
+      res.map(function(r){ return r.w + " at distance " + r.s.toFixed(2); }).join(", ") + ".";
+    arrows = [[a, b], [c, res[0] ? res[0].w : c]];
+    plotEmb(null, [a, b, c].concat(res[0] ? [res[0].w] : []));
+  }
+  byId("nn-word").addEventListener("change", nn);
+  ["an-a", "an-b", "an-c"].forEach(function(id){ byId(id).addEventListener("change", analogy); });
+
+  function plotEmb(focus, highlight){
+    const W = 340, H = 300, pad = 18;
+    const X = function(v){ return pad + (v + 1.05) / 2.1 * (W - 2*pad); };
+    const Y = function(v){ return H - pad - (v + 1.05) / 2.1 * (H - 2*pad); };
+    const svg = sv("svg", {viewBox:"0 0 " + W + " " + H, class:"plot"});
+    svg.appendChild(sv("line", {x1:pad, y1:Y(0), x2:W-pad, y2:Y(0), stroke:"var(--line)", "stroke-width":"1"}));
+    svg.appendChild(sv("line", {x1:X(0), y1:pad, x2:X(0), y2:H-pad, stroke:"var(--line)", "stroke-width":"1"}));
+    if (arrows){
+      arrows.forEach(function(pr){
+        const p = EMB[pr[0]], q = EMB[pr[1]];
+        svg.appendChild(sv("line", {x1:X(p[0]), y1:Y(p[1]), x2:X(q[0]), y2:Y(q[1]),
+          stroke:"var(--amber)", "stroke-width":"2.4"}));
+      });
+    }
+    WORDS.forEach(function(w){
+      const p = EMB[w];
+      const on = !highlight || highlight.indexOf(w) >= 0;
+      const isFocus = focus === w;
+      svg.appendChild(sv("circle", {cx:X(p[0]), cy:Y(p[1]), r:isFocus ? 6 : 4,
+        fill:isFocus ? "var(--rose)" : (on ? "var(--teal)" : "var(--line-strong)"),
+        opacity:on ? 1 : 0.35}));
+      const t = sv("text", {x:X(p[0]) + 7, y:Y(p[1]) - 5});
+      t.setAttribute("style", "font-family:var(--mono);font-size:10.5px;fill:" +
+        (isFocus ? "var(--rose)" : "var(--ink)") + ";opacity:" + (on ? 1 : 0.4));
+      t.textContent = w;
+      svg.appendChild(t);
+    });
+    const host = byId("emb-plot");
+    clear(host); host.appendChild(svg);
+  }
+
+  sub(function(){ demos(); cooc(); });
+  nn();
+  analogy();
+})();
+
+/* =========================================================
+   full screen and scroll spy
+   ========================================================= */
+(function fullscreen(){
+  const enabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+  if (!enabled) return;
+  function request(el){ const f = el.requestFullscreen || el.webkitRequestFullscreen; if (f) f.call(el); }
+  function leave(){ const f = document.exitFullscreen || document.webkitExitFullscreen; if (f) f.call(document); }
+  function current(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
+  const buttons = [];
+  function attach(btn, target){
+    buttons.push({btn:btn, target:target});
+    btn.addEventListener("click", function(){ current() === target ? leave() : request(target); });
+  }
+  [].forEach.call(document.querySelectorAll(".card"), function(card){
+    const row = document.createElement("div");
+    row.className = "fsrow";
+    const b = document.createElement("button");
+    b.className = "tinybtn";
+    b.textContent = "Full screen";
+    row.appendChild(b); card.appendChild(row);
+    attach(b, card);
+  });
+  const page = document.createElement("button");
+  page.className = "tinybtn"; page.id = "page-fs"; page.textContent = "Full screen";
+  document.body.appendChild(page);
+  attach(page, document.documentElement);
+  function sync(){
+    const c = current();
+    buttons.forEach(function(x){ x.btn.textContent = (c === x.target) ? "Exit full screen" : "Full screen"; });
+  }
+  document.addEventListener("fullscreenchange", sync);
+  document.addEventListener("webkitfullscreenchange", sync);
+})();
+
+(function spy(){
+  const links = [].slice.call(document.querySelectorAll(".rail a"));
+  const secs = links.map(function(a){ return byId(a.dataset.sec); });
+  function upd(){
+    let best = 0;
+    secs.forEach(function(s, i){ if (s && s.getBoundingClientRect().top < window.innerHeight * 0.36) best = i; });
+    links.forEach(function(a, i){ a.classList.toggle("on", i === best); });
+  }
+  window.addEventListener("scroll", upd, {passive:true});
+  upd();
+})();
+
+recompute();
+</script>
+</body>
+</html>
