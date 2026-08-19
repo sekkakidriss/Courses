@@ -227,6 +227,18 @@ footer{border-top:1px solid var(--line);padding:22px 0 60px;color:var(--muted);f
 .pop{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--rose)}
 @media (max-width:620px){.qopts{grid-template-columns:1fr}}
 
+/* board */
+.board{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+canvas.pad{display:block;width:100%;height:520px;touch-action:none;cursor:crosshair}
+.card:fullscreen canvas.pad{height:74vh}
+.card:-webkit-full-screen canvas.pad{height:74vh}
+.swatch{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;background-clip:padding-box}
+.swatch.on{border-color:var(--ink);box-shadow:0 0 0 3px rgba(16,27,51,.09)}
+.sizebtn{width:34px;height:28px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.sizebtn.on{border-color:var(--ink);background:rgba(16,27,51,.05)}
+.sizebtn i{display:block;border-radius:50%;background:var(--ink)}
+@media (max-width:620px){canvas.pad{height:380px}}
+
 
 /* full screen */
 .fsrow{display:flex;justify-content:flex-end;margin-top:14px}
@@ -290,6 +302,7 @@ html:-webkit-full-screen{background:var(--paper);overflow:auto}
       <li><a href="#algos" data-sec="algos"><span class="num">Part 05</span>Algorithms</a></li>
       <li><a href="#where" data-sec="where"><span class="num">Part 06</span>WHERE vs traversal</a></li>
       <li><a href="#quiz" data-sec="quiz"><span class="num">Part 07</span>Quiz</a></li>
+      <li><a href="#board" data-sec="board"><span class="num">Extra</span>Board</a></li>
     </ol>
   </nav>
 
@@ -601,6 +614,31 @@ html:-webkit-full-screen{background:var(--paper);overflow:auto}
       <p>Sommet is a vertex, and he grows one edge for every correct answer in a row. Break the streak and he goes back to being the trivial graph.</p>
     </div>
     <div class="card" id="quiz-card"></div>
+  </section>
+
+  <!-- ============ BOARD ============ -->
+  <section id="board">
+    <div class="sec-head">
+      <div class="eyebrow">Extra</div>
+      <h2>Board</h2>
+      <p>Space to draw a graph by hand, work through a traversal, or answer a question on the spot. Nothing here is stored: save the image before you leave the page.</p>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div class="row" id="pen-colors"></div>
+        <div class="row" id="pen-sizes"></div>
+        <div class="row">
+          <button class="btn" id="b-undo">Undo last stroke</button>
+          <button class="btn" id="b-clear">Clear the board</button>
+          <button class="btn primary" id="b-save">Save as image</button>
+        </div>
+      </div>
+      <div class="board"><canvas class="pad" id="pad"></canvas></div>
+      <div class="row" style="margin-top:10px;justify-content:space-between">
+        <p class="hint" id="b-status"></p>
+        <p class="hint">Ctrl or Cmd with Z also undoes. Works with a stylus or a finger on a tablet.</p>
+      </div>
+    </div>
   </section>
 
   </main>
@@ -3252,6 +3290,163 @@ function MASCOT(mood, streak){
     const rt = byId("q-retry"); if (rt) rt.addEventListener("click", function(){ start(shuffle(S.missed)); });
   }
   render();
+})();
+
+
+/* ---------------- board ---------------- */
+(function board(){
+  const cv = byId("pad");
+  if (!cv) return;
+  const ctx = cv.getContext ? cv.getContext("2d") : null;
+  if (!ctx) return;
+
+  const COLORS = [
+    {name:"ink", css:"#101B33"},
+    {name:"teal", css:"#0F7A83"},
+    {name:"amber", css:"#DE9126"},
+    {name:"rose", css:"#A62B54"}
+  ];
+  const SIZES = [2, 4, 8];
+  let color = COLORS[0].css, width = SIZES[1];
+  let strokes = [], live = null, dpr = 1;
+
+  const cbox = byId("pen-colors");
+  COLORS.forEach(function(c, i){
+    const b = document.createElement("button");
+    b.className = "swatch" + (i === 0 ? " on" : "");
+    b.style.background = c.css;
+    b.title = c.name;
+    b.setAttribute("aria-label", "pen colour " + c.name);
+    b.addEventListener("click", function(){
+      color = c.css;
+      [].forEach.call(cbox.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+    });
+    cbox.appendChild(b);
+  });
+  const sbox = byId("pen-sizes");
+  SIZES.forEach(function(w, i){
+    const b = document.createElement("button");
+    b.className = "sizebtn" + (i === 1 ? " on" : "");
+    b.innerHTML = '<i style="width:' + (w + 2) + "px;height:" + (w + 2) + 'px"></i>';
+    b.setAttribute("aria-label", "pen width " + w);
+    b.addEventListener("click", function(){
+      width = w;
+      [].forEach.call(sbox.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+    });
+    sbox.appendChild(b);
+  });
+
+  function fit(){
+    const r = cv.getBoundingClientRect();
+    dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.round(r.width * dpr));
+    cv.height = Math.max(1, Math.round(r.height * dpr));
+    if (ctx.setTransform) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    redraw();
+  }
+  function paper(c, w, h){
+    c.fillStyle = "#FFFFFF";
+    c.fillRect(0, 0, w, h);
+    c.fillStyle = "rgba(16,27,51,.13)";
+    for (let x = 22; x < w; x += 22)
+      for (let y = 22; y < h; y += 22){
+        c.beginPath();
+        c.arc(x, y, 1, 0, 6.284);
+        c.fill();
+      }
+  }
+  function paint(c, list){
+    c.lineCap = "round";
+    c.lineJoin = "round";
+    list.forEach(function(s){
+      if (!s.pts.length) return;
+      c.strokeStyle = s.color;
+      c.lineWidth = s.width;
+      c.beginPath();
+      c.moveTo(s.pts[0].x, s.pts[0].y);
+      if (s.pts.length === 1) c.lineTo(s.pts[0].x + 0.1, s.pts[0].y + 0.1);
+      for (let i = 1; i < s.pts.length; i++) c.lineTo(s.pts[i].x, s.pts[i].y);
+      c.stroke();
+    });
+  }
+  function redraw(){
+    const r = cv.getBoundingClientRect();
+    paper(ctx, r.width, r.height);
+    paint(ctx, strokes.concat(live ? [live] : []));
+    status();
+  }
+  function status(){
+    const el = byId("b-status");
+    if (el) el.textContent = strokes.length
+      ? strokes.length + (strokes.length === 1 ? " stroke on the board" : " strokes on the board")
+      : "Empty board. Draw with the mouse, a stylus or a finger.";
+  }
+  function at(ev){
+    const r = cv.getBoundingClientRect();
+    return {x:ev.clientX - r.left, y:ev.clientY - r.top};
+  }
+
+  cv.addEventListener("pointerdown", function(ev){
+    ev.preventDefault();
+    cv.setPointerCapture(ev.pointerId);
+    live = {color:color, width:width, pts:[at(ev)]};
+    redraw();
+  });
+  cv.addEventListener("pointermove", function(ev){
+    if (!live) return;
+    live.pts.push(at(ev));
+    redraw();
+  });
+  function end(){
+    if (!live) return;
+    strokes.push(live);
+    live = null;
+    redraw();
+  }
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointercancel", end);
+  cv.addEventListener("pointerleave", end);
+
+  byId("b-undo").addEventListener("click", function(){ strokes.pop(); redraw(); });
+  byId("b-clear").addEventListener("click", function(){
+    if (strokes.length && !window.confirm("Clear the whole board? This cannot be undone.")) return;
+    strokes = []; live = null; redraw();
+  });
+  document.addEventListener("keydown", function(ev){
+    if ((ev.ctrlKey || ev.metaKey) && (ev.key === "z" || ev.key === "Z")){
+      const box = byId("board");
+      if (!box) return;
+      const r = box.getBoundingClientRect();
+      if (r.top < window.innerHeight && r.bottom > 0){
+        ev.preventDefault();
+        strokes.pop();
+        redraw();
+      }
+    }
+  });
+  byId("b-save").addEventListener("click", function(){
+    const r = cv.getBoundingClientRect();
+    const out = document.createElement("canvas");
+    const scale = 2;
+    out.width = Math.round(r.width * scale);
+    out.height = Math.round(r.height * scale);
+    const c = out.getContext("2d");
+    c.setTransform(scale, 0, 0, scale, 0, 0);
+    paper(c, r.width, r.height);
+    paint(c, strokes);
+    const d = new Date();
+    const pad2 = function(n){ return (n < 10 ? "0" : "") + n; };
+    const stamp = d.getFullYear() + pad2(d.getMonth()+1) + pad2(d.getDate()) + "-" + pad2(d.getHours()) + pad2(d.getMinutes());
+    const a = document.createElement("a");
+    a.download = "graph-board-" + stamp + ".png";
+    a.href = out.toDataURL("image/png");
+    a.click();
+  });
+
+  window.addEventListener("resize", fit);
+  fit();
 })();
 
 /* ---------------- full screen ---------------- */
