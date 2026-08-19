@@ -135,6 +135,35 @@ svg.plot{width:100%;height:auto;display:block}
 .stage{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
 select.btn{font-family:var(--mono);font-size:13px;padding:6px 9px}
 footer{border-top:1px solid var(--line);padding:22px 0 60px;color:var(--muted);font-size:13.5px}
+/* quiz */
+.qhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+.qtag{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.mascotrow{display:flex;gap:14px;align-items:flex-start}
+.mascotbox{width:126px;flex:0 0 126px}
+.mascotbox svg{width:100%;height:auto;display:block}
+.bubble{position:relative;flex:1;background:rgba(15,122,131,.09);border:1px solid rgba(15,122,131,.34);border-radius:14px;padding:13px 16px;font-size:16.5px;line-height:1.45}
+.bubble:before{content:"";position:absolute;left:-8px;top:28px;width:14px;height:14px;background:rgba(15,122,131,.09);border-left:1px solid rgba(15,122,131,.34);border-bottom:1px solid rgba(15,122,131,.34);transform:rotate(45deg)}
+.bubble .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:600;display:block;margin-bottom:5px}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.qopt{text-align:left;font-family:var(--body);font-size:14.5px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 13px;cursor:pointer;line-height:1.4;color:var(--ink)}
+.qopt:hover{border-color:var(--teal)}
+.qopt .key{font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:8px}
+.qopt.right{border-color:var(--teal);background:rgba(15,122,131,.14);font-weight:600}
+.qopt.wrong{border-color:var(--rose);background:rgba(166,43,84,.12)}
+.qopt[disabled]{cursor:default}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.tile{border:1px solid var(--line);border-radius:11px;padding:9px 11px;background:var(--panel)}
+.tile .n{font-family:var(--mono);font-size:21px;font-weight:600;line-height:1.1}
+.tile small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:3px}
+.pbar{height:8px;border-radius:5px;background:rgba(16,27,51,.09);overflow:hidden;margin-top:8px}
+.pbar i{display:block;height:100%;background:var(--teal);border-radius:5px;transition:width .3s ease}
+.pbar.time i{background:var(--amber);transition:width .12s linear}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.bdg{font-family:var(--mono);font-size:11px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;color:var(--muted);opacity:.55}
+.bdg.got{border-color:var(--rose);color:var(--rose);font-weight:600;background:rgba(166,43,84,.07);opacity:1}
+.pop{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--rose)}
+@media (max-width:620px){.qopts{grid-template-columns:1fr}}
+
 .fsrow{display:flex;justify-content:flex-end;margin-top:14px}
 #page-fs{position:fixed;top:14px;right:14px;z-index:60;background:var(--panel)}
 .card:fullscreen{background:var(--panel);padding:32px 40px;border-radius:0;border:0;box-shadow:none;overflow:auto}
@@ -189,6 +218,7 @@ html:-webkit-full-screen{background:var(--paper);overflow:auto}
       <li><a href="#ngrams" data-sec="ngrams"><span class="num">Part 03</span>N-grams</a></li>
       <li><a href="#vectors" data-sec="vectors"><span class="num">Part 04</span>Vectors and TF-IDF</a></li>
       <li><a href="#embed" data-sec="embed"><span class="num">Part 05</span>Word embeddings</a></li>
+      <li><a href="#quiz" data-sec="quiz"><span class="num">Part 06</span>Quiz</a></li>
     </ol>
     <div class="pipe">
       <strong>Live pipeline</strong>
@@ -583,6 +613,15 @@ html:-webkit-full-screen{background:var(--paper);overflow:auto}
         The fifteen positions above were chosen by hand so that the arithmetic is visible on a page. A real word2vec or GloVe space is trained on billions of words and has hundreds of dimensions, and the analogy behaviour is weaker and messier than demonstrations suggest. What is real is the property being illustrated: differences between vectors encode relations, so the same offset that separates a capital from its country separates another capital from its country. Neighbours are ranked here by Euclidean distance, since the points were placed by hand; production systems rank by cosine, which gives the same ordering once vectors are normalised to unit length. Also worth stating: these are static embeddings, one vector per word type, so <em>bank</em> gets a single vector for both the river and the money. Contextual models compute a different vector for every occurrence, which is the step beyond this lecture.
       </div>
     </div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head">
+      <div class="eyebrow">Part 06</div>
+      <h2>Test yourself</h2>
+      <p>Tok is a token, and the vector beside him fills one cell for every correct answer in a row. Miss one and the vector empties.</p>
+    </div>
+    <div class="card" id="quiz-card"></div>
   </section>
 
   </main>
@@ -1487,6 +1526,310 @@ function cosine(a, b){
     byId("scheme-cmp").innerHTML = c;
   }
   sub(render);
+})();
+
+
+/* Tok, a token whose vector fills up with your streak */
+function MASCOT(mood, streak){
+  const svg = sv("svg", {viewBox:"0 0 150 150"});
+  const k = Math.min(streak, 6);
+  const fill = mood === "happy" ? "var(--teal)" : mood === "sad" ? "rgba(166,43,84,.18)" : "var(--panel)";
+  svg.appendChild(sv("rect", {x:12, y:46, width:80, height:56, rx:16, fill:fill, stroke:"var(--ink)", "stroke-width":"2.6"}));
+  const eyeY = 68, dx = mood === "think" ? 4 : 0;
+  const eyeFill = mood === "happy" ? "#fff" : "var(--ink)";
+  if (mood === "sad"){
+    svg.appendChild(sv("path", {d:"M34," + (eyeY-3) + " l9,6 M43," + (eyeY-3) + " l-9,6", stroke:eyeFill, "stroke-width":"2.2", fill:"none"}));
+    svg.appendChild(sv("path", {d:"M61," + (eyeY-3) + " l9,6 M70," + (eyeY-3) + " l-9,6", stroke:eyeFill, "stroke-width":"2.2", fill:"none"}));
+  } else {
+    svg.appendChild(sv("circle", {cx:39 + dx, cy:eyeY, r:3.6, fill:eyeFill}));
+    svg.appendChild(sv("circle", {cx:65 + dx, cy:eyeY, r:3.6, fill:eyeFill}));
+  }
+  const mouth = mood === "happy" ? "M41,82 q11,11 22,0" : mood === "sad" ? "M42,88 q10,-8 20,0" : "M43,85 h18";
+  svg.appendChild(sv("path", {d:mouth, stroke:mood === "happy" ? "#fff" : "var(--ink)", "stroke-width":"2.4", fill:"none", "stroke-linecap":"round"}));
+  svg.appendChild(sv("path", {d:"M104,30 q-7,0 -7,7 v74 q0,7 7,7", fill:"none", stroke:"var(--ink)", "stroke-width":"1.6"}));
+  svg.appendChild(sv("path", {d:"M140,30 q7,0 7,7 v74 q0,7 -7,7", fill:"none", stroke:"var(--ink)", "stroke-width":"1.6"}));
+  for (let i = 0; i < 6; i++){
+    const on = i >= 6 - k;
+    const y = 34 + i*13;
+    svg.appendChild(sv("rect", {x:110, y:y, width:30, height:10, rx:3,
+      fill:on ? "var(--rose)" : "rgba(16,27,51,.08)"}));
+  }
+  const lab = sv("text", {x:75, y:134});
+  lab.setAttribute("style", "font-family:var(--mono);font-size:10.5px;text-anchor:middle;fill:var(--muted)");
+  lab.textContent = "streak vector, " + k + " of 6";
+  svg.appendChild(lab);
+  return svg;
+}
+
+
+/* ---------------- quiz ---------------- */
+(function quiz(){
+  const host = byId("quiz-card");
+  if (!host) return;
+  const BANK = [
+  {s:"tokens",d:1,q:"A document has 40 tokens and 25 types. What does that mean?",o:["40 word occurrences drawn from 25 distinct words", "40 distinct words and 25 repeated ones", "40 characters and 25 letters", "40 sentences and 25 paragraphs"],a:0,w:"A token is one occurrence, a type is one distinct unit. The ratio between them is the first statistic anyone computes on a text."},
+  {s:"tokens",d:1,q:"Which counts as a character but not as a letter?",o:["A space", "The letter e", "An accented e", "A capital A"],a:0,w:"Characters include spaces and punctuation. Letters are the alphabetic subset, which is why the two counters in Part 01 rarely agree."},
+  {s:"tokens",d:2,q:"In the word to index mapping, index 3 sitting between index 2 and index 4 means:",o:["Nothing at all, the order is alphabetical convenience", "Those words are related in meaning", "Those words appear near each other in the text", "Those words have similar frequency"],a:0,w:"The integer is a column position and nothing more. Any model that treats it as a magnitude is misreading the encoding."},
+  {s:"tokens",d:2,q:"The cosine similarity between the one-hot vectors of two different words is:",o:["Always exactly 0", "Always exactly 1", "Between 0 and 1 depending on the words", "Undefined"],a:0,w:"Distinct one-hot vectors are orthogonal, so market and markets are as unrelated as market and elephant. That wall is what embeddings remove."},
+  {s:"tokens",d:3,q:"The main advantage of character level tokenization is:",o:["Nothing is ever out of vocabulary", "The vectors become shorter", "Word meaning is captured directly", "It removes the need for a corpus"],a:0,w:"The alphabet is small and fixed, so any string decomposes into known units. The cost is that the model must learn word structure by itself."},
+  {s:"tokens",d:2,q:"Splitting on whitespace fails badly on:",o:["Chinese, where words are not separated by spaces", "Long documents", "Uppercase text", "Numeric data"],a:0,w:"It also breaks on contractions, hyphenated compounds and Arabic clitics. Modern models use subword pieces for exactly this reason."},
+  {s:"normal",d:1,q:"Stopwords are removed because:",o:["They appear nearly everywhere and so separate nothing", "They are grammatically incorrect", "They are always short", "They break the tokenizer"],a:0,w:"A word in every document cannot tell you which document you are holding. TF-IDF achieves the same effect automatically, and more gently."},
+  {s:"normal",d:2,q:"Removing stopwords is dangerous for which task?",o:["Sentiment analysis, because negations disappear", "Topic modelling", "Document length statistics", "Language identification"],a:0,w:"Authorship attribution suffers too, since function words are the signal there rather than the noise."},
+  {s:"normal",d:2,q:"Which statement about stemming is true?",o:["Its output need not be a real word", "It always returns a dictionary form", "It needs a part of speech tagger", "It is slower than lemmatization"],a:0,w:"Stemming chops suffixes by rule, so studies can become studi. That is acceptable for retrieval, where only consistency matters."},
+  {s:"normal",d:2,q:"Lemmatization differs from stemming because it:",o:["Uses a dictionary and the part of speech", "Removes more characters", "Works only on English", "Runs faster"],a:0,w:"That is what lets it return real words and handle irregular forms, at the cost of needing a lexicon and a tagger."},
+  {s:"normal",d:3,q:"Which pair can only be merged by lemmatization, never by suffix stripping?",o:["ran and run", "markets and market", "running and run", "studies and study"],a:0,w:"There is no suffix to remove from ran. Irregular forms need a lookup table, which is exactly what a lemmatizer is."},
+  {s:"normal",d:2,q:"Turning stemming on in the pipeline makes the vocabulary:",o:["Smaller, because word forms merge into one type", "Larger, because stems are new words", "Unchanged in size", "Alphabetically reordered only"],a:0,w:"Every normalisation step merges types you have decided are equivalent. The vocabulary shrinks by exactly the amount of distinction you gave up."},
+  {s:"ngrams",d:1,q:"A document of 10 tokens yields how many bigrams?",o:["9", "10", "20", "5"],a:0,w:"L - n + 1, so 10 - 2 + 1. The window simply slides along the sequence."},
+  {s:"ngrams",d:2,q:"With a vocabulary of size |V|, the number of possible n-grams is:",o:["|V| to the power n", "|V| times n", "|V| plus n", "n to the power |V|"],a:0,w:"With 20000 words, bigrams already allow 400 million columns, of which a corpus shows a tiny fraction. That is why n stays small."},
+  {s:"ngrams",d:2,q:"Character n-grams are the standard tool for:",o:["Misspellings, morphology and language identification", "Counting sentences", "Removing stopwords", "Building a lemmatizer"],a:0,w:"They degrade gracefully when a word is misspelled or unseen, and they capture morphology in languages where a word carries many affixes."},
+  {s:"ngrams",d:3,q:"As n grows, the number of distinct n-grams approaches the number produced. What does that tell you?",o:["Almost every n-gram occurs once, so counting them stops being informative", "The corpus is too small to tokenize", "The vocabulary is shrinking", "Order no longer matters"],a:0,w:"Features that never repeat cannot support a frequency based model. The feature space explodes while each feature gets rarer."},
+  {s:"ngrams",d:1,q:"Unigrams are:",o:["n-grams with n = 1, that is single tokens", "Pairs of adjacent tokens", "Characters", "Sentences"],a:0,w:"A bag of unigrams is exactly the bag of words model, which keeps no order at all."},
+  {s:"vectors",d:1,q:"The bag of words representation loses:",o:["Word order", "Word identity", "Document boundaries", "Vocabulary size"],a:0,w:"The market fell and fell the market give identical rows. It survives because for topic level questions the identity of words carries most of the signal."},
+  {s:"vectors",d:1,q:"A document term matrix has shape:",o:["Documents by vocabulary entries", "Vocabulary by vocabulary", "Tokens by types", "Documents by documents"],a:0,w:"One row per document, one column per vocabulary entry, and the cell is how often that term occurs in that document."},
+  {s:"vectors",d:2,q:"Real document term matrices are stored sparsely because:",o:["Almost every cell is zero", "The values are decimals", "The matrix is symmetric", "Rows must stay sorted"],a:0,w:"A document uses a tiny fraction of the vocabulary, so a dense matrix over a million documents would be unusable."},
+  {s:"vectors",d:2,q:"With the textbook formula, a term appearing in every document gets an idf of:",o:["0, so it vanishes from the weighted matrix", "1, so it is unchanged", "Infinity", "Its raw frequency"],a:0,w:"idf is ln(N/df), and df equal to N gives ln(1) = 0. This is TF-IDF removing stopwords without anyone writing a stoplist."},
+  {s:"vectors",d:2,q:"TF-IDF is defined as:",o:["Term frequency multiplied by inverse document frequency", "Term frequency divided by document length", "The logarithm of the term count", "The cosine between two documents"],a:0,w:"How often the term appears here, times how surprising the term is across the corpus."},
+  {s:"vectors",d:3,q:"Scikit-learn's TfidfVectorizer gives different numbers from a hand calculation because it:",o:["Smooths the idf and normalises each row to unit length", "Uses a different tokenizer only", "Removes stopwords by default", "Rounds to two decimals"],a:0,w:"Its idf is ln((1+N)/(1+df)) + 1, which never returns exactly zero, followed by L2 normalisation. The shape of the answer is the same, the numbers are not."},
+  {s:"vectors",d:3,q:"Compared with plain TF-IDF, Okapi BM25 adds:",o:["Saturation of term frequency and document length normalisation", "A neural network", "Stemming", "A stoplist"],a:0,w:"The fifth occurrence of a word adds much less than the second, and long documents stop winning simply for being long."},
+  {s:"vectors",d:2,q:"Cosine similarity measures:",o:["The angle between two vectors, ignoring their lengths", "The distance between two points", "The number of shared words", "The difference in document length"],a:0,w:"Paste a document to itself and its distance to everything changes while its angle to everything stays identical. Length is usually a nuisance rather than the signal."},
+  {s:"vectors",d:2,q:"On non negative count vectors, cosine similarity of 0 means:",o:["The two documents share no vocabulary at all", "The documents are identical", "One document is empty", "The documents have equal length"],a:0,w:"The dot product is zero only if no term is present in both. On these vectors cosine runs from 0 to 1."},
+  {s:"vectors",d:3,q:"Probabilistic idf can produce negative weights for:",o:["Terms occurring in more than half the documents", "Rare terms", "Terms with high raw counts", "Terms in short documents"],a:0,w:"That is either a feature or a bug depending on the model, and it also lets cosine similarity go negative, which count based weighting never does."},
+  {s:"vectors",d:2,q:"Binary term frequency is the right choice when:",o:["Presence is the signal, as in short queries or Bernoulli naive Bayes", "Documents vary in length", "The vocabulary is large", "You plan to use cosine"],a:0,w:"It records only whether the term is there, which is exactly what a presence model consumes."},
+  {s:"embed",d:1,q:"An embedding vector differs from a one-hot vector because it is:",o:["Short, dense and real valued", "Long, sparse and binary", "Always integer valued", "One per document rather than per word"],a:0,w:"One-hot has length |V| with a single 1. An embedding has a fixed small dimension, typically 100 to 1000, learned from data."},
+  {s:"embed",d:2,q:"The distributional hypothesis says:",o:["A word is characterised by the words that occur near it", "Words are distributed uniformly in a corpus", "Word frequency follows a normal distribution", "Every word has one meaning"],a:0,w:"Count the neighbours inside a window and each row of that table is already a usable vector for that word."},
+  {s:"embed",d:2,q:"In word2vec, the skip-gram task is to:",o:["Predict the context words from the target word", "Predict the target word from its context", "Reconstruct the document from its vector", "Classify the document topic"],a:0,w:"CBOW does the reverse. Neither prediction is the point: the hidden layer weights are the point, and the task is only the pressure that shapes them."},
+  {s:"embed",d:3,q:"After training word2vec, what do you actually keep?",o:["The hidden layer weights, one short vector per word", "The output probabilities", "The training corpus", "The softmax layer"],a:0,w:"The prediction machinery is discarded. What remains is the table of vectors, which is why the method is called an embedding rather than a classifier."},
+  {s:"embed",d:2,q:"The analogy a is to b as c is to what is computed as:",o:["vector(b) minus vector(a) plus vector(c), then find the nearest word", "vector(a) plus vector(b) plus vector(c)", "the cosine of a and c", "the average of all three vectors"],a:0,w:"The difference between two vectors encodes the relation, so applying the same offset to a third word lands near the fourth."},
+  {s:"embed",d:3,q:"Static embeddings such as word2vec give the word bank:",o:["One vector, mixing the river and the money senses", "Two vectors, one per sense", "A different vector in every sentence", "No vector at all"],a:0,w:"One vector per word type. Contextual models compute a vector per occurrence, which is the step beyond this lecture."},
+  {s:"embed",d:2,q:"A word never seen during training is a problem because:",o:["It has no vector, the out of vocabulary problem", "It has too many vectors", "It slows down training", "It breaks the tokenizer"],a:0,w:"Subword and character based methods exist precisely to give unseen words a representation built from known pieces."}
+];
+  const SECNAME = {tokens:"Part 01, corpus and tokens", normal:"Part 02, normalisation", ngrams:"Part 03, n-grams", vectors:"Part 04, vectors and TF-IDF", embed:"Part 05, embeddings"};
+  const NAME = "Tok, a token";
+
+  const OK_LINES = ["Exactly.", "That is it.", "Correct.", "Right on.", "Well spotted.", "Yes, and cleanly."];
+  const NO_LINES = ["Not quite.", "Close, but no.", "That one catches many people.", "Almost.", "Not this time."];
+  const ASK_LINES = ["Here is one.", "Try this.", "Next.", "Let us see.", "One more."];
+
+  const BADGES = [
+    {id:"first", label:"first blood", test:function(s){ return s.correct >= 1; }},
+    {id:"streak5", label:"streak of 5", test:function(s){ return s.best >= 5; }},
+    {id:"half", label:"halfway", test:function(s){ return s.idx >= Math.ceil(s.pool.length/2); }},
+    {id:"hard", label:"hard question down", test:function(s){ return s.hardWon >= 1; }},
+    {id:"quick", label:"under five seconds", test:function(s){ return s.quick >= 1; }},
+    {id:"perfect", label:"flawless round", test:function(s){ return s.done && s.correct === s.pool.length; }}
+  ];
+
+  let S = {stage:"intro", pool:[], idx:0, score:0, streak:0, best:0, correct:0,
+           picked:null, timed:true, tleft:0, tmax:18, timer:null, hardWon:0, quick:0,
+           got:{}, log:[], done:false, missed:[], mood:"idle", line:""};
+
+  function shuffle(a){
+    const b = a.slice();
+    for (let i = b.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = b[i]; b[i] = b[j]; b[j] = t;
+    }
+    return b;
+  }
+  function pick(n){
+    const byDiff = [1, 2, 3].map(function(d){ return shuffle(BANK.filter(function(q){ return q.d === d; })); });
+    const out = [];
+    let i = 0;
+    while (out.length < n && (byDiff[0].length || byDiff[1].length || byDiff[2].length)){
+      const lane = byDiff[i % 3];
+      if (lane.length) out.push(lane.shift());
+      i++;
+    }
+    return out.slice(0, n);
+  }
+  function shuffleOpts(q){
+    const order = shuffle(q.o.map(function(x, i){ return i; }));
+    return {s:q.s, d:q.d, q:q.q, w:q.w, o:order.map(function(i){ return q.o[i]; }), a:order.indexOf(q.a)};
+  }
+  function level(){ return 1 + Math.floor(S.score / 120); }
+  function mult(){ return 1 + Math.min(S.streak, 5) * 0.2; }
+
+  function stopTimer(){ if (S.timer){ clearInterval(S.timer); S.timer = null; } }
+  function startTimer(){
+    stopTimer();
+    if (!S.timed) return;
+    S.tleft = S.tmax;
+    S.timer = setInterval(function(){
+      S.tleft -= 0.12;
+      if (S.tleft <= 0){ S.tleft = 0; stopTimer(); }
+      const bar = byId("q-time");
+      if (bar) bar.style.width = (100 * S.tleft / S.tmax) + "%";
+      const lab = byId("q-timelab");
+      if (lab) lab.textContent = S.tleft > 0 ? "bonus " + bonus() : "no time bonus left";
+    }, 120);
+  }
+  function bonus(){ return S.timed ? Math.round(5 * S.tleft / S.tmax) : 0; }
+
+  function answer(i){
+    if (S.picked !== null) return;
+    const q = S.pool[S.idx];
+    S.picked = i;
+    const good = i === q.a;
+    const spent = S.tmax - S.tleft;
+    stopTimer();
+    if (good){
+      const gain = Math.round(10 * q.d * mult()) + bonus();
+      S.score += gain;
+      S.streak++;
+      S.best = Math.max(S.best, S.streak);
+      S.correct++;
+      if (q.d === 3) S.hardWon++;
+      if (S.timed && spent < 5) S.quick++;
+      S.gain = gain;
+      S.mood = "happy";
+      S.line = OK_LINES[Math.floor(Math.random()*OK_LINES.length)];
+    } else {
+      S.streak = 0;
+      S.gain = 0;
+      S.mood = "sad";
+      S.line = NO_LINES[Math.floor(Math.random()*NO_LINES.length)];
+      S.missed.push(q);
+    }
+    S.log.push({sec:q.s, ok:good});
+    BADGES.forEach(function(b){ if (!S.got[b.id] && b.test(S)) S.got[b.id] = true; });
+    S.stage = "answered";
+    render();
+  }
+  function next(){
+    S.idx++;
+    S.picked = null;
+    if (S.idx >= S.pool.length){
+      S.done = true;
+      BADGES.forEach(function(b){ if (!S.got[b.id] && b.test(S)) S.got[b.id] = true; });
+      S.stage = "done";
+      S.mood = S.correct === S.pool.length ? "happy" : "idle";
+      render();
+      return;
+    }
+    S.stage = "asking";
+    S.mood = "think";
+    S.line = ASK_LINES[Math.floor(Math.random()*ASK_LINES.length)];
+    render();
+    startTimer();
+  }
+  function start(list){
+    S.pool = list.map(shuffleOpts);
+    S.idx = 0; S.score = 0; S.streak = 0; S.best = 0; S.correct = 0;
+    S.picked = null; S.hardWon = 0; S.quick = 0; S.got = {}; S.log = [];
+    S.done = false; S.missed = []; S.stage = "asking"; S.mood = "think";
+    S.line = "Here is the first one.";
+    render();
+    startTimer();
+  }
+
+  function tiles(){
+    return '<div class="tiles">' +
+      '<div class="tile"><div class="n">' + S.score + '</div><small>points</small></div>' +
+      '<div class="tile"><div class="n">' + S.streak + ' <span class="hint">best ' + S.best + '</span></div><small>streak, &times;' + mult().toFixed(1) + '</small></div>' +
+      '<div class="tile"><div class="n">' + level() + '</div><small>level</small></div>' +
+      '<div class="tile"><div class="n">' + S.correct + '/' + S.pool.length + '</div><small>correct</small></div>' +
+      '</div>' +
+      '<div class="pbar"><i style="width:' + (100 * (S.idx + (S.picked !== null ? 1 : 0)) / Math.max(1, S.pool.length)) + '%"></i></div>' +
+      '<div class="badges">' + BADGES.map(function(b){
+        return '<span class="bdg' + (S.got[b.id] ? " got" : "") + '">' + b.label + "</span>";
+      }).join("") + "</div>";
+  }
+
+  function render(){
+    let h = "";
+    if (S.stage === "intro"){
+      h = '<div class="qhead"><div><div class="beat">Check what stuck</div><h3>Quiz</h3></div>' +
+          '<span class="qtag">' + BANK.length + " questions in the bank</span></div>" +
+          '<div class="mascotrow"><div class="mascotbox" id="mascot"></div>' +
+          '<div class="bubble"><span class="who">' + NAME + '</span>' +
+          "I ask, you answer, and I keep score. Correct answers are worth more when they are hard and more again when you are on a streak. Pick a round length.</div></div>" +
+          '<div class="row" style="margin-top:16px">' +
+          '<button class="btn primary" data-go="8">Quick round, 8</button>' +
+          '<button class="btn" data-go="16">Full round, 16</button>' +
+          '<button class="btn" data-go="all">Everything, ' + BANK.length + "</button>" +
+          '<label class="sw' + (S.timed ? " on" : "") + '" id="timed-sw" style="margin-left:8px"><input type="checkbox"' +
+          (S.timed ? " checked" : "") + "> timed bonus</label></div>" +
+          '<p class="hint" style="margin-top:12px">Scoring: 10 points per difficulty level, doubled once you are five in a row, plus up to 5 for answering quickly. Every 120 points is a level. Nothing is stored between visits.</p>';
+    } else if (S.stage === "asking" || S.stage === "answered"){
+      const q = S.pool[S.idx];
+      h = '<div class="qhead"><div class="qtag">Question ' + (S.idx + 1) + " of " + S.pool.length +
+          " &middot; " + SECNAME[q.s] + " &middot; " + "\u2605".repeat(q.d) + "</div>" +
+          '<div class="qtag">' + (S.timed ? '<span id="q-timelab">bonus ' + bonus() + "</span>" : "no timer") + "</div></div>" +
+          (S.timed && S.stage === "asking" ? '<div class="pbar time"><i id="q-time" style="width:' + (100*S.tleft/S.tmax) + '%"></i></div>' : "") +
+          '<div class="split" style="margin-top:12px"><div>' +
+          '<div class="mascotrow"><div class="mascotbox" id="mascot"></div>' +
+          '<div class="bubble"><span class="who">' + NAME + (S.stage === "answered" ? " &middot; " + S.line : "") + "</span>" + q.q + "</div></div>" +
+          '<div class="qopts">' + q.o.map(function(t, i){
+            let cls = "qopt";
+            if (S.stage === "answered"){
+              if (i === q.a) cls += " right";
+              else if (i === S.picked) cls += " wrong";
+            }
+            return '<button class="' + cls + '" data-opt="' + i + '"' + (S.stage === "answered" ? " disabled" : "") +
+              '><span class="key">' + "ABCD".charAt(i) + "</span>" + t + "</button>";
+          }).join("") + "</div>" +
+          (S.stage === "answered"
+            ? '<div class="msg ' + (S.picked === q.a ? "" : "bad") + '" style="margin-top:14px">' +
+              (S.picked === q.a ? '<span class="pop">+' + S.gain + " points</span> " : "") + q.w +
+              ' <a href="#' + q.s + '">Review ' + SECNAME[q.s] + "</a>.</div>" +
+              '<div class="row" style="margin-top:12px"><button class="btn primary" id="q-next">' +
+              (S.idx + 1 >= S.pool.length ? "See the result" : "Next question") + "</button>" +
+              '<button class="btn" id="q-quit">Stop here</button></div>'
+            : "") +
+          '</div><div>' + tiles() + "</div></div>";
+    } else {
+      const pct = Math.round(100 * S.correct / Math.max(1, S.pool.length));
+      const per = {};
+      S.log.forEach(function(r){
+        per[r.sec] = per[r.sec] || {n:0, ok:0};
+        per[r.sec].n++; if (r.ok) per[r.sec].ok++;
+      });
+      let verdict;
+      if (pct === 100) verdict = "A flawless round. Try the full bank, or turn the timer on for the bonus.";
+      else if (pct >= 75) verdict = "Solid. The table below shows where the gaps are.";
+      else if (pct >= 50) verdict = "A reasonable start. Reread the weakest section and run the missed questions again.";
+      else verdict = "Worth another pass through the lecture before the next round. Nothing here is memorisation, it all follows from the definitions.";
+      h = '<div class="qhead"><div><div class="beat">Round complete</div><h3>' + S.correct + " of " + S.pool.length +
+          " correct, " + pct + " percent</h3></div><span class=\"qtag\">level " + level() + "</span></div>" +
+          '<div class="split"><div><div class="mascotrow"><div class="mascotbox" id="mascot"></div>' +
+          '<div class="bubble"><span class="who">' + NAME + "</span>" + verdict + "</div></div>" +
+          '<table class="cmp" style="margin-top:14px"><tr><th>Section</th><th>Correct</th><th>Score</th></tr>' +
+          Object.keys(per).map(function(k){
+            const p = per[k];
+            return "<tr><td>" + SECNAME[k] + "</td><td>" + p.ok + " of " + p.n + "</td><td>" +
+              Math.round(100*p.ok/p.n) + " percent</td></tr>";
+          }).join("") + "</table>" +
+          '<div class="row" style="margin-top:14px"><button class="btn primary" id="q-again">Play again</button>' +
+          (S.missed.length ? '<button class="btn" id="q-retry">Retry the ' + S.missed.length + " I missed</button>" : "") +
+          "</div></div><div>" + tiles() + "</div></div>";
+    }
+    host.innerHTML = h;
+
+    const mb = byId("mascot");
+    if (mb) mb.appendChild(MASCOT(S.mood, S.streak));
+
+    [].forEach.call(host.querySelectorAll("[data-go]"), function(b){
+      b.addEventListener("click", function(){
+        const v = b.dataset.go;
+        start(v === "all" ? shuffle(BANK) : pick(+v));
+      });
+    });
+    const sw = byId("timed-sw");
+    if (sw) sw.querySelector("input").addEventListener("change", function(){
+      S.timed = this.checked;
+      sw.classList.toggle("on", this.checked);
+    });
+    [].forEach.call(host.querySelectorAll("[data-opt]"), function(b){
+      b.addEventListener("click", function(){ answer(+b.dataset.opt); });
+    });
+    const nx = byId("q-next"); if (nx) nx.addEventListener("click", next);
+    const qq = byId("q-quit"); if (qq) qq.addEventListener("click", function(){
+      S.pool = S.pool.slice(0, S.idx + 1); S.done = true; S.stage = "done"; stopTimer(); render();
+    });
+    const ag = byId("q-again"); if (ag) ag.addEventListener("click", function(){ S.stage = "intro"; S.mood = "idle"; render(); });
+    const rt = byId("q-retry"); if (rt) rt.addEventListener("click", function(){ start(shuffle(S.missed)); });
+  }
+  render();
 })();
 
 /* =========================================================
