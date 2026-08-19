@@ -307,6 +307,7 @@ html:-webkit-full-screen{background:var(--paper);overflow:auto}
       </div>
     </div>
 
+    <div class="card" id="trivial-card"></div>
     <div class="card" id="iso-card"></div>
     <div class="card" id="hom-card"></div>
   </section>
@@ -1991,6 +1992,147 @@ function makeView(host, opts){
   rebuild();
 })();
 
+
+
+/* ---------------- the smallest graphs, including the trivial graph ---------------- */
+(function trivialCard(){
+  const host = byId("trivial-card");
+  host.innerHTML =
+    '<div class="row" style="justify-content:space-between;margin-bottom:12px">' +
+    '<div><div class="beat">One vertex is already a graph</div><h3>The trivial graph, and the cases around it</h3></div>' +
+    '<div class="seg" id="tv-pick"></div></div>' +
+    '<p style="margin:0 0 12px;max-width:74ch">Nothing in the definition of <code>G = (V, E)</code> says that V must be large. A single vertex with no edge satisfies it, and so, arguably, does the empty set. Walk through the smallest graphs and watch which of the usual words still apply.</p>' +
+    '<div class="split"><div><div class="stage" id="tv-stage"></div>' +
+    '<p class="hint" id="tv-cap" style="margin-top:9px"></p></div>' +
+    '<div id="tv-panel"></div></div>' +
+    '<div class="formal" id="tv-formal"></div>';
+
+  const CASES = [
+    {label:"none", title:"Null graph, also called the order zero graph",
+     nodes:[], edges:[],
+     cap:"No vertices and no edges. There is nothing to draw, which is part of the problem.",
+     note:"Authors disagree about whether this is a graph at all. Many definitions require V to be non empty, precisely so that statements about graphs do not need an exception written into every one of them. Beware also that <em>empty graph</em> is used in two different senses: some authors mean this, no vertices, and others mean a graph with vertices but no edges, which is the next case but one."},
+    {label:"1 vertex", title:"Trivial graph K\u2081",
+     nodes:[node("v", 170, 100)], edges:[],
+     cap:"One vertex, no edges. This is the trivial graph, written K\u2081.",
+     note:"The trivial graph is the smallest object everyone agrees to call a graph. It is connected, since the only pair of vertices you can pick is one vertex with itself and the path of length zero joins them. It is a tree, because it is connected and acyclic and satisfies |E| = |V| - 1 with both sides at their smallest. It is complete, because every pair of distinct vertices is joined and there are no pairs to check. Its single vertex is isolated, meaning degree zero. It is the base case of essentially every proof by induction on the number of vertices, and it is the counterexample that breaks careless statements: <em>every tree has at least two leaves</em> is false here, and so is <em>every graph has an edge</em>."},
+    {label:"2 isolated", title:"Edgeless graph on two vertices",
+     nodes:[node("a", 108, 100), node("b", 232, 100)], edges:[],
+     cap:"Two vertices, still no edges. Two isolated vertices, two components.",
+     note:"This is what many authors mean by the empty graph: the edge set is empty but the vertex set is not. It is the first disconnected graph, and it shows that connectivity is a property of the pair, not of the vertices: nothing is wrong with either vertex, what is missing is between them."},
+    {label:"2 joined", title:"K\u2082, a single edge",
+     nodes:[node("a", 108, 100), node("b", 232, 100)],
+     edges:[{id:"e0", u:"a", v:"b"}],
+     cap:"The smallest graph with an edge, and the smallest interesting one.",
+     note:"K\u2082 is complete, a tree, and a path all at once. Its two vertices both have degree 1, so both are leaves, and the degree sum is 2, which is 2|E| as the handshake lemma requires. This is where the trivial graph stops being an exception: from two vertices upward, the usual statements behave."},
+    {label:"3 path", title:"Path P\u2083",
+     nodes:[node("a", 80, 130), node("b", 170, 66), node("c", 260, 130)],
+     edges:[{id:"e0", u:"a", v:"b"}, {id:"e1", u:"b", v:"c"}],
+     cap:"Three vertices in a line. The first graph with a genuine centre.",
+     note:"The middle vertex has eccentricity 1 and the ends have eccentricity 2, so the radius is 1, the diameter is 2 and the centre is the single middle vertex. This is also the smallest tree that is not complete, which is why it separates the two families that K\u2081 and K\u2082 had confusingly merged."},
+    {label:"3 triangle", title:"K\u2083, the triangle",
+     nodes:[node("a", 80, 130), node("b", 170, 60), node("c", 260, 130)],
+     edges:[{id:"e0", u:"a", v:"b"}, {id:"e1", u:"b", v:"c"}, {id:"e2", u:"a", v:"c"}],
+     cap:"The smallest cycle, and the smallest graph that is not a tree.",
+     note:"Adding one edge to P\u2083 closes a cycle, so the graph is no longer a tree even though it is still connected. Now |E| = |V|, one more than a tree allows. K\u2083 is the smallest graph with a cycle, the shortest possible cycle in a simple graph, and the reason girth starts at 3."}
+  ];
+
+  let cur = 1;
+  const seg = byId("tv-pick");
+  CASES.forEach(function(c, i){
+    const b = document.createElement("button");
+    b.textContent = c.label;
+    if (i === cur) b.classList.add("on");
+    b.addEventListener("click", function(){
+      cur = i;
+      [].forEach.call(seg.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+      draw();
+    });
+    seg.appendChild(b);
+  });
+  const view = makeView(byId("tv-stage"), {w:340, h:200, r:16});
+
+  function dist(g, src){
+    const D = {}; D[src] = 0;
+    const q = [src];
+    while (q.length){
+      const u = q.shift();
+      g.edges.forEach(function(e){
+        let w = null;
+        if (e.u === u) w = e.v; else if (e.v === u) w = e.u;
+        if (w !== null && D[w] === undefined){ D[w] = D[u] + 1; q.push(w); }
+      });
+    }
+    return D;
+  }
+  function radDiam(g){
+    if (!g.nodes.length) return {rad:"undefined", diam:"undefined", centre:"empty"};
+    const ecc = {};
+    let ok = true;
+    g.nodes.forEach(function(n){
+      const D = dist(g, n.id);
+      let m = 0;
+      g.nodes.forEach(function(o){
+        if (D[o.id] === undefined) ok = false;
+        else m = Math.max(m, D[o.id]);
+      });
+      ecc[n.id] = m;
+    });
+    if (!ok) return {rad:"\u221e", diam:"\u221e", centre:"undefined while disconnected"};
+    let rad = Infinity, diam = 0;
+    g.nodes.forEach(function(n){ rad = Math.min(rad, ecc[n.id]); diam = Math.max(diam, ecc[n.id]); });
+    const centre = g.nodes.filter(function(n){ return ecc[n.id] === rad; }).map(function(n){ return n.id; });
+    return {rad:rad, diam:diam, centre:"{" + centre.join(", ") + "}"};
+  }
+
+  function draw(){
+    const c = CASES[cur];
+    const g = {directed:false, weighted:false, nodes:c.nodes, edges:c.edges};
+    view.render(g, {nodeClass:function(){ return "done"; }, badge:function(id){ return degree(g, id); }});
+    const svg0 = byId("tv-stage").querySelector("svg");
+    const old = svg0 ? svg0.querySelector("text.emptymark") : null;
+    if (old) old.parentNode.removeChild(old);
+    if (!c.nodes.length){
+      const svg = svg0;
+      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("class", "emptymark");
+      t.setAttribute("x", 170); t.setAttribute("y", 100);
+      t.setAttribute("style", "font-family:var(--mono);font-size:12px;letter-spacing:.1em;fill:var(--muted);text-anchor:middle;dominant-baseline:central");
+      t.textContent = "V = \u2205,  E = \u2205";
+      svg.appendChild(t);
+    }
+    byId("tv-cap").textContent = c.cap;
+
+    const n = g.nodes.length, m = g.edges.length;
+    const comps = n ? components(g, {}).length : 0;
+    const connected = n > 0 && comps === 1;
+    const acyclic = m === n - comps;
+    const tree = connected && acyclic;
+    const complete = m === n * (n - 1) / 2;
+    const rd = radDiam(g);
+    let degSum = 0;
+    g.nodes.forEach(function(x){ degSum += degree(g, x.id); });
+
+    byId("tv-panel").innerHTML =
+      '<div class="beat">' + c.title + "</div>" +
+      '<table class="cmp"><tr><th>Property</th><th>Value</th></tr>' +
+      "<tr><td>Order |V|</td><td>" + n + "</td></tr>" +
+      "<tr><td>Size |E|</td><td>" + m + "</td></tr>" +
+      "<tr><td>Degree sum</td><td>" + degSum + ", and 2|E| = " + (2*m) + "</td></tr>" +
+      "<tr><td>Average degree</td><td>" + (n ? (degSum / n).toFixed(2) : "undefined, division by zero") + "</td></tr>" +
+      "<tr><td>Components</td><td>" + comps + "</td></tr>" +
+      "<tr><td>Connected</td><td>" + (n === 0 ? "convention dependent" : connected ? "yes" : "no") + "</td></tr>" +
+      "<tr><td>Acyclic</td><td>" + (n === 0 ? "yes, vacuously" : acyclic ? "yes" : "no") + "</td></tr>" +
+      "<tr><td>Tree</td><td>" + (n === 0 ? "no, a tree must have a vertex" : tree ? "yes" : "no") + "</td></tr>" +
+      "<tr><td>Complete</td><td>" + (n === 0 ? "vacuously, K\u2080" : complete ? "yes, K" + n : "no") + "</td></tr>" +
+      "<tr><td>Radius, diameter</td><td>" + rd.rad + ", " + rd.diam + "</td></tr>" +
+      "<tr><td>Centre</td><td>" + rd.centre + "</td></tr></table>";
+
+    byId("tv-formal").innerHTML = '<div class="beat">What to notice here</div>' + c.note;
+  }
+  draw();
+})();
 
 /* ---------------- Part 1b: isomorphism, invariants, homomorphism ---------------- */
 (function isoCard(){

@@ -410,6 +410,69 @@ html:-webkit-full-screen{background:var(--paper);overflow:auto}
     </div>
 
     <div class="card">
+      <div class="beat">There is no single TF-IDF</div>
+      <h3>Weighting schemes, and how much the choice matters</h3>
+      <p style="margin-top:8px;max-width:74ch">TF-IDF is a family, not a formula. Pick a way to count the term, a way to measure its rarity, and a way to handle document length. Every library makes a different default choice, which is why two implementations disagree on the same corpus.</p>
+
+      <div class="slab">Build a scheme</div>
+      <div class="row" style="gap:14px;align-items:flex-start">
+        <div>
+          <div class="hint" style="margin-bottom:5px">term frequency</div>
+          <div class="seg" id="tf-scheme">
+            <button class="on" data-v="raw">raw</button>
+            <button data-v="binary">binary</button>
+            <button data-v="log">log</button>
+            <button data-v="aug">augmented</button>
+            <button data-v="rel">relative</button>
+          </div>
+        </div>
+        <div>
+          <div class="hint" style="margin-bottom:5px">inverse document frequency</div>
+          <div class="seg" id="idf-scheme">
+            <button data-v="none">none</button>
+            <button class="on" data-v="std">textbook</button>
+            <button data-v="smooth">smoothed</button>
+            <button data-v="prob">probabilistic</button>
+          </div>
+        </div>
+        <div>
+          <div class="hint" style="margin-bottom:5px">row normalisation</div>
+          <div class="seg" id="norm-scheme">
+            <button class="on" data-v="none">none</button>
+            <button data-v="l1">L1</button>
+            <button data-v="l2">L2</button>
+          </div>
+        </div>
+      </div>
+      <div class="msg" id="scheme-formula"></div>
+      <div class="scrollx" style="margin-top:6px" id="scheme-mat"></div>
+      <div class="msg" id="scheme-msg"></div>
+
+      <div class="slab">The same cell under every named scheme</div>
+      <div class="row" style="margin-bottom:10px">
+        <select class="btn" id="cmp-doc"></select>
+        <select class="btn" id="cmp-term"></select>
+      </div>
+      <div class="scrollx" id="scheme-cmp"></div>
+
+      <div class="formal">
+        <div class="beat">When each one is the right choice</div>
+        <table class="cmp">
+          <tr><th>Component</th><th>Formula</th><th>Use it when</th></tr>
+          <tr><td>raw tf</td><td><code>f(t,d)</code></td><td>short documents of similar length, or when you want the count itself</td></tr>
+          <tr><td>binary tf</td><td><code>1 if f &gt; 0</code></td><td>presence is the signal, as in Bernoulli naive Bayes or short queries</td></tr>
+          <tr><td>log tf</td><td><code>1 + ln f</code></td><td>the usual default: a word occurring ten times is not ten times more relevant</td></tr>
+          <tr><td>augmented tf</td><td><code>0.5 + 0.5&middot;f/max f</code></td><td>document lengths vary wildly and you want the longest document not to dominate</td></tr>
+          <tr><td>relative tf</td><td><code>f / |d|</code></td><td>you want a proportion, comparable across documents of any size</td></tr>
+          <tr><td>textbook idf</td><td><code>ln(N/df)</code></td><td>teaching, and any setting where every term appears at least once</td></tr>
+          <tr><td>smoothed idf</td><td><code>ln((1+N)/(1+df)) + 1</code></td><td>production: never divides by zero, never returns exactly zero, which is what scikit-learn does</td></tr>
+          <tr><td>probabilistic idf</td><td><code>ln((N - df + 0.5)/(df + 0.5))</code></td><td>retrieval ranking, the Robertson and Sparck Jones weight. The half added top and bottom keeps it finite when a term is in every document. It goes negative above half the documents, which is either a feature or a bug depending on your model</td></tr>
+          <tr><td>L2 normalisation</td><td>divide the row by its length</td><td>always, if you are about to take cosine similarity or feed a linear model</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="row" style="justify-content:space-between;margin-bottom:12px">
         <div><div class="beat">Comparing two rows</div><h3>Vector similarity</h3></div>
         <div class="hint">Hover a cell to see the computation</div>
@@ -1254,6 +1317,176 @@ function cosine(a, b){
   sub(function(){ demos(); cooc(); });
   nn();
   analogy();
+})();
+
+
+/* =========================================================
+   TF-IDF weighting schemes
+   ========================================================= */
+(function schemes(){
+  let tfS = "raw", idfS = "std", normS = "none";
+
+  function seg(id, set){
+    byId(id).addEventListener("click", function(ev){
+      const b = ev.target.closest("button"); if (!b) return;
+      [].forEach.call(this.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on"); set(b.dataset.v); render();
+    });
+  }
+  seg("tf-scheme", function(v){ tfS = v; });
+  seg("idf-scheme", function(v){ idfS = v; });
+  seg("norm-scheme", function(v){ normS = v; });
+
+  function tfOf(scheme, f, maxF, len){
+    if (f <= 0) return 0;
+    if (scheme === "raw") return f;
+    if (scheme === "binary") return 1;
+    if (scheme === "log") return 1 + Math.log(f);
+    if (scheme === "aug") return 0.5 + 0.5 * f / (maxF || 1);
+    if (scheme === "rel") return f / (len || 1);
+    return f;
+  }
+  function idfOf(scheme, N, df){
+    if (scheme === "none") return 1;
+    if (scheme === "std") return df ? Math.log(N / df) : 0;
+    if (scheme === "smooth") return Math.log((1 + N) / (1 + df)) + 1;
+    if (scheme === "prob") return Math.log((N - df + 0.5) / (df + 0.5));
+    return 1;
+  }
+  function normalise(row, scheme){
+    if (scheme === "none") return row;
+    if (scheme === "l1"){
+      const s = row.reduce(function(a, v){ return a + Math.abs(v); }, 0);
+      return s ? row.map(function(v){ return v / s; }) : row;
+    }
+    const s = Math.sqrt(row.reduce(function(a, v){ return a + v*v; }, 0));
+    return s ? row.map(function(v){ return v / s; }) : row;
+  }
+  function build(tfs, idfs, norms){
+    const N = D.N;
+    return D.counts.map(function(row, i){
+      const maxF = Math.max.apply(null, row.concat([1]));
+      const len = D.toks[i].length || 1;
+      const w = row.map(function(f, j){
+        return tfOf(tfs, f, maxF, len) * idfOf(idfs, N, D.df[j]);
+      });
+      return normalise(w, norms);
+    });
+  }
+  function bm25(){
+    const N = D.N, k1 = 1.5, b = 0.75;
+    const lens = D.toks.map(function(t){ return t.length || 1; });
+    const avg = lens.reduce(function(a, v){ return a + v; }, 0) / (lens.length || 1);
+    return D.counts.map(function(row, i){
+      return row.map(function(f, j){
+        if (f <= 0) return 0;
+        const df = D.df[j];
+        const idf = Math.log(1 + (N - df + 0.5) / (df + 0.5));
+        return idf * (f * (k1 + 1)) / (f + k1 * (1 - b + b * lens[i] / avg));
+      });
+    });
+  }
+  function closest(M){
+    let best = null;
+    for (let i = 0; i < M.length; i++)
+      for (let j = i+1; j < M.length; j++){
+        const c = cosine(M[i], M[j]);
+        if (!best || c > best.c) best = {i:i, j:j, c:c};
+      }
+    return best;
+  }
+  function topTerm(M, i){
+    let bj = 0;
+    M[i].forEach(function(v, j){ if (v > M[i][bj]) bj = j; });
+    return D.vocab[bj];
+  }
+
+  const FORMULA = {
+    raw:"f(t,d)", binary:"1 if f &gt; 0", log:"1 + ln f",
+    aug:"0.5 + 0.5\u00b7f/max f", rel:"f / |d|"
+  };
+  const IFORM = {
+    none:"1", std:"ln(N/df)", smooth:"ln((1+N)/(1+df)) + 1", prob:"ln((N-df+0.5)/(df+0.5))"
+  };
+
+  const PRESETS = [
+    {name:"Raw count", tf:"raw", idf:"none", norm:"none", note:"the plain count vectorizer"},
+    {name:"Binary", tf:"binary", idf:"none", norm:"none", note:"presence only"},
+    {name:"Textbook TF-IDF", tf:"raw", idf:"std", norm:"none", note:"what most courses teach"},
+    {name:"Log TF-IDF, L2", tf:"log", idf:"std", norm:"l2", note:"the classic retrieval choice"},
+    {name:"Augmented TF-IDF", tf:"aug", idf:"std", norm:"none", note:"length robust"},
+    {name:"scikit-learn TfidfVectorizer", tf:"raw", idf:"smooth", norm:"l2", note:"the library default"},
+    {name:"Probabilistic idf", tf:"raw", idf:"prob", norm:"none", note:"can go negative"}
+  ];
+
+  function render(){
+    if (!D.docs.length) return;
+    const M = build(tfS, idfS, normS);
+
+    byId("scheme-formula").innerHTML = "Current scheme: <code>w(t,d) = [" + FORMULA[tfS] + "] &times; [" +
+      IFORM[idfS] + "]</code>" + (normS === "none" ? ", with no row normalisation." :
+      ", then each row divided by its " + (normS === "l1" ? "sum of absolute values, L1" : "Euclidean length, L2") + ".");
+
+    let h = '<table class="grid"><tr><th class="rowh">w</th>';
+    D.vocab.forEach(function(w){ h += "<th>" + esc(w) + "</th>"; });
+    h += "</tr>";
+    M.forEach(function(row, i){
+      h += '<tr><th class="rowh">d' + (i+1) + "</th>";
+      row.forEach(function(v){
+        h += '<td class="' + (Math.abs(v) > 1e-9 ? "pos" : "zero") + '">' + (Math.abs(v) < 1e-9 ? "0" : v.toFixed(2)) + "</td>";
+      });
+      h += "</tr>";
+    });
+    h += "</table>";
+    byId("scheme-mat").innerHTML = h;
+
+    const best = closest(M);
+    const neg = M.some(function(r){ return r.some(function(v){ return v < -1e-9; }); });
+    byId("scheme-msg").innerHTML = (best
+      ? "Under this scheme the closest pair is <strong>d" + (best.i+1) + " and d" + (best.j+1) +
+        "</strong> at cosine " + best.c.toFixed(3) + ", and the highest weighted term in d1 is <code>" +
+        esc(topTerm(M, 0)) + "</code>."
+      : "") + (neg
+      ? " Some weights are <strong>negative</strong>, because probabilistic idf punishes terms found in more than half the documents. Cosine similarity on negative values can also go negative, which count based models never do."
+      : "");
+
+    /* the cell comparison */
+    const ds = byId("cmp-doc"), ts = byId("cmp-term");
+    const keepD = ds.value, keepT = ts.value;
+    ds.innerHTML = D.docs.map(function(x, i){ return '<option value="' + i + '">d' + (i+1) + "</option>"; }).join("");
+    ts.innerHTML = D.vocab.map(function(w){ return '<option value="' + esc(w) + '">' + esc(w) + "</option>"; }).join("");
+    ds.value = (keepD !== "" && +keepD < D.N) ? keepD : "0";
+    const preferred = D.vocab.indexOf("the") >= 0 ? "the" : D.vocab[0];
+    ts.value = D.vocab.indexOf(keepT) >= 0 ? keepT : preferred;
+    ds.onchange = render; ts.onchange = render;
+
+    const di = +ds.value, tj = D.index[ts.value];
+    const f = D.counts[di][tj], df = D.df[tj];
+
+    let c = '<table class="cmp"><tr><th>Scheme</th><th>tf part</th><th>idf part</th><th>weight of the cell</th><th>closest pair</th></tr>';
+    PRESETS.forEach(function(P){
+      const W = build(P.tf, P.idf, P.norm);
+      const maxF = Math.max.apply(null, D.counts[di].concat([1]));
+      const len = D.toks[di].length || 1;
+      const tfv = tfOf(P.tf, f, maxF, len), idfv = idfOf(P.idf, D.N, df);
+      const b2 = closest(W);
+      c += "<tr><td>" + P.name + '<div class="hint">' + P.note + "</div></td><td>" + tfv.toFixed(2) +
+        "</td><td>" + idfv.toFixed(2) + "</td><td><strong>" + W[di][tj].toFixed(3) + "</strong>" +
+        (P.norm === "none" ? "" : '<div class="hint">after ' + P.norm.toUpperCase() + "</div>") +
+        "</td><td>" + (b2 ? "d" + (b2.i+1) + " and d" + (b2.j+1) + ", " + b2.c.toFixed(2) : "") + "</td></tr>";
+    });
+    const B = bm25();
+    const bb = closest(B);
+    const lens = D.toks.map(function(t){ return t.length || 1; });
+    const avg = lens.reduce(function(a, v){ return a + v; }, 0) / (lens.length || 1);
+    c += "<tr><td>Okapi BM25<div class='hint'>k1 = 1.5, b = 0.75</div></td><td>saturating<div class='hint'>f(k1+1)/(f + k1(1-b+b|d|/avg))</div></td><td>ln(1 + (N-df+0.5)/(df+0.5))</td><td><strong>" +
+      B[di][tj].toFixed(3) + "</strong></td><td>" + (bb ? "d" + (bb.i+1) + " and d" + (bb.j+1) + ", " + bb.c.toFixed(2) : "") + "</td></tr>";
+    c += "</table><p class='hint' style='margin-top:8px'>Cell shown: document d" + (di+1) + ", term <code>" +
+      esc(D.vocab[tj]) + "</code>, which occurs " + f + " time" + (f === 1 ? "" : "s") + " there and in " + df +
+      " of the " + D.N + " documents. Average document length is " + avg.toFixed(1) + " tokens.</p>";
+    byId("scheme-cmp").innerHTML = c;
+  }
+  sub(render);
 })();
 
 /* =========================================================
