@@ -1,0 +1,1665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neural networks, from one neuron to backpropagation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..900,0..100,0..1&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#101B33; --paper:#EDF0F6; --panel:#FFFFFF; --line:#C9D2E2; --line-strong:#7C89A3;
+  --muted:#66738F; --teal:#0F7A83; --amber:#DE9126; --rose:#A62B54; --violet:#4B3F97;
+  --display:"Fraunces",Georgia,"Times New Roman",serif;
+  --body:"Karla","Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:14px; --shadow:0 1px 0 rgba(16,27,51,.04), 0 8px 24px -18px rgba(16,27,51,.5);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);
+  background-image:radial-gradient(circle at 1px 1px, rgba(16,27,51,.09) 1px, transparent 0);
+  background-size:22px 22px;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;
+  -webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);font-variation-settings:"SOFT" 12,"WONK" 1;margin:0;line-height:1.05}
+h1{font-size:clamp(32px,5vw,58px);font-weight:800;letter-spacing:-.022em}
+h2{font-size:clamp(24px,3.1vw,35px);font-weight:700;letter-spacing:-.018em}
+h3{font-size:19px;font-weight:600;letter-spacing:-.01em}
+p{margin:0 0 12px}
+a{color:var(--teal)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+.backlink{display:inline-block;margin-bottom:18px;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--muted)}
+.backlink:hover{color:var(--teal)}
+.masthead{padding:34px 0 22px}
+.mast-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,540px);gap:38px;align-items:center}
+.mast-lede{font-size:17.5px;color:var(--muted);max-width:46ch;margin-top:16px}
+.mast-lede strong{color:var(--ink);font-weight:500}
+.hero-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px}
+.tinybtn{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:none;border:1px solid var(--line);color:var(--muted);padding:5px 9px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.tinybtn:hover{border-color:var(--teal);color:var(--teal)}
+.tinybtn.on{border-color:var(--rose);color:var(--rose);font-weight:600}
+.shell{display:grid;grid-template-columns:206px minmax(0,1fr);gap:34px;padding:26px 0 80px}
+.rail{position:sticky;top:22px;align-self:start}
+.rail ol{list-style:none;margin:0;padding:0}
+.rail a{display:block;padding:8px 10px;border-radius:9px;text-decoration:none;color:var(--muted);font-size:14px;border-left:2px solid transparent}
+.rail a .num{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;display:block;opacity:.75}
+.rail a:hover{background:rgba(15,122,131,.07);color:var(--ink)}
+.rail a.on{color:var(--ink);border-left-color:var(--rose);background:rgba(166,43,84,.06);font-weight:700}
+.rail .fieldbox{margin-top:16px;padding:11px;border:1px dashed var(--line);border-radius:10px}
+.rail .fieldbox strong{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--rose);margin-bottom:7px}
+.rail .fieldbox button{display:block;width:100%;text-align:left;font-size:13px;margin-bottom:4px;padding:6px 8px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer}
+.rail .fieldbox button.on{border-color:var(--teal);background:rgba(15,122,131,.09);color:var(--ink);font-weight:700}
+section{scroll-margin-top:18px;margin-bottom:56px}
+.sec-head{margin-bottom:20px;border-top:2px solid var(--ink);padding-top:12px}
+.sec-head p{color:var(--muted);max-width:64ch;margin-top:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+.card + .card{margin-top:18px}
+.beat{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose);font-weight:600;margin-bottom:6px}
+.formal{background:rgba(16,27,51,.045);border-left:2px solid var(--line-strong);border-radius:0 8px 8px 0;padding:10px 13px;font-size:14.5px;margin-top:12px}
+.formal .beat{color:var(--muted)}
+code{font-family:var(--mono);font-size:13px;background:rgba(15,122,131,.1);padding:1px 5px;border-radius:5px}
+.seg{display:inline-flex;background:rgba(16,27,51,.06);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font-family:var(--body);font-size:13.5px;font-weight:500;border:0;background:none;color:var(--muted);padding:6px 13px;border-radius:999px;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(16,27,51,.16)}
+.btn{font-family:var(--body);font-size:14px;font-weight:600;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:7px 14px;border-radius:9px;cursor:pointer}
+.btn:hover{border-color:var(--line-strong)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.hint{font-size:13px;color:var(--muted)}
+.slab{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:14px 0 6px}
+.slab:first-child{margin-top:0}
+.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;align-items:start}
+.split3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+svg.plot{width:100%;height:auto;display:block}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.msg{border-radius:9px;padding:9px 12px;font-size:14px;margin-top:12px;background:rgba(15,122,131,.09);border-left:3px solid var(--teal)}
+.msg.warn{background:rgba(222,145,38,.14);border-left-color:var(--amber)}
+.msg.bad{background:rgba(166,43,84,.1);border-left-color:var(--rose)}
+.readout{font-family:var(--mono);font-size:13px;line-height:1.8}
+.readout .k{color:var(--muted)}
+table.cmp{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+table.cmp th,table.cmp td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.cmp th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+table.cmp td:first-child{font-weight:600}
+table.grid{border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+table.grid th,table.grid td{border:1px solid var(--line);padding:4px 8px;text-align:center;white-space:nowrap}
+table.grid th{background:rgba(16,27,51,.05);color:var(--muted);font-weight:600}
+table.grid td.pos{background:rgba(15,122,131,.13)}
+table.grid td.neg{background:rgba(166,43,84,.11)}
+table.grid td.hot{background:var(--amber)}
+table.grid th.rowh{text-align:left;background:rgba(16,27,51,.05)}
+.scrollx{overflow-x:auto;padding-bottom:6px}
+.slider{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.slider label{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:96px}
+.slider input[type=range]{flex:1;accent-color:var(--teal)}
+.slider .v{font-family:var(--mono);font-size:12.5px;font-weight:600;min-width:52px;text-align:right}
+.bars{display:grid;gap:6px;margin-top:8px}
+.barrow{display:grid;grid-template-columns:150px 1fr 62px;gap:9px;align-items:center;font-size:13.5px}
+.barrow .track{height:16px;border-radius:6px;background:rgba(16,27,51,.07);overflow:hidden}
+.barrow .track i{display:block;height:100%;background:var(--teal);border-radius:6px;transition:width .25s ease}
+.barrow.win .track i{background:var(--rose)}
+.barrow.truth span:first-child{color:var(--rose);font-weight:700}
+.barrow .num{font-family:var(--mono);font-size:12.5px;text-align:right}
+.pop{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--rose)}
+.step{font-family:var(--mono);font-size:13px;line-height:1.7;background:rgba(16,27,51,.04);border-radius:9px;padding:10px 12px}
+.step b{color:var(--rose)}
+footer{border-top:1px solid var(--line);padding:22px 0 60px;color:var(--muted);font-size:13.5px}
+.fsrow{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+#page-fs{position:fixed;top:14px;right:14px;z-index:60;background:var(--panel)}
+.card:fullscreen{background:var(--panel);padding:32px 40px;border-radius:0;border:0;box-shadow:none;overflow:auto}
+.card:-webkit-full-screen{background:var(--panel);padding:32px 40px;border-radius:0;border:0;box-shadow:none;overflow:auto}
+.card:fullscreen > *{max-width:1280px;margin-left:auto;margin-right:auto}
+.card:-webkit-full-screen > *{max-width:1280px;margin-left:auto;margin-right:auto}
+html:fullscreen{background:var(--paper);overflow:auto}
+/* board */
+.boardwrap{margin-top:14px;border-top:1px dashed var(--line);padding-top:12px}
+.board{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+canvas.pad{display:block;width:100%;height:340px;touch-action:none;cursor:crosshair}
+canvas.pad.big{height:540px}
+.card:fullscreen canvas.pad{height:66vh}
+.swatch{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0}
+.swatch.on{border-color:var(--ink);box-shadow:0 0 0 3px rgba(16,27,51,.09)}
+.sizebtn{width:32px;height:26px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.sizebtn.on{border-color:var(--ink);background:rgba(16,27,51,.05)}
+.sizebtn i{display:block;border-radius:50%;background:var(--ink)}
+@media (max-width:940px){
+  .shell{grid-template-columns:1fr;gap:14px}
+  .rail{position:static;overflow-x:auto}
+  .rail ol{display:flex;gap:6px}
+  .rail a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent;padding:7px 11px}
+  .rail a.on{border-left:0;border-bottom-color:var(--rose)}
+  .rail .fieldbox{display:none}
+  .mast-grid,.split,.split3{grid-template-columns:1fr}
+  .barrow{grid-template-columns:110px 1fr 56px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap"><a class="backlink" href="index.html">&larr; Lecture library</a></div>
+  <div class="wrap mast-grid">
+    <div>
+      <div class="eyebrow">Lecture companion &middot; nine parts</div>
+      <h1>Neural<br>networks</h1>
+      <p class="mast-lede">A network is a function with knobs. Training is turning the knobs until the output stops being wrong. Everything else, activations, softmax, cross entropy, backpropagation, exists to answer one question: <strong>which way should each knob turn, and by how much.</strong></p>
+      <div class="slab">Choose the field you want the examples drawn from</div>
+      <div class="row" id="field-pick"></div>
+      <p class="hint" id="field-note" style="margin-top:10px"></p>
+    </div>
+    <div class="hero-card">
+      <div class="stage" id="hero-stage"></div>
+      <p class="hint" style="margin:10px 0 0" id="hero-cap"></p>
+    </div>
+  </div>
+</header>
+
+<div class="wrap shell">
+  <nav class="rail" aria-label="Lecture sections">
+    <ol>
+      <li><a href="#idea" class="on" data-sec="idea"><span class="num">Part 01</span>The essential idea</a></li>
+      <li><a href="#forward" data-sec="forward"><span class="num">Part 02</span>Forward propagation</a></li>
+      <li><a href="#act" data-sec="act"><span class="num">Part 03</span>Activation functions</a></li>
+      <li><a href="#soft" data-sec="soft"><span class="num">Part 04</span>Argmax and softmax</a></li>
+      <li><a href="#ce" data-sec="ce"><span class="num">Part 05</span>Cross entropy</a></li>
+      <li><a href="#chain" data-sec="chain"><span class="num">Part 06</span>The chain rule</a></li>
+      <li><a href="#deriv" data-sec="deriv"><span class="num">Part 07</span>The two derivatives</a></li>
+      <li><a href="#gd" data-sec="gd"><span class="num">Part 08</span>Gradient descent</a></li>
+      <li><a href="#backprop" data-sec="backprop"><span class="num">Part 09</span>Backpropagation</a></li>
+      <li><a href="#board" data-sec="board"><span class="num">Extra</span>Board</a></li>
+    </ol>
+    <div class="fieldbox" id="rail-field"><strong>examples from</strong></div>
+  </nav>
+
+  <main>
+
+  <section id="idea">
+    <div class="sec-head">
+      <div class="eyebrow">Part 01</div>
+      <h2>What a network actually is</h2>
+      <p id="idea-lede"></p>
+    </div>
+
+    <div class="card">
+      <div class="beat">Start with one</div>
+      <h3>A single neuron</h3>
+      <p style="margin-top:8px;max-width:74ch">A neuron does three things and nothing more: multiply each input by a weight, add them up with a bias, then pass the total through one fixed nonlinear function. Move the sliders and watch the two stages separately.</p>
+      <div class="split">
+        <div><div class="stage" id="neuron-stage"></div></div>
+        <div>
+          <div id="neuron-sliders"></div>
+          <div class="step" id="neuron-calc"></div>
+          <div class="msg" id="neuron-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">The whole neuron</div>
+        <code>z = w&#8321;x&#8321; + w&#8322;x&#8322; + w&#8323;x&#8323; + b</code> then <code>a = f(z)</code>. The weights say how much each input matters and in which direction, the bias shifts the threshold, and <code>f</code> supplies the only nonlinearity in the entire model. A network is thousands of these, arranged in layers, and the weights and biases are the parameters that training changes.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">The loop that everything else serves</div>
+      <h3>Four steps, repeated</h3>
+      <div class="split3" id="loop-cards" style="margin-top:12px"></div>
+      <div class="formal">
+        <div class="beat">Where the parts of this lecture fit</div>
+        <table class="cmp">
+          <tr><th>Step</th><th>Machinery</th><th>Part</th></tr>
+          <tr><td>Predict</td><td>weighted sums, activations, softmax</td><td>02, 03, 04</td></tr>
+          <tr><td>Score the mistake</td><td>cross entropy</td><td>05</td></tr>
+          <tr><td>Attribute the mistake</td><td>chain rule, softmax and cross entropy derivatives, backpropagation</td><td>06, 07, 09</td></tr>
+          <tr><td>Adjust</td><td>gradient descent, all parameters at once</td><td>08</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="forward">
+    <div class="sec-head">
+      <div class="eyebrow">Part 02</div>
+      <h2>Forward propagation, and many inputs at once</h2>
+      <p>Three inputs, three hidden neurons, three outputs. Nothing new happens in a layer that did not happen in a single neuron, it just happens in parallel, which is why the whole thing is written as a matrix product.</p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div><div class="beat">Values flowing left to right</div><h3>One forward pass</h3></div>
+        <div class="row">
+          <button class="btn" id="fw-step">Step</button>
+          <button class="btn primary" id="fw-run">Run the pass</button>
+          <button class="btn" id="fw-reset">Reset</button>
+        </div>
+      </div>
+      <div class="split">
+        <div><div class="stage" id="net-stage"></div>
+          <p class="hint" style="margin-top:8px">Click any neuron to see its own arithmetic. Teal edges carry positive weights, red edges negative, and thickness is magnitude.</p>
+        </div>
+        <div>
+          <div class="step" id="fw-calc"></div>
+          <div class="msg" id="fw-msg"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">The same pass written once</div>
+      <h3>Matrix form, multiple inputs and multiple outputs</h3>
+      <div class="split">
+        <div>
+          <div class="slab">Hidden layer weights W&#8321;, shape 3 by 3</div>
+          <div class="scrollx" id="w1-table"></div>
+          <div class="slab">Output layer weights W&#8322;, shape 3 by 3</div>
+          <div class="scrollx" id="w2-table"></div>
+        </div>
+        <div>
+          <div class="formal" style="margin-top:0">
+            <div class="beat">Shapes are the whole trick</div>
+            <p><code>z&#8321; = W&#8321;x + b&#8321;</code> with <code>W&#8321;</code> of shape (hidden, inputs) and <code>x</code> of shape (inputs, 1), giving <code>z&#8321;</code> of shape (hidden, 1).</p>
+            <p><code>a&#8321; = f(z&#8321;)</code>, applied element by element.</p>
+            <p><code>z&#8322; = W&#8322;a&#8321; + b&#8322;</code>, shape (outputs, 1).</p>
+            <p style="margin:0"><code>p = softmax(z&#8322;)</code>, shape (outputs, 1), summing to 1.</p>
+          </div>
+          <div class="msg">Row <em>i</em> of a weight matrix belongs to neuron <em>i</em> of the next layer, and column <em>j</em> belongs to neuron <em>j</em> of the previous one. Reading a weight matrix is reading a small table of influences: <span id="w-read"></span></div>
+          <div class="slab">Parameter count</div>
+          <div class="readout" id="param-count"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="act">
+    <div class="sec-head">
+      <div class="eyebrow">Part 03</div>
+      <h2>Activation functions</h2>
+      <p>The one nonlinear ingredient. Without it a network of any depth collapses into a single matrix, which the demonstration below performs explicitly rather than asserts.</p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div><div class="beat">Shape and slope</div><h3>Pick one and look at its derivative</h3></div>
+        <div class="seg" id="act-pick"></div>
+      </div>
+      <div class="split">
+        <div><div class="stage"><div id="act-plot"></div></div>
+          <div class="slider" style="margin-top:10px"><label for="act-x">input z</label>
+            <input id="act-x" type="range" min="-6" max="6" step="0.1" value="1.2"><span class="v" id="act-xv"></span></div>
+        </div>
+        <div>
+          <div class="step" id="act-calc"></div>
+          <div class="msg" id="act-msg"></div>
+          <div class="scrollx" style="margin-top:10px" id="act-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Why nonlinearity is not optional</div>
+      <h3>Two linear layers are one linear layer</h3>
+      <p style="margin-top:8px;max-width:74ch">If <code>f</code> is the identity then <code>z&#8322; = W&#8322;(W&#8321;x + b&#8321;) + b&#8322; = (W&#8322;W&#8321;)x + (W&#8322;b&#8321; + b&#8322;)</code>. The product is computed below from the actual weights, so a two layer linear network is exactly the one layer network on the right, and depth has bought nothing.</p>
+      <div class="split3">
+        <div><div class="slab">W&#8322;</div><div class="scrollx" id="lin-w2"></div></div>
+        <div><div class="slab">W&#8321;</div><div class="scrollx" id="lin-w1"></div></div>
+        <div><div class="slab">W&#8322;W&#8321;, the single equivalent layer</div><div class="scrollx" id="lin-prod"></div></div>
+      </div>
+      <div class="msg" id="lin-msg"></div>
+    </div>
+  </section>
+
+  <section id="soft">
+    <div class="sec-head">
+      <div class="eyebrow">Part 04</div>
+      <h2>Argmax and softmax</h2>
+      <p>The last layer produces three unbounded numbers. Turning them into an answer is easy. Turning them into an answer you can learn from is the reason softmax exists.</p>
+    </div>
+
+    <div class="card">
+      <div class="split">
+        <div>
+          <div class="beat">Move the three scores</div>
+          <div id="logit-sliders"></div>
+          <div class="slider"><label for="temp">temperature</label>
+            <input id="temp" type="range" min="0.2" max="4" step="0.1" value="1"><span class="v" id="tempv"></span></div>
+          <div class="bars" id="soft-bars"></div>
+          <div class="readout" id="soft-sum" style="margin-top:8px"></div>
+        </div>
+        <div>
+          <div class="step" id="soft-calc"></div>
+          <div class="msg" id="soft-msg"></div>
+          <div class="formal">
+            <div class="beat">Argmax against softmax</div>
+            <table class="cmp">
+              <tr><th></th><th>argmax</th><th>softmax</th></tr>
+              <tr><td>Output</td><td>one index</td><td>a probability for every class</td></tr>
+              <tr><td>Range</td><td>a label</td><td>each in (0,1), summing to 1</td></tr>
+              <tr><td>Derivative</td><td>zero everywhere, undefined at ties</td><td>smooth everywhere</td></tr>
+              <tr><td>Can you learn from it</td><td>no, the gradient carries no information</td><td>yes, this is the entire point</td></tr>
+              <tr><td>Used</td><td>at prediction time, to read off the answer</td><td>at training time, to compute the loss</td></tr>
+            </table>
+            <p style="margin:10px 0 0">Note that softmax is shift invariant: adding the same constant to every score leaves the probabilities unchanged. Implementations subtract the largest score before exponentiating, which prevents overflow and changes nothing.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ce">
+    <div class="sec-head">
+      <div class="eyebrow">Part 05</div>
+      <h2>Cross entropy, the cost of being confidently wrong</h2>
+      <p>Once the network outputs probabilities, the loss only looks at one of them: the probability it assigned to the class that was actually true.</p>
+    </div>
+    <div class="card">
+      <div class="split">
+        <div><div class="stage"><div id="ce-plot"></div></div>
+          <div class="slider" style="margin-top:10px"><label for="ce-p">p of the true class</label>
+            <input id="ce-p" type="range" min="0.01" max="1" step="0.01" value="0.35"><span class="v" id="ce-pv"></span></div>
+          <div class="row"><label class="hint"><input type="checkbox" id="ce-mse"> compare with squared error</label></div>
+        </div>
+        <div>
+          <div class="step" id="ce-calc"></div>
+          <div class="msg" id="ce-msg"></div>
+          <div class="formal">
+            <div class="beat">Why this shape</div>
+            <p><code>L = -ln(p<sub>true</sub>)</code>. At <code>p = 1</code> the loss is 0. As <code>p</code> falls toward 0 the loss rises without bound, so being confident and wrong is punished far harder than being uncertain.</p>
+            <p style="margin:0">With one hot targets the general formula <code>L = -&Sigma;<sub>k</sub> y<sub>k</sub> ln(p<sub>k</sub>)</code> collapses to that single term, because every other <code>y<sub>k</sub></code> is zero. Squared error also has its minimum in the right place but its gradient goes flat exactly where the model is most wrong, which is why classification uses cross entropy.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="chain">
+    <div class="sec-head">
+      <div class="eyebrow">Part 06</div>
+      <h2>The chain rule, the only calculus you need</h2>
+      <p>A network is functions inside functions. The chain rule says the derivative of the whole is the product of the local derivatives, which is what makes a deep model differentiable at all.</p>
+    </div>
+    <div class="card">
+      <div class="split">
+        <div>
+          <div class="beat">A three link chain</div>
+          <div class="step" id="chain-calc"></div>
+          <div class="slider" style="margin-top:12px"><label for="chain-x">x</label>
+            <input id="chain-x" type="range" min="-2" max="2" step="0.05" value="0.7"><span class="v" id="chain-xv"></span></div>
+          <div class="msg" id="chain-msg"></div>
+        </div>
+        <div>
+          <div class="stage"><div id="chain-plot"></div></div>
+          <div class="formal">
+            <div class="beat">Read it as a message passing backwards</div>
+            <p><code>dL/dx = (dL/dc)(dc/db)(db/dx)</code>. Each factor is local: it needs only its own inputs and outputs, not the rest of the network. That locality is the reason backpropagation can be implemented once, per layer type, and then composed arbitrarily.</p>
+            <p style="margin:0">The numeric check above compares the analytic product against a finite difference, <code>(L(x+h) - L(x-h)) / 2h</code>. Any framework you write should pass this test before you trust it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="deriv">
+    <div class="sec-head">
+      <div class="eyebrow">Part 07</div>
+      <h2>The softmax derivative, the cross entropy derivative, and the simplification</h2>
+      <p>Two messy derivatives that multiply into something startlingly clean. This is the single most useful piece of algebra in classification.</p>
+    </div>
+
+    <div class="card">
+      <div class="beat">Messy on its own</div>
+      <h3>The softmax Jacobian</h3>
+      <p style="margin-top:8px;max-width:74ch">Softmax takes a vector to a vector, so its derivative is a matrix. Every output depends on every input, because the denominator contains all of them. Two cases:</p>
+      <div class="split">
+        <div>
+          <div class="formal" style="margin-top:0">
+            <p><code>&part;p<sub>i</sub> / &part;z<sub>j</sub> = p<sub>i</sub>(1 - p<sub>i</sub>)</code> when <code>i = j</code></p>
+            <p style="margin:0"><code>&part;p<sub>i</sub> / &part;z<sub>j</sub> = -p<sub>i</sub>p<sub>j</sub></code> when <code>i &ne; j</code></p>
+          </div>
+          <div class="slab">Computed from the current probabilities</div>
+          <div class="scrollx" id="jac-table"></div>
+          <p class="hint" style="margin-top:8px">Each row sums to zero: pushing one score up must pull the others down, since the probabilities always sum to one.</p>
+        </div>
+        <div>
+          <div class="beat">Clean when combined</div>
+          <h3>Cross entropy derivative</h3>
+          <p style="margin-top:8px"><code>&part;L / &part;p<sub>true</sub> = -1 / p<sub>true</sub></code>, which explodes as the model gets it badly wrong. Multiply that by the Jacobian above and almost everything cancels:</p>
+          <div class="step" id="pmy-calc"></div>
+          <div class="msg" id="pmy-msg"></div>
+          <div class="formal">
+            <div class="beat">The result worth memorising</div>
+            <code>&part;L / &part;z = p - y</code>. Predicted probabilities minus the one hot target. That is the error signal that starts the backward pass, and it is why softmax and cross entropy are always implemented as a single fused operation rather than two.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="gd">
+    <div class="sec-head">
+      <div class="eyebrow">Part 08</div>
+      <h2>Gradient descent, and why all parameters move together</h2>
+      <p>The gradient is a vector with one component per parameter. Every component is computed from the same forward pass, and every parameter is updated in the same step.</p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div><div class="beat">One parameter first</div><h3>Rolling downhill</h3></div>
+        <div class="row">
+          <button class="btn" id="gd-step">One step</button>
+          <button class="btn primary" id="gd-run">Run 25 steps</button>
+          <button class="btn" id="gd-reset">Reset</button>
+        </div>
+      </div>
+      <div class="split">
+        <div><div class="stage"><div id="gd-plot"></div></div>
+          <div class="slider" style="margin-top:10px"><label for="gd-lr">learning rate</label>
+            <input id="gd-lr" type="range" min="0.01" max="1.15" step="0.01" value="0.25"><span class="v" id="gd-lrv"></span></div>
+        </div>
+        <div>
+          <div class="step" id="gd-calc"></div>
+          <div class="msg" id="gd-msg"></div>
+          <div class="formal">
+            <div class="beat">The update rule</div>
+            <code>w &larr; w - &eta; &part;L/&part;w</code>. The derivative gives the direction of steepest increase, so the minus sign walks downhill, and <code>&eta;</code> decides how far. Too small and you crawl, too large and you overshoot the valley and climb the far wall. Push the slider past about 1.0 and watch it diverge.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Now two at once</div>
+      <h3>Simultaneous updates</h3>
+      <p style="margin-top:8px;max-width:74ch">With two parameters the loss is a surface and the gradient has two components. The tempting mistake is to update one parameter, recompute, then update the other. Gradient descent does not do that: both components are computed from the <em>same</em> point, then both parameters move together.</p>
+      <div class="split">
+        <div><div class="stage"><div id="contour"></div></div></div>
+        <div>
+          <div class="row" style="margin-bottom:8px">
+            <div class="seg" id="gd2-mode">
+              <button class="on" data-m="sim">Simultaneous, correct</button>
+              <button data-m="alt">One at a time</button>
+            </div>
+          </div>
+          <div class="row"><button class="btn" id="gd2-step">Step</button>
+            <button class="btn primary" id="gd2-run">Run 30</button>
+            <button class="btn" id="gd2-reset">Reset</button></div>
+          <div class="step" id="gd2-calc" style="margin-top:10px"></div>
+          <div class="msg" id="gd2-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">In vector form</div>
+        <code>&theta; &larr; &theta; - &eta; &nabla;L(&theta;)</code> where <code>&theta;</code> holds every weight and bias in the network stacked into one vector. For the small network in this lecture that is <span id="theta-size"></span> numbers moving in one step. The alternating version above still reaches a minimum here, but it takes a zigzag path, and on a network with millions of parameters it would need millions of forward passes per update instead of one.
+      </div>
+    </div>
+  </section>
+
+  <section id="backprop">
+    <div class="sec-head">
+      <div class="eyebrow">Part 09</div>
+      <h2>Backpropagation, the whole thing on one example</h2>
+      <p>Every piece of this lecture, in order, on real numbers. Step through it once by hand, then let it train.</p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div><div class="beat">Ten steps, forward then backward</div><h3 id="bp-title"></h3></div>
+        <div class="row">
+          <button class="btn" id="bp-back">Back</button>
+          <button class="btn primary" id="bp-next">Next step</button>
+          <button class="btn" id="bp-reset">Restart</button>
+        </div>
+      </div>
+      <div class="split">
+        <div><div class="stage" id="bp-stage"></div>
+          <div class="bars" id="bp-bars" style="margin-top:10px"></div>
+        </div>
+        <div>
+          <div class="readout" id="bp-where"></div>
+          <div class="step" id="bp-calc"></div>
+          <div class="msg" id="bp-msg"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div><div class="beat">Now repeat it</div><h3>Training on the whole set</h3></div>
+        <div class="row">
+          <button class="btn" id="tr-1">1 epoch</button>
+          <button class="btn primary" id="tr-run">Train 200 epochs</button>
+          <button class="btn" id="tr-reset">Reset the weights</button>
+        </div>
+      </div>
+      <div class="split">
+        <div><div class="stage"><div id="loss-plot"></div></div>
+          <div class="slider" style="margin-top:10px"><label for="tr-lr">learning rate</label>
+            <input id="tr-lr" type="range" min="0.02" max="1.5" step="0.02" value="0.4"><span class="v" id="tr-lrv"></span></div>
+        </div>
+        <div>
+          <div class="slab">The training set</div>
+          <div class="scrollx" id="data-table"></div>
+          <div class="msg" id="tr-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">What you just watched</div>
+        Every epoch runs one forward pass over all six examples, averages the gradients, and takes one gradient descent step. The loss falls, the probability on the correct class rises, and the weight matrices in Part 02 are the ones being changed. Nothing in this page is a recording: the numbers come from the same arithmetic you stepped through above, run again a few hundred times.
+      </div>
+    </div>
+  </section>
+
+  <section id="board">
+    <div class="sec-head">
+      <div class="eyebrow">Extra</div>
+      <h2>Board</h2>
+      <p>A full page board for working through the derivatives by hand. Every card above also has its own board: press Sketch on any card to open one right there, without leaving the block.</p>
+    </div>
+    <div class="card" id="board-card"></div>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">Companion to the lecture on neural networks: the neuron, forward propagation, activations, softmax, cross entropy, the chain rule, the two derivatives, gradient descent and backpropagation. Every number is computed in the browser. <a href="index.html">Back to the lecture library</a>.</div>
+</footer>
+
+<script>
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function sv(n, a){ const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; }
+function byId(i){ return document.getElementById(i); }
+function clear(n){ while (n && n.firstChild) n.removeChild(n.firstChild); }
+function f2(v){ return (Math.round(v*100)/100).toFixed(2); }
+function f3(v){ return (Math.round(v*1000)/1000).toFixed(3); }
+
+/* ================= fields ================= */
+const FIELDS = {
+  epi:{
+    name:"Epidemiology",
+    blurb:"A model that reads three indicators for a reported case and predicts the outcome.",
+    inputs:["symptom score", "days since onset", "contacts (scaled)"],
+    classes:["recovers at home", "hospitalised", "critical"],
+    unit:"case",
+    story:"a reported case"
+  },
+  macro:{
+    name:"Macroeconomics",
+    blurb:"A model that reads three monthly indicators and predicts the regime of the next quarter.",
+    inputs:["CPI change", "credit growth", "oil price change"],
+    classes:["contraction", "stable", "expansion"],
+    unit:"quarter",
+    story:"next quarter"
+  },
+  stats:{
+    name:"Official statistics",
+    blurb:"A model that reads three weighted keywords from a business description and predicts its ISIC section.",
+    inputs:["weight of 'software'", "weight of 'retail'", "weight of 'transport'"],
+    classes:["Section C, manufacturing", "Section G, trade", "Section J, information"],
+    unit:"establishment",
+    story:"an establishment description"
+  }
+};
+let FIELD = "epi";
+function F(){ return FIELDS[FIELD]; }
+
+/* ================= the network ================= */
+const DATA = [
+  {x:[0.90, 0.20, 0.10], y:0},
+  {x:[0.80, 0.35, 0.20], y:0},
+  {x:[0.20, 0.90, 0.30], y:1},
+  {x:[0.15, 0.80, 0.40], y:1},
+  {x:[0.20, 0.30, 0.90], y:2},
+  {x:[0.30, 0.15, 0.80], y:2}
+];
+const FOCUS = 2;   /* the example carried through Part 09 */
+
+function lcg(seed){ let s = seed; return function(){ s = (s*1103515245 + 12345) % 2147483648; return s / 2147483648; }; }
+function initNet(){
+  const r = lcg(7);
+  const mk = function(a, b){
+    const m = [];
+    for (let i = 0; i < a; i++){
+      const row = [];
+      for (let j = 0; j < b; j++) row.push(Math.round((r()*2 - 1) * 120) / 100);
+      m.push(row);
+    }
+    return m;
+  };
+  return {W1:mk(3,3), b1:[0.1, -0.1, 0.05], W2:mk(3,3), b2:[0.05, 0.0, -0.05]};
+}
+let NET = initNet();
+
+const ACTS = {
+  relu:{label:"ReLU", f:function(z){ return Math.max(0, z); }, d:function(z){ return z > 0 ? 1 : 0; },
+    tex:"max(0, z)", note:"Zero below the origin, identity above. Cheap, and the default for hidden layers since 2012."},
+  sigmoid:{label:"sigmoid", f:function(z){ return 1/(1+Math.exp(-z)); },
+    d:function(z){ const s = 1/(1+Math.exp(-z)); return s*(1-s); },
+    tex:"1 / (1 + e^(-z))", note:"Squashes into (0,1). Its derivative peaks at 0.25 and vanishes in both tails, which is the classic vanishing gradient."},
+  tanh:{label:"tanh", f:function(z){ return Math.tanh(z); }, d:function(z){ const t = Math.tanh(z); return 1 - t*t; },
+    tex:"tanh(z)", note:"Like sigmoid but centred on zero, which usually trains better. Still saturates in the tails."},
+  leaky:{label:"leaky ReLU", f:function(z){ return z > 0 ? z : 0.1*z; }, d:function(z){ return z > 0 ? 1 : 0.1; },
+    tex:"z if z > 0, else 0.1z", note:"Keeps a small slope on the left so a neuron that falls below zero can still recover."},
+  linear:{label:"identity", f:function(z){ return z; }, d:function(){ return 1; },
+    tex:"z", note:"Not an activation at all. Use it to watch the network collapse into a single linear map."}
+};
+let ACT = "relu";
+
+function softmax(z, T){
+  T = T || 1;
+  const m = Math.max.apply(null, z);
+  const e = z.map(function(v){ return Math.exp((v - m) / T); });
+  const s = e.reduce(function(a, v){ return a + v; }, 0);
+  return e.map(function(v){ return v / s; });
+}
+function forward(net, x, actKey){
+  const A = ACTS[actKey || ACT];
+  const z1 = net.W1.map(function(row, i){
+    return row.reduce(function(a, w, j){ return a + w*x[j]; }, net.b1[i]);
+  });
+  const a1 = z1.map(A.f);
+  const z2 = net.W2.map(function(row, i){
+    return row.reduce(function(a, w, j){ return a + w*a1[j]; }, net.b2[i]);
+  });
+  const p = softmax(z2);
+  return {x:x, z1:z1, a1:a1, z2:z2, p:p};
+}
+function oneHot(k){ return [0,1,2].map(function(i){ return i === k ? 1 : 0; }); }
+function ceLoss(p, y){ return -Math.log(Math.max(1e-12, p[y])); }
+
+function backward(net, fp, y, actKey){
+  const A = ACTS[actKey || ACT];
+  const yv = oneHot(y);
+  const dz2 = fp.p.map(function(v, i){ return v - yv[i]; });
+  const dW2 = dz2.map(function(d){ return fp.a1.map(function(a){ return d*a; }); });
+  const db2 = dz2.slice();
+  const da1 = fp.a1.map(function(_, j){
+    return dz2.reduce(function(acc, d, i){ return acc + d*net.W2[i][j]; }, 0);
+  });
+  const dz1 = da1.map(function(v, j){ return v * A.d(fp.z1[j]); });
+  const dW1 = dz1.map(function(d){ return fp.x.map(function(xv){ return d*xv; }); });
+  const db1 = dz1.slice();
+  return {dz2:dz2, dW2:dW2, db2:db2, da1:da1, dz1:dz1, dW1:dW1, db1:db1};
+}
+function epoch(net, lr, actKey){
+  const g = {W1:[[0,0,0],[0,0,0],[0,0,0]], b1:[0,0,0], W2:[[0,0,0],[0,0,0],[0,0,0]], b2:[0,0,0]};
+  let loss = 0, ok = 0;
+  DATA.forEach(function(d){
+    const fp = forward(net, d.x, actKey);
+    const bp = backward(net, fp, d.y, actKey);
+    loss += ceLoss(fp.p, d.y);
+    if (fp.p.indexOf(Math.max.apply(null, fp.p)) === d.y) ok++;
+    for (let i = 0; i < 3; i++){
+      g.b1[i] += bp.db1[i]; g.b2[i] += bp.db2[i];
+      for (let j = 0; j < 3; j++){ g.W1[i][j] += bp.dW1[i][j]; g.W2[i][j] += bp.dW2[i][j]; }
+    }
+  });
+  const n = DATA.length;
+  for (let i = 0; i < 3; i++){
+    net.b1[i] -= lr*g.b1[i]/n; net.b2[i] -= lr*g.b2[i]/n;
+    for (let j = 0; j < 3; j++){ net.W1[i][j] -= lr*g.W1[i][j]/n; net.W2[i][j] -= lr*g.W2[i][j]/n; }
+  }
+  return {loss:loss/n, acc:ok/n};
+}
+
+const SUBS = [];
+function sub(f){ SUBS.push(f); }
+function refresh(){ SUBS.forEach(function(f){ try { f(); } catch(e){} }); }
+
+/* ================= small drawing helpers ================= */
+function axes(svg, W, H, pad, xr, yr, xlab, ylab){
+  const X = function(v){ return pad + (v - xr[0])/(xr[1]-xr[0]) * (W - pad - 12); };
+  const Y = function(v){ return H - pad - (v - yr[0])/(yr[1]-yr[0]) * (H - pad - 14); };
+  svg.appendChild(sv("line", {x1:pad, y1:Y(yr[0]), x2:W-10, y2:Y(yr[0]), stroke:"var(--line-strong)", "stroke-width":"1"}));
+  svg.appendChild(sv("line", {x1:X(xr[0] < 0 && xr[1] > 0 ? 0 : xr[0]), y1:14, x2:X(xr[0] < 0 && xr[1] > 0 ? 0 : xr[0]), y2:H-pad, stroke:"var(--line-strong)", "stroke-width":"1"}));
+  if (xlab){
+    const t = sv("text", {x:W-10, y:H-pad+15});
+    t.setAttribute("style", "font-family:var(--mono);font-size:10.5px;fill:var(--muted);text-anchor:end");
+    t.textContent = xlab; svg.appendChild(t);
+  }
+  if (ylab){
+    const t = sv("text", {x:pad+4, y:13});
+    t.setAttribute("style", "font-family:var(--mono);font-size:10.5px;fill:var(--muted)");
+    t.textContent = ylab; svg.appendChild(t);
+  }
+  return {X:X, Y:Y};
+}
+function curve(svg, pts, col, w){
+  let d = "";
+  pts.forEach(function(p, i){ d += (i ? " L" : "M") + p[0] + "," + p[1]; });
+  svg.appendChild(sv("path", {d:d, fill:"none", stroke:col, "stroke-width":w || 2.2, "stroke-linejoin":"round"}));
+}
+function plotHost(id, W, H){
+  const svg = sv("svg", {viewBox:"0 0 " + W + " " + H, class:"plot"});
+  const host = byId(id);
+  clear(host); host.appendChild(svg);
+  return svg;
+}
+function slider(host, label, min, max, step, val, cb){
+  const d = document.createElement("div");
+  d.className = "slider";
+  d.innerHTML = "<label>" + label + '</label><input type="range" min="' + min + '" max="' + max +
+    '" step="' + step + '" value="' + val + '"><span class="v">' + f2(val) + "</span>";
+  const inp = d.querySelector("input"), out = d.querySelector(".v");
+  inp.addEventListener("input", function(){ out.textContent = f2(+inp.value); cb(+inp.value); });
+  host.appendChild(d);
+  return {set:function(v){ inp.value = v; out.textContent = f2(v); }, get:function(){ return +inp.value; }};
+}
+
+/* ================= field picker ================= */
+(function picker(){
+  function build(host, small){
+    clear(host);
+    Object.keys(FIELDS).forEach(function(k){
+      const b = document.createElement("button");
+      b.className = small ? (k === FIELD ? "on" : "") : ("btn" + (k === FIELD ? " primary" : ""));
+      b.textContent = FIELDS[k].name;
+      b.addEventListener("click", function(){
+        FIELD = k;
+        build(byId("field-pick"), false);
+        build(byId("rail-field"), true);
+        note();
+        refresh();
+      });
+      host.appendChild(b);
+    });
+  }
+  function note(){
+    byId("field-note").textContent = F().blurb + " Inputs: " + F().inputs.join(", ") +
+      ". Classes: " + F().classes.join(", ") + ".";
+    byId("idea-lede").textContent = "Every example on this page reads " + F().story +
+      ", passes three numbers through the same small network, and produces a probability for each of the three outcomes. Change the field in the sidebar at any time and every number keeps working, because the mathematics never depended on the labels.";
+  }
+  const rail = byId("rail-field");
+  const keep = rail.innerHTML;
+  build(byId("field-pick"), false);
+  rail.innerHTML = keep;
+  build(rail, true);
+  rail.insertAdjacentHTML("afterbegin", "<strong>examples from</strong>");
+  note();
+})();
+
+/* ================= hero ================= */
+(function hero(){
+  function render(){
+    const svg = plotHost("hero-stage", 460, 250);
+    const fp = forward(NET, DATA[FOCUS].x);
+    const cols = [[40, "input"], [220, "hidden"], [400, "output"]];
+    const vals = [fp.x, fp.a1, fp.p];
+    const labs = [F().inputs, ["h1", "h2", "h3"], F().classes];
+    for (let L = 0; L < 3; L++)
+      for (let i = 0; i < 3; i++){
+        const y = 70 + i*60;
+        if (L < 2){
+          for (let j = 0; j < 3; j++){
+            const w = L === 0 ? NET.W1[j][i] : NET.W2[j][i];
+            svg.appendChild(sv("line", {x1:cols[L][0]+16, y1:y, x2:cols[L+1][0]-16, y2:70+j*60,
+              stroke:w > 0 ? "var(--teal)" : "var(--rose)", "stroke-width":Math.min(3.4, 0.5 + Math.abs(w)*1.6),
+              opacity:0.5}));
+          }
+        }
+      }
+    for (let L = 0; L < 3; L++)
+      for (let i = 0; i < 3; i++){
+        const y = 70 + i*60, x = cols[L][0];
+        svg.appendChild(sv("circle", {cx:x, cy:y, r:16, fill:"var(--panel)", stroke:"var(--ink)", "stroke-width":"2"}));
+        const t = sv("text", {x:x, y:y});
+        t.setAttribute("style", "font-family:var(--mono);font-size:10.5px;text-anchor:middle;dominant-baseline:central");
+        t.textContent = f2(vals[L][i]);
+        svg.appendChild(t);
+        if (L === 2){
+          const l = sv("text", {x:x + 24, y:y});
+          l.setAttribute("style", "font-family:var(--mono);font-size:9.5px;dominant-baseline:central;fill:var(--muted)");
+          l.textContent = labs[2][i].slice(0, 12);
+          svg.appendChild(l);
+        }
+      }
+    const heads = ["inputs x", "hidden a\u2081", "probabilities p"];
+    heads.forEach(function(h, i){
+      const t = sv("text", {x:cols[i][0], y:32});
+      t.setAttribute("style", "font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;fill:var(--muted);text-anchor:middle");
+      t.textContent = h;
+      svg.appendChild(t);
+    });
+    byId("hero-cap").textContent = "The untrained network on one " + F().unit +
+      ". Teal edges are positive weights, red negative, thickness is magnitude. Right now it is guessing.";
+  }
+  sub(render);
+})();
+
+/* ================= Part 1 ================= */
+(function part1(){
+  let w = [0.8, -0.5, 0.3], b = 0.1;
+  let built = false, sl = [];
+  function render(){
+    const host = byId("neuron-sliders");
+    if (!built){
+      clear(host);
+      sl = [0,1,2].map(function(i){
+        return slider(host, "w" + (i+1), -2, 2, 0.05, w[i], function(v){ w[i] = v; draw(); });
+      });
+      sl.push(slider(host, "bias b", -2, 2, 0.05, b, function(v){ b = v; draw(); }));
+      built = true;
+    }
+    [0,1,2].forEach(function(i){
+      host.children[i].querySelector("label").textContent = "w" + (i+1) + ", " + F().inputs[i].slice(0, 14);
+    });
+    draw();
+    const lc = byId("loop-cards");
+    const steps = [
+      ["Predict", "Push the numbers of one " + F().unit + " through the network and read three probabilities."],
+      ["Score", "Compare the probability given to the true class against 1. That gap is the loss."],
+      ["Attribute", "Work backwards to ask how much each weight contributed to that loss."],
+      ["Adjust", "Move every weight a small step against its contribution. Repeat."]
+    ];
+    lc.innerHTML = steps.map(function(s, i){
+      return '<div><div class="slab">step ' + (i+1) + "</div><strong>" + s[0] + "</strong><p class='hint' style='margin-top:5px'>" + s[1] + "</p></div>";
+    }).join("");
+  }
+  function draw(){
+    const x = DATA[FOCUS].x;
+    const z = w[0]*x[0] + w[1]*x[1] + w[2]*x[2] + b;
+    const a = ACTS[ACT].f(z);
+    const svg = plotHost("neuron-stage", 340, 220);
+    [0,1,2].forEach(function(i){
+      const y = 50 + i*55;
+      svg.appendChild(sv("line", {x1:56, y1:y, x2:170, y2:110,
+        stroke:w[i] > 0 ? "var(--teal)" : "var(--rose)", "stroke-width":Math.min(5, 0.6 + Math.abs(w[i])*2)}));
+      svg.appendChild(sv("circle", {cx:44, cy:y, r:15, fill:"var(--panel)", stroke:"var(--ink)", "stroke-width":"2"}));
+      const t = sv("text", {x:44, y:y});
+      t.setAttribute("style", "font-family:var(--mono);font-size:10.5px;text-anchor:middle;dominant-baseline:central");
+      t.textContent = f2(x[i]);
+      svg.appendChild(t);
+      const wl = sv("text", {x:110, y:y + (i === 1 ? -6 : (i === 0 ? 14 : -12))});
+      wl.setAttribute("style", "font-family:var(--mono);font-size:10px;fill:" + (w[i] > 0 ? "var(--teal)" : "var(--rose)") + ";text-anchor:middle");
+      wl.textContent = f2(w[i]);
+      svg.appendChild(wl);
+    });
+    svg.appendChild(sv("circle", {cx:190, cy:110, r:26, fill:"rgba(16,27,51,.05)", stroke:"var(--ink)", "stroke-width":"2.4"}));
+    const zt = sv("text", {x:190, y:110});
+    zt.setAttribute("style", "font-family:var(--mono);font-size:11px;text-anchor:middle;dominant-baseline:central");
+    zt.textContent = f2(z);
+    svg.appendChild(zt);
+    svg.appendChild(sv("line", {x1:216, y1:110, x2:262, y2:110, stroke:"var(--ink)", "stroke-width":"2"}));
+    svg.appendChild(sv("circle", {cx:288, cy:110, r:24, fill:"var(--teal)", stroke:"var(--ink)", "stroke-width":"2.4"}));
+    const at = sv("text", {x:288, y:110});
+    at.setAttribute("style", "font-family:var(--mono);font-size:11px;fill:#fff;text-anchor:middle;dominant-baseline:central");
+    at.textContent = f2(a);
+    svg.appendChild(at);
+    [["weighted sum z", 190, 156], ["output a", 288, 150], ["inputs", 44, 24]].forEach(function(l){
+      const t = sv("text", {x:l[1], y:l[2]});
+      t.setAttribute("style", "font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;fill:var(--muted);text-anchor:middle");
+      t.textContent = l[0];
+      svg.appendChild(t);
+    });
+    byId("neuron-calc").innerHTML =
+      "z = " + f2(w[0]) + "\u00d7" + f2(x[0]) + " + " + f2(w[1]) + "\u00d7" + f2(x[1]) + " + " +
+      f2(w[2]) + "\u00d7" + f2(x[2]) + " + " + f2(b) + " = <b>" + f2(z) + "</b><br>" +
+      "a = " + ACTS[ACT].label + "(" + f2(z) + ") = <b>" + f2(a) + "</b>";
+    const strongest = w.map(Math.abs).indexOf(Math.max.apply(null, w.map(Math.abs)));
+    byId("neuron-msg").innerHTML = "This neuron currently leans hardest on <strong>" + F().inputs[strongest] +
+      "</strong>, with weight " + f2(w[strongest]) + ". A negative weight is not a weaker vote, it is a vote in the opposite direction. Set every weight to 0 and only the bias survives, which is a model that ignores its input entirely.";
+  }
+  sub(render);
+})();
+
+/* ================= Part 2 ================= */
+(function part2(){
+  let stage = 0, sel = null, timer = null;
+  const STAGES = ["nothing computed yet", "z\u2081 = W\u2081x + b\u2081", "a\u2081 = f(z\u2081)", "z\u2082 = W\u2082a\u2081 + b\u2082", "p = softmax(z\u2082)"];
+
+  function draw(){
+    const fp = forward(NET, DATA[FOCUS].x);
+    const svg = plotHost("net-stage", 360, 260);
+    const cols = [46, 180, 314];
+    const vals = [fp.x, stage >= 2 ? fp.a1 : (stage >= 1 ? fp.z1 : null), stage >= 4 ? fp.p : (stage >= 3 ? fp.z2 : null)];
+    for (let L = 0; L < 2; L++)
+      for (let i = 0; i < 3; i++)
+        for (let j = 0; j < 3; j++){
+          const w = L === 0 ? NET.W1[j][i] : NET.W2[j][i];
+          const lit = (L === 0 && stage >= 1) || (L === 1 && stage >= 3);
+          svg.appendChild(sv("line", {x1:cols[L]+17, y1:66+i*66, x2:cols[L+1]-17, y2:66+j*66,
+            stroke:w > 0 ? "var(--teal)" : "var(--rose)",
+            "stroke-width":Math.min(3.6, 0.5 + Math.abs(w)*1.7), opacity:lit ? 0.75 : 0.18}));
+        }
+    for (let L = 0; L < 3; L++)
+      for (let i = 0; i < 3; i++){
+        const x = cols[L], y = 66 + i*66;
+        const on = vals[L] !== null;
+        const isSel = sel && sel[0] === L && sel[1] === i;
+        const g = sv("g", {});
+        g.setAttribute("style", "cursor:pointer");
+        g.appendChild(sv("circle", {cx:x, cy:y, r:17,
+          fill:isSel ? "var(--amber)" : (on ? "var(--panel)" : "rgba(16,27,51,.04)"),
+          stroke:"var(--ink)", "stroke-width":isSel ? "3" : "2"}));
+        const t = sv("text", {x:x, y:y});
+        t.setAttribute("style", "font-family:var(--mono);font-size:10.5px;text-anchor:middle;dominant-baseline:central");
+        t.textContent = on ? f2(vals[L][i]) : "?";
+        g.appendChild(t);
+        g.addEventListener("click", function(){ sel = [L, i]; draw(); });
+        svg.appendChild(g);
+      }
+    ["x", "hidden", "output"].forEach(function(h, i){
+      const t = sv("text", {x:cols[i], y:28});
+      t.setAttribute("style", "font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;fill:var(--muted);text-anchor:middle");
+      t.textContent = h;
+      svg.appendChild(t);
+    });
+
+    let calc = "<b>Stage " + stage + " of 4</b>: " + STAGES[stage] + "<br><br>";
+    if (sel){
+      const L = sel[0], i = sel[1];
+      if (L === 0) calc += "Input " + (i+1) + ", " + F().inputs[i] + " = " + f2(fp.x[i]);
+      else if (L === 1){
+        calc += "hidden neuron " + (i+1) + "<br>z = " +
+          NET.W1[i].map(function(w, j){ return f2(w) + "\u00d7" + f2(fp.x[j]); }).join(" + ") +
+          " + " + f2(NET.b1[i]) + " = <b>" + f2(fp.z1[i]) + "</b><br>a = " + ACTS[ACT].label + "(" + f2(fp.z1[i]) + ") = <b>" + f2(fp.a1[i]) + "</b>";
+      } else {
+        calc += "output " + (i+1) + ", " + F().classes[i] + "<br>z = " +
+          NET.W2[i].map(function(w, j){ return f2(w) + "\u00d7" + f2(fp.a1[j]); }).join(" + ") +
+          " + " + f2(NET.b2[i]) + " = <b>" + f2(fp.z2[i]) + "</b><br>p = e^z / \u03a3 e^z = <b>" + f3(fp.p[i]) + "</b>";
+      }
+    } else calc += "Click a neuron to see its arithmetic.";
+    byId("fw-calc").innerHTML = calc;
+    const top = fp.p.indexOf(Math.max.apply(null, fp.p));
+    byId("fw-msg").innerHTML = stage < 4
+      ? "Press Step to advance one stage. Notice that nothing about the second layer differs from the first, apart from what it reads."
+      : "The pass is complete. The network says <strong>" + F().classes[top] + "</strong> with probability " +
+        f3(fp.p[top]) + ", while the truth for this " + F().unit + " is <strong>" + F().classes[DATA[FOCUS].y] +
+        "</strong>. That gap is what Part 05 turns into a number.";
+
+    /* matrices */
+    function mtable(M, rows, cols2){
+      let h = '<table class="grid"><tr><th></th>';
+      cols2.forEach(function(c){ h += "<th>" + c + "</th>"; });
+      h += "</tr>";
+      M.forEach(function(row, i){
+        h += '<tr><th class="rowh">' + rows[i] + "</th>";
+        row.forEach(function(v){ h += '<td class="' + (v >= 0 ? "pos" : "neg") + '">' + f2(v) + "</td>"; });
+        h += "</tr>";
+      });
+      return h + "</table>";
+    }
+    const short = F().inputs.map(function(s){ return s.split(" ")[0].slice(0, 9); });
+    byId("w1-table").innerHTML = mtable(NET.W1, ["h1", "h2", "h3"], short);
+    byId("w2-table").innerHTML = mtable(NET.W2, F().classes.map(function(c){ return c.split(",")[0].slice(0, 12); }), ["h1", "h2", "h3"]);
+    let big = [0, 0, NET.W2[0][0]];
+    NET.W2.forEach(function(row, i){ row.forEach(function(v, j){ if (Math.abs(v) >= Math.abs(big[2])){ big = [i, j, v]; } }); });
+    byId("w-read").innerHTML = "the largest entry of W&#8322; is " + f2(big[2]) + ", so hidden neuron " + (big[1]+1) +
+      " " + (big[2] > 0 ? "pushes toward" : "pushes away from") + " <strong>" + F().classes[big[0]] + "</strong>.";
+    byId("param-count").innerHTML = '<span class="k">W\u2081</span> 3\u00d73 = 9 &nbsp; <span class="k">b\u2081</span> 3 &nbsp; ' +
+      '<span class="k">W\u2082</span> 3\u00d73 = 9 &nbsp; <span class="k">b\u2082</span> 3 &nbsp; <span class="k">total</span> <strong>24 parameters</strong>, ' +
+      "every one of which moves on every step of Part 08.";
+  }
+  byId("fw-step").addEventListener("click", function(){ stage = Math.min(4, stage + 1); draw(); });
+  byId("fw-reset").addEventListener("click", function(){ stage = 0; sel = null; draw(); });
+  byId("fw-run").addEventListener("click", function(){
+    if (timer) clearInterval(timer);
+    stage = 0; draw();
+    timer = setInterval(function(){
+      stage++; draw();
+      if (stage >= 4){ clearInterval(timer); timer = null; }
+    }, REDUCED ? 1 : 700);
+  });
+  sub(draw);
+})();
+
+/* ================= Part 3 ================= */
+(function part3(){
+  let zx = 1.2;
+  const seg = byId("act-pick");
+  Object.keys(ACTS).forEach(function(k){
+    const b = document.createElement("button");
+    b.textContent = ACTS[k].label;
+    if (k === ACT) b.classList.add("on");
+    b.addEventListener("click", function(){
+      ACT = k;
+      [].forEach.call(seg.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+      refresh();
+    });
+    seg.appendChild(b);
+  });
+  byId("act-x").addEventListener("input", function(){ zx = +this.value; draw(); });
+
+  function draw(){
+    const A = ACTS[ACT];
+    const W = 340, H = 240, pad = 30;
+    const svg = plotHost("act-plot", W, H);
+    const ax = axes(svg, W, H, pad, [-6, 6], [-1.4, 2.2], "z", "f(z) and f'(z)");
+    const p1 = [], p2 = [];
+    for (let z = -6; z <= 6.001; z += 0.1){
+      p1.push([ax.X(z), ax.Y(Math.max(-1.4, Math.min(2.2, A.f(z))))]);
+      p2.push([ax.X(z), ax.Y(Math.max(-1.4, Math.min(2.2, A.d(z))))]);
+    }
+    curve(svg, p2, "var(--amber)", 2);
+    curve(svg, p1, "var(--teal)", 2.6);
+    const px = ax.X(zx), py = ax.Y(Math.max(-1.4, Math.min(2.2, A.f(zx))));
+    svg.appendChild(sv("line", {x1:px, y1:14, x2:px, y2:H-pad, stroke:"var(--rose)", "stroke-width":"1", "stroke-dasharray":"4 3"}));
+    svg.appendChild(sv("circle", {cx:px, cy:py, r:5, fill:"var(--rose)"}));
+    byId("act-xv").textContent = f2(zx);
+    byId("act-calc").innerHTML = A.label + "(" + f2(zx) + ") = <b>" + f3(A.f(zx)) + "</b><br>" +
+      "slope at that point = <b>" + f3(A.d(zx)) + "</b><br>formula: " + A.tex;
+    byId("act-msg").innerHTML = A.note + (A.d(zx) < 0.02
+      ? " <strong>Right now the slope is " + f3(A.d(zx)) + "</strong>, so a gradient arriving here is multiplied by almost zero and the neurons behind it learn nothing. That is the vanishing gradient, visible."
+      : "");
+    let t = '<table class="cmp"><tr><th>Function</th><th>Range</th><th>Slope issue</th></tr>' +
+      "<tr><td>ReLU</td><td>[0, &infin;)</td><td>exactly zero on the left, a dead neuron stays dead</td></tr>" +
+      "<tr><td>leaky ReLU</td><td>(-&infin;, &infin;)</td><td>small slope on the left keeps it recoverable</td></tr>" +
+      "<tr><td>sigmoid</td><td>(0, 1)</td><td>slope at most 0.25, vanishes in both tails</td></tr>" +
+      "<tr><td>tanh</td><td>(-1, 1)</td><td>slope at most 1, still vanishes in the tails</td></tr>" +
+      "<tr><td>identity</td><td>(-&infin;, &infin;)</td><td>slope always 1, and the network collapses</td></tr></table>";
+    byId("act-table").innerHTML = t;
+
+    function mtable(M){
+      let h = '<table class="grid">';
+      M.forEach(function(row){
+        h += "<tr>";
+        row.forEach(function(v){ h += '<td class="' + (v >= 0 ? "pos" : "neg") + '">' + f2(v) + "</td>"; });
+        h += "</tr>";
+      });
+      return h + "</table>";
+    }
+    const prod = NET.W2.map(function(row){
+      return [0,1,2].map(function(j){
+        return row.reduce(function(a, w, k){ return a + w*NET.W1[k][j]; }, 0);
+      });
+    });
+    byId("lin-w2").innerHTML = mtable(NET.W2);
+    byId("lin-w1").innerHTML = mtable(NET.W1);
+    byId("lin-prod").innerHTML = mtable(prod);
+    byId("lin-msg").innerHTML = "Those nine numbers on the right are a single 3 by 3 matrix. With the identity activation, the two layer network computes exactly <code>W\u2082W\u2081x + const</code>, which no amount of extra layers can make more expressive. Select <strong>identity</strong> above and run the forward pass in Part 02 to see the same collapse happen to the actual outputs.";
+  }
+  sub(draw);
+})();
+
+/* ================= Part 4 ================= */
+(function part4(){
+  let z = [1.2, 0.4, -0.6], T = 1, built = false;
+  function draw(){
+    const host = byId("logit-sliders");
+    if (!built){
+      clear(host);
+      [0,1,2].map(function(i){
+        return slider(host, "score z" + (i+1), -4, 4, 0.1, z[i], function(v){ z[i] = v; draw(); });
+      });
+      built = true;
+    }
+    [0,1,2].forEach(function(i){
+      host.children[i].querySelector("label").textContent = "z" + (i+1) + ", " + F().classes[i].split(",")[0].slice(0, 13);
+    });
+    byId("tempv").textContent = f2(T);
+    const p = softmax(z, T);
+    const am = z.indexOf(Math.max.apply(null, z));
+    byId("soft-bars").innerHTML = p.map(function(v, i){
+      return '<div class="barrow' + (i === am ? " win" : "") + '"><span>' + F().classes[i] +
+        '</span><div class="track"><i style="width:' + (v*100).toFixed(1) + '%"></i></div>' +
+        '<span class="num">' + f3(v) + "</span></div>";
+    }).join("");
+    byId("soft-sum").innerHTML = '<span class="k">sum of probabilities =</span> ' +
+      f3(p.reduce(function(a, v){ return a + v; }, 0)) + ' &nbsp; <span class="k">argmax =</span> ' + F().classes[am];
+    const e = z.map(function(v){ return Math.exp(v/T); });
+    byId("soft-calc").innerHTML =
+      "e^(z/T): " + e.map(function(v){ return f3(v); }).join(", ") + "<br>" +
+      "sum = <b>" + f3(e.reduce(function(a, v){ return a + v; }, 0)) + "</b><br>" +
+      "p = each divided by the sum: " + p.map(function(v){ return f3(v); }).join(", ");
+    byId("soft-msg").innerHTML = T < 0.6
+      ? "Low temperature sharpens the distribution toward a hard argmax. In the limit it becomes one and zeros, and the gradient disappears with it."
+      : T > 2
+        ? "High temperature flattens everything toward equal probabilities. The model expresses no preference, so the loss is large but the gradients are gentle."
+        : "Raise one score and the others must fall, because the probabilities are forced to sum to one. That coupling is exactly what the softmax Jacobian in Part 07 describes.";
+  }
+  byId("temp").addEventListener("input", function(){ T = +this.value; draw(); });
+  sub(draw);
+})();
+
+/* ================= Part 5 ================= */
+(function part5(){
+  let p = 0.35, mse = false;
+  byId("ce-p").addEventListener("input", function(){ p = +this.value; draw(); });
+  byId("ce-mse").addEventListener("change", function(){ mse = this.checked; draw(); });
+  function draw(){
+    const W = 340, H = 240, pad = 32;
+    const svg = plotHost("ce-plot", W, H);
+    const ax = axes(svg, W, H, pad, [0, 1], [0, 4], "p of the true class", "loss");
+    const c1 = [], c2 = [];
+    for (let q = 0.02; q <= 1.001; q += 0.01){
+      c1.push([ax.X(q), ax.Y(Math.min(4, -Math.log(q)))]);
+      c2.push([ax.X(q), ax.Y((1-q)*(1-q))]);
+    }
+    if (mse) curve(svg, c2, "var(--amber)", 2);
+    curve(svg, c1, "var(--teal)", 2.6);
+    svg.appendChild(sv("circle", {cx:ax.X(p), cy:ax.Y(Math.min(4, -Math.log(p))), r:5, fill:"var(--rose)"}));
+    byId("ce-pv").textContent = f2(p);
+    const fp = forward(NET, DATA[FOCUS].x);
+    const y = DATA[FOCUS].y;
+    byId("ce-calc").innerHTML =
+      "L = -ln(p) = -ln(" + f2(p) + ") = <b>" + f3(-Math.log(p)) + "</b><br><br>" +
+      "On the live network, for this " + F().unit + ":<br>true class = <b>" + F().classes[y] + "</b><br>" +
+      "p assigned to it = <b>" + f3(fp.p[y]) + "</b><br>loss = <b>" + f3(ceLoss(fp.p, y)) + "</b>";
+    byId("ce-msg").innerHTML = p < 0.1
+      ? "At p = " + f2(p) + " the loss is " + f2(-Math.log(p)) + ". Confident and wrong is the expensive corner, which is what makes the gradient large enough to fix it quickly."
+      : p > 0.9
+        ? "Near p = 1 the loss flattens toward zero. There is little left to learn from this example, so it stops contributing much to the gradient."
+        : "Cross entropy only ever reads the probability of the true class. The other two probabilities matter only because they took mass away from it.";
+  }
+  sub(draw);
+})();
+
+/* ================= Part 6 ================= */
+(function part6(){
+  let x = 0.7;
+  /* L(x) = (tanh(2x + 0.5))^2 */
+  const h = function(v){ return 2*v + 0.5; }, dh = function(){ return 2; };
+  const g = function(u){ return Math.tanh(u); }, dg = function(u){ const t = Math.tanh(u); return 1 - t*t; };
+  const f = function(w){ return w*w; }, df = function(w){ return 2*w; };
+  const L = function(v){ return f(g(h(v))); };
+  byId("chain-x").addEventListener("input", function(){ x = +this.value; draw(); });
+  function draw(){
+    const b = h(x), c = g(b), l = f(c);
+    const d1 = df(c), d2 = dg(b), d3 = dh(x);
+    const total = d1*d2*d3;
+    const eps = 1e-4;
+    const num = (L(x+eps) - L(x-eps)) / (2*eps);
+    byId("chain-xv").textContent = f2(x);
+    byId("chain-calc").innerHTML =
+      "b = 2x + 0.5 = <b>" + f3(b) + "</b><br>" +
+      "c = tanh(b) = <b>" + f3(c) + "</b><br>" +
+      "L = c\u00b2 = <b>" + f3(l) + "</b><br><br>" +
+      "dL/dc = 2c = <b>" + f3(d1) + "</b><br>" +
+      "dc/db = 1 - tanh\u00b2(b) = <b>" + f3(d2) + "</b><br>" +
+      "db/dx = 2 = <b>" + f3(d3) + "</b><br><br>" +
+      "product = " + f3(d1) + " \u00d7 " + f3(d2) + " \u00d7 " + f3(d3) + " = <b>" + f3(total) + "</b>";
+    byId("chain-msg").innerHTML = "Finite difference check: <strong>" + f3(num) +
+      "</strong> against the analytic <strong>" + f3(total) + "</strong>. They agree to " +
+      (Math.abs(num - total) < 1e-4 ? "four decimals" : "within " + f3(Math.abs(num-total))) +
+      ". If one link in the chain has a small derivative, the whole product is small: that is the vanishing gradient, arising from multiplication rather than from any single layer being broken.";
+    const W = 340, H = 230, pad = 32;
+    const svg = plotHost("chain-plot", W, H);
+    const ax = axes(svg, W, H, pad, [-2, 2], [-2.2, 1.4], "x", "L(x) in teal, dL/dx in amber");
+    const cL = [], cD = [];
+    for (let v = -2; v <= 2.001; v += 0.02){
+      cL.push([ax.X(v), ax.Y(L(v))]);
+      const bb = h(v);
+      cD.push([ax.X(v), ax.Y(Math.max(-2.2, Math.min(1.4, df(g(bb))*dg(bb)*dh(v))))]);
+    }
+    curve(svg, cD, "var(--amber)", 2);
+    curve(svg, cL, "var(--teal)", 2.6);
+    svg.appendChild(sv("circle", {cx:ax.X(x), cy:ax.Y(l), r:5, fill:"var(--rose)"}));
+  }
+  sub(draw);
+})();
+
+/* ================= Part 7 ================= */
+(function part7(){
+  function draw(){
+    const fp = forward(NET, DATA[FOCUS].x);
+    const p = fp.p, y = DATA[FOCUS].y, yv = oneHot(y);
+    let h = '<table class="grid"><tr><th></th><th>&part;/&part;z\u2081</th><th>&part;/&part;z\u2082</th><th>&part;/&part;z\u2083</th></tr>';
+    for (let i = 0; i < 3; i++){
+      h += '<tr><th class="rowh">&part;p' + (i+1) + "</th>";
+      for (let j = 0; j < 3; j++){
+        const v = i === j ? p[i]*(1-p[i]) : -p[i]*p[j];
+        h += '<td class="' + (i === j ? "pos" : "neg") + '">' + f3(v) + "</td>";
+      }
+      h += "</tr>";
+    }
+    byId("jac-table").innerHTML = h + "</table>";
+    byId("pmy-calc").innerHTML =
+      "p = [" + p.map(f3).join(", ") + "]<br>" +
+      "y = [" + yv.join(", ") + "] &nbsp; (" + F().classes[y] + ")<br><br>" +
+      "&part;L/&part;z = p - y = [<b>" + p.map(function(v, i){ return f3(v - yv[i]); }).join(", ") + "</b>]";
+    byId("pmy-msg").innerHTML = "Read the signs. The true class carries a <strong>negative</strong> value, so its score is pushed up. The other two carry positive values, so their scores are pushed down. The size of each push is exactly how much probability mass sits in the wrong place, which is as direct an error signal as one could ask for.";
+  }
+  sub(draw);
+})();
+
+/* ================= Part 8 ================= */
+(function part8(){
+  /* 1D */
+  const J = function(w){ return 0.6*(w-1.4)*(w-1.4) + 0.15*Math.sin(3*w) + 0.4; };
+  const dJ = function(w){ return 1.2*(w-1.4) + 0.45*Math.cos(3*w); };
+  let w = -1.6, lr = 0.25, path = [-1.6], timer = null;
+  byId("gd-lr").addEventListener("input", function(){ lr = +this.value; byId("gd-lrv").textContent = f2(lr); draw(); });
+  byId("gd-step").addEventListener("click", function(){ step(); });
+  byId("gd-reset").addEventListener("click", function(){ if (timer) clearInterval(timer); w = -1.6; path = [w]; draw(); });
+  byId("gd-run").addEventListener("click", function(){
+    if (timer) clearInterval(timer);
+    let n = 0;
+    timer = setInterval(function(){ step(); if (++n >= 25){ clearInterval(timer); timer = null; } }, REDUCED ? 1 : 110);
+  });
+  function step(){
+    const gr = dJ(w);
+    w = w - lr*gr;
+    if (!isFinite(w) || Math.abs(w) > 8) w = Math.sign(w)*8;
+    path.push(w);
+    if (path.length > 60) path.shift();
+    draw();
+  }
+  function draw(){
+    byId("gd-lrv").textContent = f2(lr);
+    const W = 340, H = 240, pad = 30;
+    const svg = plotHost("gd-plot", W, H);
+    const ax = axes(svg, W, H, pad, [-3, 4], [0, 6], "parameter w", "loss");
+    const c = [];
+    for (let v = -3; v <= 4.001; v += 0.03) c.push([ax.X(v), ax.Y(Math.min(6, J(v)))]);
+    curve(svg, c, "var(--teal)", 2.4);
+    path.forEach(function(v, i){
+      svg.appendChild(sv("circle", {cx:ax.X(v), cy:ax.Y(Math.min(6, J(v))), r:2.6,
+        fill:"var(--amber)", opacity:0.25 + 0.75*i/Math.max(1, path.length-1)}));
+    });
+    svg.appendChild(sv("circle", {cx:ax.X(w), cy:ax.Y(Math.min(6, J(w))), r:6, fill:"var(--rose)"}));
+    const gr = dJ(w);
+    byId("gd-calc").innerHTML =
+      "w = <b>" + f3(w) + "</b><br>loss J(w) = <b>" + f3(J(w)) + "</b><br>slope dJ/dw = <b>" + f3(gr) + "</b><br><br>" +
+      "next w = " + f3(w) + " - " + f2(lr) + "\u00d7" + f3(gr) + " = <b>" + f3(w - lr*gr) + "</b>";
+    byId("gd-msg").innerHTML = Math.abs(gr) < 0.05
+      ? "The slope is nearly zero, so the steps have almost stopped. This is a minimum, though on a real loss surface there is no guarantee it is the lowest one."
+      : lr > 0.95
+        ? "At this learning rate each step overshoots the valley and lands higher up the far side. Watch the trail bounce outward rather than settle."
+        : "The slope is " + f3(gr) + ", so the step moves " + (gr > 0 ? "left" : "right") + " by " + f3(Math.abs(lr*gr)) + ". Steps shrink automatically as the slope flattens, which is why the ball slows near the bottom without anyone telling it to.";
+  }
+
+  /* 2D */
+  const J2 = function(a, b){ return 0.5*(a-1.2)*(a-1.2) + 1.8*(b+0.6)*(b+0.6) + 0.5*a*b; };
+  const dA = function(a, b){ return (a-1.2) + 0.5*b; };
+  const dB = function(a, b){ return 3.6*(b+0.6) + 0.5*a; };
+  let A2 = -1.8, B2 = 1.5, mode = "sim", path2 = [[-1.8, 1.5]], t2 = null, tick = 0;
+  byId("gd2-mode").addEventListener("click", function(ev){
+    const b = ev.target.closest("button"); if (!b) return;
+    [].forEach.call(this.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+    b.classList.add("on"); mode = b.dataset.m; reset2();
+  });
+  function reset2(){ if (t2) clearInterval(t2); A2 = -1.8; B2 = 1.5; path2 = [[A2, B2]]; tick = 0; draw2(); }
+  function step2(){
+    const lr2 = 0.18;
+    if (mode === "sim"){
+      const ga = dA(A2, B2), gb = dB(A2, B2);
+      A2 -= lr2*ga; B2 -= lr2*gb;
+    } else {
+      if (tick % 2 === 0) A2 -= lr2*2*dA(A2, B2);
+      else B2 -= lr2*2*dB(A2, B2);
+      tick++;
+    }
+    path2.push([A2, B2]);
+    draw2();
+  }
+  byId("gd2-step").addEventListener("click", step2);
+  byId("gd2-reset").addEventListener("click", reset2);
+  byId("gd2-run").addEventListener("click", function(){
+    if (t2) clearInterval(t2);
+    let n = 0;
+    t2 = setInterval(function(){ step2(); if (++n >= 30){ clearInterval(t2); t2 = null; } }, REDUCED ? 1 : 90);
+  });
+  function draw2(){
+    const W = 340, H = 260, pad = 30;
+    const svg = plotHost("contour", W, H);
+    const ax = axes(svg, W, H, pad, [-3, 3], [-2.5, 2.5], "w\u2090", "w\u1d47");
+    [0.4, 1.2, 2.6, 4.6, 7.2, 10.5].forEach(function(lvl){
+      const pts = [];
+      for (let k = 0; k <= 90; k++){
+        const th = 2*Math.PI*k/90;
+        let lo = 0, hi = 6;
+        for (let it = 0; it < 26; it++){
+          const mid = (lo+hi)/2;
+          const a = 1.0 + mid*Math.cos(th), b = -0.75 + mid*Math.sin(th);
+          if (J2(a, b) < lvl) lo = mid; else hi = mid;
+        }
+        pts.push([ax.X(1.0 + lo*Math.cos(th)), ax.Y(-0.75 + lo*Math.sin(th))]);
+      }
+      pts.push(pts[0]);
+      curve(svg, pts, "var(--line-strong)", 1);
+    });
+    for (let i = 1; i < path2.length; i++){
+      svg.appendChild(sv("line", {x1:ax.X(path2[i-1][0]), y1:ax.Y(path2[i-1][1]),
+        x2:ax.X(path2[i][0]), y2:ax.Y(path2[i][1]), stroke:"var(--amber)", "stroke-width":"2"}));
+    }
+    svg.appendChild(sv("circle", {cx:ax.X(A2), cy:ax.Y(B2), r:5.5, fill:"var(--rose)"}));
+    byId("gd2-calc").innerHTML =
+      "w\u2090 = <b>" + f3(A2) + "</b>, w\u1d47 = <b>" + f3(B2) + "</b><br>loss = <b>" + f3(J2(A2, B2)) + "</b><br>" +
+      "gradient = [" + f3(dA(A2, B2)) + ", " + f3(dB(A2, B2)) + "]<br>steps taken: " + (path2.length - 1);
+    byId("gd2-msg").innerHTML = mode === "sim"
+      ? "Both components come from the same evaluation of the gradient at the current point, and both parameters move at once. One forward pass, one backward pass, every parameter updated."
+      : "Here only one parameter moves per step, so the path turns at right angles and takes longer. Worse, each move needs its own gradient evaluation, which on a real network means one full pass per parameter instead of one pass in total.";
+    byId("theta-size").textContent = "24";
+  }
+  reset2();
+  draw();
+})();
+
+/* ================= Part 9 ================= */
+(function part9(){
+  let k = 0;
+  const N = 10;
+  function draw(){
+    const d = DATA[FOCUS];
+    const fp = forward(NET, d.x);
+    const bp = backward(NET, fp, d.y);
+    const yv = oneHot(d.y);
+    byId("bp-title").textContent = "Step " + k + " of " + N;
+    const steps = [
+      ["Start", "The inputs of one " + F().unit + ": x = [" + d.x.map(f2).join(", ") + "], and the truth is " + F().classes[d.y] + ".",
+       "Nothing has been computed yet. The 24 parameters are whatever the last training left them at."],
+      ["Forward, hidden pre-activations", "z\u2081 = W\u2081x + b\u2081 = [" + fp.z1.map(f3).join(", ") + "]",
+       "Three weighted sums, computed in parallel and independently of each other."],
+      ["Forward, hidden activations", "a\u2081 = " + ACTS[ACT].label + "(z\u2081) = [" + fp.a1.map(f3).join(", ") + "]",
+       "The only nonlinear step in the forward pass."],
+      ["Forward, output scores", "z\u2082 = W\u2082a\u2081 + b\u2082 = [" + fp.z2.map(f3).join(", ") + "]",
+       "Three unbounded numbers, one per class. They are not probabilities yet."],
+      ["Forward, softmax", "p = softmax(z\u2082) = [" + fp.p.map(f3).join(", ") + "]",
+       "Now they are probabilities: each in (0,1) and summing to one."],
+      ["The loss", "L = -ln(p[" + (d.y+1) + "]) = -ln(" + f3(fp.p[d.y]) + ") = <b>" + f3(ceLoss(fp.p, d.y)) + "</b>",
+       "Cross entropy reads only the probability given to the true class."],
+      ["Backward, the error signal", "&part;L/&part;z\u2082 = p - y = [" + bp.dz2.map(f3).join(", ") + "]",
+       "Softmax and cross entropy collapse into this one subtraction. Negative on the true class, positive on the others."],
+      ["Backward, output layer gradients", "&part;L/&part;W\u2082 = (p - y) a\u2081\u1d40, first row = [" + bp.dW2[0].map(f3).join(", ") + "]<br>&part;L/&part;b\u2082 = [" + bp.db2.map(f3).join(", ") + "]",
+       "Each weight gradient is its own error signal times the activation it multiplied on the way forward. A weight that carried a large activation gets a large share of the blame."],
+      ["Backward, through the activation", "&part;L/&part;a\u2081 = W\u2082\u1d40(p - y) = [" + bp.da1.map(f3).join(", ") + "]<br>&part;L/&part;z\u2081 = that, times " + ACTS[ACT].label + "'(z\u2081) = [" + bp.dz1.map(f3).join(", ") + "]",
+       "The signal travels back through the same weights it came forward through, then is multiplied by the local slope. Where the slope is zero, the signal stops dead."],
+      ["Backward, hidden layer gradients", "&part;L/&part;W\u2081 = &part;L/&part;z\u2081 x\u1d40, first row = [" + bp.dW1[0].map(f3).join(", ") + "]<br>&part;L/&part;b\u2081 = [" + bp.db1.map(f3).join(", ") + "]",
+       "Same shape of rule as the layer above. This is why one implementation per layer type is enough for any depth."],
+      ["Update", "Every parameter moves at once: &theta; &larr; &theta; - &eta;&nabla;L. With &eta; = 0.4 the first weight of W\u2082 goes from " +
+        f3(NET.W2[0][0]) + " to " + f3(NET.W2[0][0] - 0.4*bp.dW2[0][0]) + ".",
+       "One forward pass and one backward pass produced a direction for all 24 numbers. Press Restart, or use the training card below to repeat this a few hundred times."]
+    ];
+    const s = steps[Math.min(k, N)];
+    byId("bp-where").innerHTML = '<span class="k">' + (k <= 5 ? "forward pass" : "backward pass") + "</span> &middot; " + s[0];
+    byId("bp-calc").innerHTML = s[1];
+    byId("bp-msg").innerHTML = s[2];
+
+    const svg = plotHost("bp-stage", 360, 250);
+    const cols = [46, 180, 314];
+    const lit = [k >= 1, k >= 3];
+    const back = k >= 6;
+    for (let L = 0; L < 2; L++)
+      for (let i = 0; i < 3; i++)
+        for (let j = 0; j < 3; j++){
+          const w = L === 0 ? NET.W1[j][i] : NET.W2[j][i];
+          const active = back ? (L === 1 ? k >= 7 : k >= 9) : lit[L];
+          svg.appendChild(sv("line", {x1:cols[L]+17, y1:62+i*63, x2:cols[L+1]-17, y2:62+j*63,
+            stroke:back ? "var(--amber)" : (w > 0 ? "var(--teal)" : "var(--rose)"),
+            "stroke-width":Math.min(3.6, 0.5 + Math.abs(w)*1.7), opacity:active ? 0.8 : 0.16}));
+        }
+    const vals = [fp.x, k >= 2 ? fp.a1 : (k >= 1 ? fp.z1 : null), k >= 4 ? fp.p : (k >= 3 ? fp.z2 : null)];
+    for (let L = 0; L < 3; L++)
+      for (let i = 0; i < 3; i++){
+        const x = cols[L], y = 62 + i*63;
+        const on = vals[L] !== null;
+        svg.appendChild(sv("circle", {cx:x, cy:y, r:17,
+          fill:on ? (L === 2 && k >= 4 && i === d.y ? "var(--rose)" : "var(--panel)") : "rgba(16,27,51,.04)",
+          stroke:"var(--ink)", "stroke-width":"2"}));
+        const t = sv("text", {x:x, y:y});
+        t.setAttribute("style", "font-family:var(--mono);font-size:10.5px;text-anchor:middle;dominant-baseline:central;fill:" +
+          (L === 2 && k >= 4 && i === d.y ? "#fff" : "var(--ink)"));
+        t.textContent = on ? f2(vals[L][i]) : "?";
+        svg.appendChild(t);
+      }
+    const dir = sv("text", {x:180, y:28});
+    dir.setAttribute("style", "font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;fill:" + (back ? "var(--amber)" : "var(--muted)") + ";text-anchor:middle");
+    dir.textContent = back ? "gradients flowing backward" : "values flowing forward";
+    svg.appendChild(dir);
+
+    byId("bp-bars").innerHTML = fp.p.map(function(v, i){
+      return '<div class="barrow' + (i === d.y ? " truth" : "") + '"><span>' + F().classes[i] + (i === d.y ? " (true)" : "") +
+        '</span><div class="track"><i style="width:' + (k >= 4 ? (v*100).toFixed(1) : 0) + '%"></i></div>' +
+        '<span class="num">' + (k >= 4 ? f3(v) : "-") + "</span></div>";
+    }).join("");
+    byId("bp-back").disabled = k <= 0;
+    byId("bp-next").disabled = k >= N;
+  }
+  byId("bp-next").addEventListener("click", function(){ k = Math.min(N, k+1); draw(); });
+  byId("bp-back").addEventListener("click", function(){ k = Math.max(0, k-1); draw(); });
+  byId("bp-reset").addEventListener("click", function(){ k = 0; draw(); });
+  sub(draw);
+})();
+
+/* ================= training ================= */
+(function training(){
+  let hist = [], lr = 0.4, timer = null;
+  byId("tr-lr").addEventListener("input", function(){ lr = +this.value; byId("tr-lrv").textContent = f2(lr); });
+  byId("tr-1").addEventListener("click", function(){ hist.push(epoch(NET, lr)); refresh(); });
+  byId("tr-reset").addEventListener("click", function(){
+    if (timer) clearInterval(timer);
+    NET = initNet(); hist = []; refresh();
+  });
+  byId("tr-run").addEventListener("click", function(){
+    if (timer){ clearInterval(timer); timer = null; return; }
+    let n = 0;
+    timer = setInterval(function(){
+      for (let i = 0; i < 4; i++){ hist.push(epoch(NET, lr)); n++; }
+      refresh();
+      if (n >= 200){ clearInterval(timer); timer = null; }
+    }, REDUCED ? 1 : 40);
+  });
+  function draw(){
+    byId("tr-lrv").textContent = f2(lr);
+    const W = 340, H = 230, pad = 34;
+    const svg = plotHost("loss-plot", W, H);
+    const maxL = Math.max(1.4, hist.length ? hist[0].loss : 1.4);
+    const ax = axes(svg, W, H, pad, [0, Math.max(20, hist.length)], [0, maxL], "epoch", "mean loss, teal");
+    if (hist.length > 1){
+      curve(svg, hist.map(function(h, i){ return [ax.X(i), ax.Y(Math.min(maxL, h.loss))]; }), "var(--teal)", 2.4);
+      curve(svg, hist.map(function(h, i){ return [ax.X(i), ax.Y(h.acc*maxL)]; }), "var(--amber)", 1.8);
+    }
+    let t = '<table class="grid"><tr><th>' + F().unit + "</th>";
+    F().inputs.forEach(function(n){ t += "<th>" + n.split(" ")[0].slice(0, 8) + "</th>"; });
+    t += "<th>truth</th><th>p(true)</th></tr>";
+    DATA.forEach(function(d, i){
+      const fp = forward(NET, d.x);
+      const ok = fp.p.indexOf(Math.max.apply(null, fp.p)) === d.y;
+      t += '<tr><th class="rowh">' + (i+1) + (i === FOCUS ? " *" : "") + "</th>";
+      d.x.forEach(function(v){ t += "<td>" + f2(v) + "</td>"; });
+      t += "<td>" + F().classes[d.y].split(",")[0].slice(0, 12) + '</td><td class="' + (ok ? "pos" : "neg") + '">' + f3(fp.p[d.y]) + "</td></tr>";
+    });
+    byId("data-table").innerHTML = t + "</table>";
+    const last = hist.length ? hist[hist.length-1] : null;
+    byId("tr-msg").innerHTML = last
+      ? "After <strong>" + hist.length + "</strong> epochs: mean loss <strong>" + f3(last.loss) +
+        "</strong>, accuracy <strong>" + Math.round(last.acc*100) + " percent</strong>. The amber line is accuracy on the same scale. " +
+        (last.acc === 1 ? "Every example is now classified correctly, and the weight tables in Part 02 have changed to make that true."
+                        : "Keep training, raise the learning rate, or switch the activation in Part 03 and watch how much the choice matters.")
+      : "The weights start from a fixed pseudo-random seed, so everyone begins from the same place. Press Train and watch the loss fall. The example marked with a star is the one stepped through above.";
+  }
+  sub(draw);
+})();
+
+/* ================= boards ================= */
+function makeBoard(host, big){
+  const wrap = document.createElement("div");
+  wrap.innerHTML =
+    '<div class="row" style="justify-content:space-between;margin-bottom:9px">' +
+    '<div class="row colors"></div><div class="row sizes"></div>' +
+    '<div class="row"><button class="btn undo">Undo last</button><button class="btn clr">Clear</button>' +
+    '<button class="btn primary save">Save as image</button></div></div>' +
+    '<div class="board"><canvas class="pad' + (big ? " big" : "") + '"></canvas></div>' +
+    '<p class="hint status" style="margin-top:8px"></p>';
+  host.appendChild(wrap);
+  const cv = wrap.querySelector("canvas");
+  const ctx = cv.getContext ? cv.getContext("2d") : null;
+  if (!ctx) return null;
+  const COLORS = ["#101B33", "#0F7A83", "#DE9126", "#A62B54"];
+  const SIZES = [2, 4, 8];
+  let color = COLORS[0], width = SIZES[1], strokes = [], live = null;
+  COLORS.forEach(function(c, i){
+    const b = document.createElement("button");
+    b.className = "swatch" + (i === 0 ? " on" : "");
+    b.style.background = c;
+    b.setAttribute("aria-label", "pen colour " + (i+1));
+    b.addEventListener("click", function(){
+      color = c;
+      [].forEach.call(wrap.querySelectorAll(".swatch"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+    });
+    wrap.querySelector(".colors").appendChild(b);
+  });
+  SIZES.forEach(function(w, i){
+    const b = document.createElement("button");
+    b.className = "sizebtn" + (i === 1 ? " on" : "");
+    b.innerHTML = '<i style="width:' + (w+2) + "px;height:" + (w+2) + 'px"></i>';
+    b.setAttribute("aria-label", "pen width " + w);
+    b.addEventListener("click", function(){
+      width = w;
+      [].forEach.call(wrap.querySelectorAll(".sizebtn"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+    });
+    wrap.querySelector(".sizes").appendChild(b);
+  });
+  function paper(c, w, h){
+    c.fillStyle = "#FFFFFF"; c.fillRect(0, 0, w, h);
+    c.fillStyle = "rgba(16,27,51,.13)";
+    for (let x = 22; x < w; x += 22)
+      for (let y = 22; y < h; y += 22){ c.beginPath(); c.arc(x, y, 1, 0, 6.284); c.fill(); }
+  }
+  function paint(c, list){
+    c.lineCap = "round"; c.lineJoin = "round";
+    list.forEach(function(s){
+      if (!s.pts.length) return;
+      c.strokeStyle = s.color; c.lineWidth = s.width;
+      c.beginPath(); c.moveTo(s.pts[0].x, s.pts[0].y);
+      if (s.pts.length === 1) c.lineTo(s.pts[0].x + 0.1, s.pts[0].y + 0.1);
+      for (let i = 1; i < s.pts.length; i++) c.lineTo(s.pts[i].x, s.pts[i].y);
+      c.stroke();
+    });
+  }
+  function redraw(){
+    const r = cv.getBoundingClientRect();
+    paper(ctx, r.width, r.height);
+    paint(ctx, strokes.concat(live ? [live] : []));
+    wrap.querySelector(".status").textContent = strokes.length
+      ? strokes.length + (strokes.length === 1 ? " stroke on this board" : " strokes on this board")
+      : "Empty board. Draw with the mouse, a stylus or a finger.";
+  }
+  function fit(){
+    const r = cv.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.max(1, Math.round(r.width*dpr));
+    cv.height = Math.max(1, Math.round(r.height*dpr));
+    if (ctx.setTransform) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    redraw();
+  }
+  function at(ev){
+    const r = cv.getBoundingClientRect();
+    return {x:ev.clientX - r.left, y:ev.clientY - r.top};
+  }
+  cv.addEventListener("pointerdown", function(ev){
+    ev.preventDefault();
+    if (cv.setPointerCapture) cv.setPointerCapture(ev.pointerId);
+    live = {color:color, width:width, pts:[at(ev)]};
+    redraw();
+  });
+  cv.addEventListener("pointermove", function(ev){ if (live){ live.pts.push(at(ev)); redraw(); } });
+  function end(){ if (live){ strokes.push(live); live = null; redraw(); } }
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointerleave", end);
+  cv.addEventListener("pointercancel", end);
+  wrap.querySelector(".undo").addEventListener("click", function(){ strokes.pop(); redraw(); });
+  wrap.querySelector(".clr").addEventListener("click", function(){
+    if (strokes.length && !window.confirm("Clear this board? It cannot be undone.")) return;
+    strokes = []; live = null; redraw();
+  });
+  wrap.querySelector(".save").addEventListener("click", function(){
+    const r = cv.getBoundingClientRect();
+    const out = document.createElement("canvas");
+    out.width = Math.round(r.width*2); out.height = Math.round(r.height*2);
+    const c = out.getContext("2d");
+    c.setTransform(2, 0, 0, 2, 0, 0);
+    paper(c, r.width, r.height); paint(c, strokes);
+    const d = new Date(), p2 = function(n){ return (n < 10 ? "0" : "") + n; };
+    const a = document.createElement("a");
+    a.download = "nn-board-" + d.getFullYear() + p2(d.getMonth()+1) + p2(d.getDate()) + "-" + p2(d.getHours()) + p2(d.getMinutes()) + ".png";
+    a.href = out.toDataURL("image/png");
+    a.click();
+  });
+  window.addEventListener("resize", fit);
+  setTimeout(fit, 0);
+  return {fit:fit};
+}
+
+(function boards(){
+  const main = byId("board-card");
+  if (main) makeBoard(main, true);
+
+  [].forEach.call(document.querySelectorAll(".card"), function(card){
+    if (card.id === "board-card") return;
+    const row = document.createElement("div");
+    row.className = "fsrow";
+    const sketch = document.createElement("button");
+    sketch.className = "tinybtn";
+    sketch.textContent = "Sketch";
+    row.appendChild(sketch);
+    card.appendChild(row);
+    let panel = null, board = null;
+    sketch.addEventListener("click", function(){
+      if (!panel){
+        panel = document.createElement("div");
+        panel.className = "boardwrap";
+        card.insertBefore(panel, row);
+        board = makeBoard(panel, false);
+      } else if (panel.style.display === "none"){
+        panel.style.display = "";
+        if (board) board.fit();
+      } else {
+        panel.style.display = "none";
+      }
+      const open = panel.style.display !== "none";
+      sketch.classList.toggle("on", open);
+      sketch.textContent = open ? "Hide sketch" : "Sketch";
+    });
+    card.__fsrow = row;
+  });
+})();
+
+/* ================= full screen and spy ================= */
+(function fullscreen(){
+  const enabled = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+  if (!enabled) return;
+  function request(el){ const f = el.requestFullscreen || el.webkitRequestFullscreen; if (f) f.call(el); }
+  function leave(){ const f = document.exitFullscreen || document.webkitExitFullscreen; if (f) f.call(document); }
+  function current(){ return document.fullscreenElement || document.webkitFullscreenElement || null; }
+  const buttons = [];
+  function attach(btn, target){
+    buttons.push({btn:btn, target:target});
+    btn.addEventListener("click", function(){ current() === target ? leave() : request(target); });
+  }
+  [].forEach.call(document.querySelectorAll(".card"), function(card){
+    const row = card.__fsrow || (function(){
+      const r = document.createElement("div"); r.className = "fsrow"; card.appendChild(r); return r;
+    })();
+    const b = document.createElement("button");
+    b.className = "tinybtn";
+    b.textContent = "Full screen";
+    row.appendChild(b);
+    attach(b, card);
+  });
+  const page = document.createElement("button");
+  page.className = "tinybtn"; page.id = "page-fs"; page.textContent = "Full screen";
+  document.body.appendChild(page);
+  attach(page, document.documentElement);
+  function sync(){
+    const c = current();
+    buttons.forEach(function(x){ x.btn.textContent = (c === x.target) ? "Exit full screen" : "Full screen"; });
+  }
+  document.addEventListener("fullscreenchange", sync);
+  document.addEventListener("webkitfullscreenchange", sync);
+})();
+
+(function spy(){
+  const links = [].slice.call(document.querySelectorAll(".rail a"));
+  const secs = links.map(function(a){ return byId(a.dataset.sec); });
+  function upd(){
+    let best = 0;
+    secs.forEach(function(s, i){ if (s && s.getBoundingClientRect().top < window.innerHeight*0.36) best = i; });
+    links.forEach(function(a, i){ a.classList.toggle("on", i === best); });
+  }
+  window.addEventListener("scroll", upd, {passive:true});
+  upd();
+})();
+
+refresh();
+</script>
+</body>
+</html>

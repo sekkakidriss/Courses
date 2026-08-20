@@ -163,6 +163,26 @@ const LECTURES = [
     ],
     tags:["NLP","TF-IDF","cosine similarity","quiz"],
     motif:"text"
+  },
+  {
+    title:"Neural networks",
+    subject:"From one neuron to backpropagation, on the field of your choice",
+    href:"neural-networks-lecture.html",
+    status:"ready",
+    field:"Data science",
+    parts:[
+      "The essential idea: a neuron, parameters, and the four step loop",
+      "Forward propagation: multiple inputs, multiple outputs, matrix form",
+      "Activation functions, and why two linear layers are one",
+      "Argmax and softmax",
+      "Cross entropy",
+      "The chain rule, checked against a finite difference",
+      "The softmax and cross entropy derivatives, collapsing to p minus y",
+      "Gradient descent, and updating every parameter at once",
+      "Backpropagation step by step, then live training"
+    ],
+    tags:["backpropagation","softmax","gradient descent","boards in every block"],
+    motif:"net"
   }
 ];
 
@@ -227,7 +247,27 @@ function motifBlank(){
   svg.appendChild(t);
   return svg;
 }
-const MOTIFS = {graph:motifGraph, text:motifText, blank:motifBlank};
+function motifNet(){
+  const svg = sv("svg", {viewBox:"0 0 360 120"});
+  const cols = [70, 180, 290];
+  const ys = [26, 60, 94];
+  for (let L = 0; L < 2; L++)
+    for (let i = 0; i < 3; i++)
+      for (let j = 0; j < 3; j++){
+        const pos = (i + j + L) % 3 !== 0;
+        svg.appendChild(sv("line", {x1:cols[L]+13, y1:ys[i], x2:cols[L+1]-13, y2:ys[j],
+          stroke:pos ? "var(--teal)" : "var(--rose)", "stroke-width":(0.8 + ((i*3+j+L) % 3)), opacity:0.55}));
+      }
+  const fills = [["var(--panel)","var(--panel)","var(--panel)"],
+                 ["var(--panel)","var(--panel)","var(--panel)"],
+                 ["var(--panel)","var(--rose)","var(--panel)"]];
+  for (let L = 0; L < 3; L++)
+    for (let i = 0; i < 3; i++)
+      svg.appendChild(sv("circle", {cx:cols[L], cy:ys[i], r:12, fill:fills[L][i],
+        stroke:"var(--ink)", "stroke-width":"1.9"}));
+  return svg;
+}
+const MOTIFS = {graph:motifGraph, text:motifText, net:motifNet, blank:motifBlank};
 
 /* ---------- render ---------- */
 let filter = "All";
