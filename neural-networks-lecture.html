@@ -119,6 +119,17 @@ table.grid th{background:rgba(16,27,51,.05);color:var(--muted)}
 table.grid td.pos{background:rgba(15,122,131,.13)} table.grid td.neg{background:rgba(166,43,84,.11)}
 table.grid td.up{background:rgba(222,145,38,.2)}
 .scrollx{overflow-x:auto;padding-bottom:5px}
+svg.chart{width:100%;height:auto;display:block;background:rgba(16,27,51,.025);border:1px solid var(--line);border-radius:10px;margin-top:9px}
+.viz{border:1px solid var(--line);border-radius:11px;padding:11px;background:rgba(16,27,51,.02)}
+svg.gsvg{width:100%;height:auto;display:block}
+.gnode,.gedge{cursor:pointer}
+.gnode circle,.gnode rect{transition:fill .15s,stroke .15s}
+.gexp{font-family:var(--mono);font-size:12.4px;line-height:1.7;background:var(--panel);border:1px solid var(--line);
+  border-radius:9px;padding:9px 11px;margin-top:9px;min-height:46px}
+.gexp b{color:var(--rose)}
+.gexp .t{font-family:var(--body);font-size:13px;color:var(--muted);display:block;margin-top:4px}
+.gtools{margin-bottom:9px}
+.cap{margin-top:6px}
 .bars{display:grid;gap:5px;margin-top:8px}
 .barrow{display:grid;grid-template-columns:132px 1fr 56px;gap:8px;align-items:center;font-size:13.2px}
 .barrow .track{height:15px;border-radius:6px;background:rgba(16,27,51,.07);overflow:hidden}
@@ -203,9 +214,10 @@ footer{border-top:1px solid var(--line);padding:20px 0 60px;color:var(--muted);f
     <div class="eyebrow">Interactive lecture</div>
     <h1>Neural networks</h1>
     <p style="color:var(--muted);max-width:72ch;margin-top:12px">
-      Twelve blocks, each built the same way: the idea in words, then drawn on the board, then the equation, then the same
-      thing with real numbers, then what it means for <strong id="field-name"></strong>, then one question to check.
-      Every block has its own board: press <strong>Show board</strong> and it opens beside the text.
+      Twelve blocks in <strong>dependency order</strong>: nothing is used before it has been built. First the machine that makes a
+      prediction, then the number that says how wrong it is, and only then the machinery for making it less wrong.
+      Each block has the same six beats: the idea in words, the network drawn as circles and lines you can click,
+      the equation, the same thing with real numbers, what it means for <strong id="field-name"></strong>, and one question to check.
     </p>
   </div>
 </header>
@@ -532,7 +544,7 @@ function neuronVals(){
 
 const BLOCKS=[
 {
- id:"b1", n:1, title:"Essential ideas of a neural network",
+ id:"b1", n:1, appKey:1, title:"Essential ideas of a neural network",
  short:"Essential ideas",
  intuition:function(f){ return "<p>A neural network is a machine that turns numbers into a decision, and whose behaviour is controlled by a set of adjustable knobs. "+
    "Nothing about it is mysterious: it multiplies, it adds, and it bends. "+
@@ -558,105 +570,9 @@ const BLOCKS=[
        "No, the bias is a separate knob and is unaffected."]
  }
 },
+
 {
- id:"b2", n:2, title:"The chain rule",
- short:"Chain rule",
- intuition:function(f){ return "<p>A network is machines feeding machines. To improve a knob deep inside, you must know how a small turn of it changes the final error, "+
-   "even though the knob does not touch the error directly.</p>"+
-   "<p>Think of gears. If the wheel turns twice for one turn of the handle, and the belt moves three centimetres per wheel turn, "+
-   "then the belt moves six centimetres per handle turn. <strong>Rates multiply along a chain.</strong> That is the entire rule.</p>"; },
- math:[
-  {tex:"y = f(g(x))",why:"An outer function applied to an inner one."},
-  {tex:"\\frac{dy}{dx} = \\frac{dy}{dg}\\cdot\\frac{dg}{dx}",punch:true,why:"How fast \\(y\\) responds to \\(g\\), times how fast \\(g\\) responds to \\(x\\)."},
-  {tex:"\\frac{\\partial L}{\\partial w_1} = \\frac{\\partial L}{\\partial a}\\cdot\\frac{\\partial a}{\\partial z}\\cdot\\frac{\\partial z}{\\partial w_1}",punch:true,
-   why:"The same rule inside a neuron. The weight touches \\(z\\), \\(z\\) touches \\(a\\), \\(a\\) touches the loss \\(L\\)."},
-  {tex:"\\frac{\\partial z}{\\partial w_1} = x_1",why:"In \\(z = w_1x_1+w_2x_2+b\\) the knob \\(w_1\\) appears once, multiplied by \\(x_1\\). Everything else is constant with respect to it."}
- ],
- num:"n2", check:{
-  q:"In a chain of three links, one link has a derivative of 0.01 and the others are about 1. What happens to the signal reaching the first knob?",
-  opts:["It is roughly a hundred times smaller","It is unchanged","It doubles","It becomes negative"],
-  a:0,
-  why:["Correct. The factors multiply, so one small link shrinks the whole product. This is exactly what a vanishing gradient is.",
-       "No: multiplying by 0.01 changes the product by a factor of a hundred.",
-       "No, multiplying by a number below 1 shrinks rather than grows the product.",
-       "Not necessarily. The sign comes from the signs of the factors, not from their size."]
- }
-},
-{
- id:"b3", n:3, title:"Gradient descent",
- short:"Gradient descent",
- intuition:function(f){ return "<p>First you need a number that says how wrong the model is: the <strong>loss</strong>. "+
-   "Without it, there is nothing to improve. "+f.app[3]+"</p>"+
-   "<p>The loss depends on the knobs, so picture it as a landscape with a knob on each axis and height equal to the error. "+
-   "Learning is walking downhill. The <strong>gradient</strong> is the slope under your feet, and the <strong>learning rate</strong> is the size of your stride.</p>"; },
- math:[
-  {tex:"L(w) \\text{ measures the mistake as a function of the knob}",why:"Change the knob and the mistake changes. That dependence is what makes improvement possible."},
-  {tex:"\\frac{\\partial L}{\\partial w} > 0 \\;\\Rightarrow\\; \\text{increasing } w \\text{ increases the loss}",why:"So you must move the other way, which is where the minus sign comes from."},
-  {tex:"\\theta_{new} = \\theta_{old} - \\eta\\,\\frac{\\partial L}{\\partial \\theta}",punch:true,why:"The update rule. \\(\\eta\\) is the learning rate, a small positive number you choose."},
-  {tex:"L(\\theta - \\eta\\nabla L) \\approx L(\\theta) - \\eta\\left(\\frac{\\partial L}{\\partial\\theta}\\right)^{2} \\le L(\\theta)",
-   why:"Why it works: substituting the step into the tangent line approximation gives a square, and a square is never negative, so the loss goes down for small enough \\(\\eta\\)."}
- ],
- num:"n3", check:{
-  q:"You set the learning rate very large and the loss starts increasing every step. What has happened?",
-  opts:["The step jumps past the valley and lands higher on the other side","The gradient was computed with the wrong sign","The loss function has no minimum","The model has too few parameters"],
-  a:0,
-  why:["Correct. The tangent line only describes the loss near the current point, so a step too large leaves the region where the approximation holds.",
-       "That would also break things, but the classic symptom of a large \\(\\eta\\) is exactly this overshoot. Reduce \\(\\eta\\) and watch it settle.",
-       "The minimum is still there. The steps are simply too long to land in it.",
-       "The number of parameters does not cause divergence. The stride length does."]
- }
-},
-{
- id:"b4", n:4, title:"Forward propagation",
- short:"Forward propagation",
- intuition:function(f){ return "<p>Forward propagation is just running the machine: numbers enter on the left, and a prediction comes out on the right. "+f.app[4]+"</p>"+
-   "<p>We now use a small network: two inputs, two hidden neurons, three outputs. "+
-   "Each hidden neuron is exactly the neuron of Block 1, and each output neuron is the same thing again, reading the hidden layer instead of the data.</p>"; },
- math:[
-  {tex:"z^{(1)}_1 = W^{(1)}_{11}x_1 + W^{(1)}_{12}x_2 + b^{(1)}_1",why:"The first hidden neuron, written on its own. Read \\(W^{(1)}_{11}\\) as: into hidden neuron 1, from input 1."},
-  {tex:"z^{(1)}_2 = W^{(1)}_{21}x_1 + W^{(1)}_{22}x_2 + b^{(1)}_2",why:"The second one. Same form, different row of weights."},
-  {tex:"a^{(1)}_j = \\sigma\\left(z^{(1)}_j\\right)",why:"Each hidden neuron bends its own total. The activation never mixes neurons."},
-  {tex:"z^{(2)}_i = \\sum_{j=1}^{2} W^{(2)}_{ij}a^{(1)}_j + b^{(2)}_i",why:"The output layer does to the hidden values exactly what the hidden layer did to the data."},
-  {tex:"\\hat{y} = \\mathrm{softmax}\\left(\\mathbf{z}^{(2)}\\right)",punch:true,why:"Three scores turned into three probabilities, which Block 8 explains in full."}
- ],
- num:"n4", check:{
-  q:"In the forward pass, which quantities change when new data arrives, and which stay put?",
-  opts:["\\(x, z, a, \\hat y\\) change; \\(W\\) and \\(b\\) stay","Everything changes","Only \\(\\hat y\\) changes","\\(W\\) and \\(b\\) change; \\(x\\) stays"],
-  a:0,
-  why:["Correct. Weights and biases are fixed during a forward pass and are only touched by the learning step.",
-       "The parameters do not change while predicting. They change only when you update them.",
-       "The intermediate values \\(z\\) and \\(a\\) change too, and they must, since they carry the data forward.",
-       "That is the learning step, not the forward pass."]
- }
-},
-{
- id:"b5", n:5, title:"Optimizing all parameters simultaneously",
- short:"All parameters at once",
- intuition:function(f){ return "<p>The network here has fifteen knobs. It is tempting to tune one, then the next, then the next. That is not what happens. "+
-   "<strong>All fifteen partial derivatives are read off the same evaluation, and all fifteen knobs move in the same step.</strong> "+f.app[5]+"</p>"+
-   "<p>A partial derivative \\(\\partial L/\\partial w_k\\) answers one question: if I nudge this knob alone, holding all others still, how does the error respond? "+
-   "Collect all the answers into a list and you have the <strong>gradient vector</strong>.</p>"; },
- math:[
-  {tex:"\\theta = \\left(W^{(1)}_{11},\\,W^{(1)}_{12},\\,\\ldots,\\,b^{(2)}_3\\right)",why:"Every weight and bias in the network, stacked into one long list. Here it has 15 entries."},
-  {tex:"\\nabla_\\theta L = \\left(\\frac{\\partial L}{\\partial \\theta_1},\\ \\ldots,\\ \\frac{\\partial L}{\\partial \\theta_{15}}\\right)",
-   why:"One partial derivative per knob. Each is measured with the others held still."},
-  {tex:"\\theta_{new} = \\theta - \\eta\\,\\nabla_\\theta L",punch:true,
-   why:"One line covering all fifteen updates. Every entry uses the same \\(\\eta\\) and the same evaluation point."},
-  {tex:"\\text{parameters} \\to \\text{loss} \\to \\text{partial derivatives} \\to \\text{gradient} \\to \\text{simultaneous update}",
-   why:"The chain that this block joins together, and that Block 12 executes end to end."}
- ],
- num:"n5", check:{
-  q:"Why is the gradient computed at one point rather than after each individual knob is moved?",
-  opts:["Because one backward pass yields every partial derivative at once","Because the knobs are independent of each other","Because it is more accurate to move one knob at a time","Because the learning rate would otherwise be negative"],
-  a:0,
-  why:["Correct. That efficiency is the whole reason backpropagation exists: one pass gives the entire gradient.",
-       "They are not independent, which is precisely why they must be evaluated together at the same point.",
-       "Moving one at a time still converges here, but it costs one gradient evaluation per knob, which is impossible at scale.",
-       "The learning rate is chosen by you and is always positive."]
- }
-},
-{
- id:"b6", n:6, title:"Activation functions",
+ id:"b6", n:2, appKey:6, title:"Activation functions",
  short:"Activation functions",
  intuition:function(f){ return "<p>Without a bend, a stack of layers is one layer. Two matrix multiplications in a row are just one matrix multiplication, so depth would buy nothing. "+
    "The activation is the only nonlinear ingredient, and its <strong>slope</strong> is what decides how much learning signal can travel back through it later. "+f.app[6]+"</p>"; },
@@ -679,15 +595,16 @@ const BLOCKS=[
        "0.25 is the maximum, reached at \\(z=0\\), not at \\(z=6\\)."]
  }
 },
+
 {
- id:"b7", n:7, title:"Multiple inputs and multiple outputs",
+ id:"b7", n:3, appKey:7, title:"Multiple inputs and multiple outputs",
  short:"Matrix notation",
  intuition:function(f){ return "<p>You have already done the work: two hidden neurons, each written on its own line. Stacking those lines is all a matrix is. "+
    "<strong>Matrix notation is shorthand, not a new idea.</strong> "+f.app[7]+"</p>"+
    "<p>The one thing to keep straight is which index is which: in \\(W_{ij}\\), the first index \\(i\\) is where the signal is going, the second \\(j\\) is where it came from.</p>"; },
  math:[
   {tex:"\\begin{aligned} z_1 &= W_{11}x_1 + W_{12}x_2 + b_1\\\\ z_2 &= W_{21}x_1 + W_{22}x_2 + b_2 \\end{aligned}",
-   why:"The two lines you already have from Block 4."},
+   why:"The neuron of Block 1, written twice: once for each hidden unit, with its own row of weights."},
   {tex:"\\begin{pmatrix}z_1\\\\z_2\\end{pmatrix} = \\begin{pmatrix}W_{11}&W_{12}\\\\W_{21}&W_{22}\\end{pmatrix}\\begin{pmatrix}x_1\\\\x_2\\end{pmatrix} + \\begin{pmatrix}b_1\\\\b_2\\end{pmatrix}",
    why:"The same two lines stacked. Matrix times vector is defined as row by row, so this is a rewriting, not a claim."},
   {tex:"\\mathbf{z} = W\\mathbf{x} + \\mathbf{b}, \\qquad \\mathbf{a} = f(\\mathbf{z})",punch:true,why:"The compact form used everywhere from here on."},
@@ -704,8 +621,33 @@ const BLOCKS=[
        "Biases have a single index, such as \\(b^{(2)}_3\\)."]
  }
 },
+
 {
- id:"b8", n:8, title:"Argmax and softmax",
+ id:"b4", n:4, appKey:4, title:"Forward propagation",
+ short:"Forward propagation",
+ intuition:function(f){ return "<p>Forward propagation is just running the machine: numbers enter on the left, and a prediction comes out on the right. "+f.app[4]+"</p>"+
+   "<p>We now use a small network: two inputs, two hidden neurons, three outputs. "+
+   "Each hidden neuron is exactly the neuron of Block 1, and each output neuron is the same thing again, reading the hidden layer instead of the data.</p>"; },
+ math:[
+  {tex:"z^{(1)}_1 = W^{(1)}_{11}x_1 + W^{(1)}_{12}x_2 + b^{(1)}_1",why:"The first hidden neuron, written on its own. Read \\(W^{(1)}_{11}\\) as: into hidden neuron 1, from input 1."},
+  {tex:"z^{(1)}_2 = W^{(1)}_{21}x_1 + W^{(1)}_{22}x_2 + b^{(1)}_2",why:"The second one. Same form, different row of weights."},
+  {tex:"a^{(1)}_j = \\sigma\\left(z^{(1)}_j\\right)",why:"Each hidden neuron bends its own total. The activation never mixes neurons."},
+  {tex:"z^{(2)}_i = \\sum_{j=1}^{2} W^{(2)}_{ij}a^{(1)}_j + b^{(2)}_i",why:"The output layer does to the hidden values exactly what the hidden layer did to the data."},
+  {tex:"\\hat{y} = \\mathrm{softmax}\\left(\\mathbf{z}^{(2)}\\right)",punch:true,why:"Three scores turned into three probabilities, which Block 5 explains in full."}
+ ],
+ num:"n4", check:{
+  q:"In the forward pass, which quantities change when new data arrives, and which stay put?",
+  opts:["\\(x, z, a, \\hat y\\) change; \\(W\\) and \\(b\\) stay","Everything changes","Only \\(\\hat y\\) changes","\\(W\\) and \\(b\\) change; \\(x\\) stays"],
+  a:0,
+  why:["Correct. Weights and biases are fixed during a forward pass and are only touched by the learning step.",
+       "The parameters do not change while predicting. They change only when you update them.",
+       "The intermediate values \\(z\\) and \\(a\\) change too, and they must, since they carry the data forward.",
+       "That is the learning step, not the forward pass."]
+ }
+},
+
+{
+ id:"b8", n:5, appKey:8, title:"Argmax and softmax",
  short:"Argmax and softmax",
  intuition:function(f){ return "<p>The output layer produces three raw scores, called logits. They can be negative and they do not sum to anything in particular, so they are not probabilities. "+f.app[8]+"</p>"+
    "<p><strong>Softmax</strong> turns the scores into a probability distribution. <strong>Argmax</strong> then simply reads off which one is largest. "+
@@ -730,8 +672,85 @@ const BLOCKS=[
        "It returns an index, never a negative value."]
  }
 },
+
 {
- id:"b9", n:9, title:"The softmax derivative",
+ id:"b10", n:6, appKey:10, title:"Cross entropy",
+ short:"Cross entropy",
+ intuition:function(f){ return "<p>Now that the outputs are probabilities, the loss should ask one question: how much probability did you put on the class that actually happened. "+f.app[10]+"</p>"+
+   "<p>If the answer is 1, the loss should be 0. As the answer falls toward 0 the model is not just wrong but insistent, and the penalty should grow without limit. "+
+   "The logarithm is what produces that unbounded growth, and it is why a confident mistake is expensive.</p>"; },
+ math:[
+  {tex:"\\mathbf{y} = (y_1,y_2,y_3), \\quad y_i=1 \\text{ for the true class, } 0 \\text{ otherwise}",
+   why:"One hot encoding. The truth written as numbers so it can be multiplied."},
+  {tex:"L = -\\sum_i y_i \\log(\\hat y_i)",punch:true,why:"Cross entropy between the truth and the prediction."},
+  {tex:"= -\\bigl(0\\cdot\\log\\hat y_1 + 1\\cdot\\log\\hat y_t + 0\\cdot\\log\\hat y_3\\bigr) = -\\log \\hat y_t",punch:true,
+   why:"Every term except the true class is multiplied by zero. The sum was never doing any work."},
+  {tex:"\\frac{\\partial L}{\\partial \\hat y_i} = -\\frac{y_i}{\\hat y_i}",
+   why:"Term by term, using \\(\\frac{d}{du}\\log u = 1/u\\). Zero except at the true class, where it is \\(-1/\\hat y_t\\)."}
+ ],
+ num:"n10", check:{
+  q:"Two models are wrong on the same observation. Model A gave the true class probability 0.4, model B gave it 0.01. How do their losses compare?",
+  opts:["B is punished far more: 4.6 against 0.9","They are punished equally, both are wrong","A is punished more because it was closer","Neither is punished, only argmax matters"],
+  a:0,
+  why:["Correct: \\(-\\ln 0.4 \\approx 0.92\\) and \\(-\\ln 0.01 \\approx 4.6\\). Confident mistakes cost much more, and produce much larger gradients.",
+       "Cross entropy is graded, not binary. It reads how much probability the true class received.",
+       "The other way around: more probability on the truth means a smaller loss.",
+       "Argmax is used to read the answer, never to compute the loss."]
+ }
+},
+
+{
+ id:"b3", n:7, appKey:3, title:"Gradient descent",
+ short:"Gradient descent",
+ intuition:function(f){ return "<p>First you need a number that says how wrong the model is: the <strong>loss</strong>. "+
+   "Without it, there is nothing to improve. "+f.app[3]+"</p>"+
+   "<p>The loss depends on the knobs, so picture it as a landscape with a knob on each axis and height equal to the error. "+
+   "Learning is walking downhill. The <strong>gradient</strong> is the slope under your feet, and the <strong>learning rate</strong> is the size of your stride.</p>"; },
+ math:[
+  {tex:"L(w) \\text{ measures the mistake as a function of the knob}",why:"Change the knob and the mistake changes. That dependence is what makes improvement possible."},
+  {tex:"\\frac{\\partial L}{\\partial w} > 0 \\;\\Rightarrow\\; \\text{increasing } w \\text{ increases the loss}",why:"So you must move the other way, which is where the minus sign comes from."},
+  {tex:"\\theta_{new} = \\theta_{old} - \\eta\\,\\frac{\\partial L}{\\partial \\theta}",punch:true,why:"The update rule. \\(\\eta\\) is the learning rate, a small positive number you choose."},
+  {tex:"L(\\theta - \\eta\\nabla L) \\approx L(\\theta) - \\eta\\left(\\frac{\\partial L}{\\partial\\theta}\\right)^{2} \\le L(\\theta)",
+   why:"Why it works: substituting the step into the tangent line approximation gives a square, and a square is never negative, so the loss goes down for small enough \\(\\eta\\)."}
+ ],
+ num:"n3", check:{
+  q:"You set the learning rate very large and the loss starts increasing every step. What has happened?",
+  opts:["The step jumps past the valley and lands higher on the other side","The gradient was computed with the wrong sign","The loss function has no minimum","The model has too few parameters"],
+  a:0,
+  why:["Correct. The tangent line only describes the loss near the current point, so a step too large leaves the region where the approximation holds.",
+       "That would also break things, but the classic symptom of a large \\(\\eta\\) is exactly this overshoot. Reduce \\(\\eta\\) and watch it settle.",
+       "The minimum is still there. The steps are simply too long to land in it.",
+       "The number of parameters does not cause divergence. The stride length does."]
+ }
+},
+
+{
+ id:"b2", n:8, appKey:2, title:"The chain rule",
+ short:"Chain rule",
+ intuition:function(f){ return "<p>A network is machines feeding machines. To improve a knob deep inside, you must know how a small turn of it changes the final error, "+
+   "even though the knob does not touch the error directly.</p>"+
+   "<p>Think of gears. If the wheel turns twice for one turn of the handle, and the belt moves three centimetres per wheel turn, "+
+   "then the belt moves six centimetres per handle turn. <strong>Rates multiply along a chain.</strong> That is the entire rule.</p>"; },
+ math:[
+  {tex:"y = f(g(x))",why:"An outer function applied to an inner one."},
+  {tex:"\\frac{dy}{dx} = \\frac{dy}{dg}\\cdot\\frac{dg}{dx}",punch:true,why:"How fast \\(y\\) responds to \\(g\\), times how fast \\(g\\) responds to \\(x\\)."},
+  {tex:"\\frac{\\partial L}{\\partial w_1} = \\frac{\\partial L}{\\partial a}\\cdot\\frac{\\partial a}{\\partial z}\\cdot\\frac{\\partial z}{\\partial w_1}",punch:true,
+   why:"The same rule inside a neuron. The weight touches \\(z\\), \\(z\\) touches \\(a\\), \\(a\\) touches the loss \\(L\\)."},
+  {tex:"\\frac{\\partial z}{\\partial w_1} = x_1",why:"In \\(z = w_1x_1+w_2x_2+b\\) the knob \\(w_1\\) appears once, multiplied by \\(x_1\\). Everything else is constant with respect to it."}
+ ],
+ num:"n2", check:{
+  q:"In a chain of three links, one link has a derivative of 0.01 and the others are about 1. What happens to the signal reaching the first knob?",
+  opts:["It is roughly a hundred times smaller","It is unchanged","It doubles","It becomes negative"],
+  a:0,
+  why:["Correct. The factors multiply, so one small link shrinks the whole product. This is exactly what a vanishing gradient is.",
+       "No: multiplying by 0.01 changes the product by a factor of a hundred.",
+       "No, multiplying by a number below 1 shrinks rather than grows the product.",
+       "Not necessarily. The sign comes from the signs of the factors, not from their size."]
+ }
+},
+
+{
+ id:"b9", n:9, appKey:9, title:"The softmax derivative",
  short:"Softmax derivative",
  intuition:function(f){ return "<p>Softmax takes three numbers to three numbers, so its derivative is a table of nine: how each output responds to each input. "+
    "The key structural fact comes for free from the intuition: since the probabilities must always sum to one, raising one must lower the others. "+f.app[9]+"</p>"+
@@ -762,43 +781,19 @@ const BLOCKS=[
        "\\(z_j\\) is the variable being differentiated, not a constant."]
  }
 },
+
 {
- id:"b10", n:10, title:"Cross entropy",
- short:"Cross entropy",
- intuition:function(f){ return "<p>Now that the outputs are probabilities, the loss should ask one question: how much probability did you put on the class that actually happened. "+f.app[10]+"</p>"+
-   "<p>If the answer is 1, the loss should be 0. As the answer falls toward 0 the model is not just wrong but insistent, and the penalty should grow without limit. "+
-   "The logarithm is what produces that unbounded growth, and it is why a confident mistake is expensive.</p>"; },
- math:[
-  {tex:"\\mathbf{y} = (y_1,y_2,y_3), \\quad y_i=1 \\text{ for the true class, } 0 \\text{ otherwise}",
-   why:"One hot encoding. The truth written as numbers so it can be multiplied."},
-  {tex:"L = -\\sum_i y_i \\log(\\hat y_i)",punch:true,why:"Cross entropy between the truth and the prediction."},
-  {tex:"= -\\bigl(0\\cdot\\log\\hat y_1 + 1\\cdot\\log\\hat y_t + 0\\cdot\\log\\hat y_3\\bigr) = -\\log \\hat y_t",punch:true,
-   why:"Every term except the true class is multiplied by zero. The sum was never doing any work."},
-  {tex:"\\frac{\\partial L}{\\partial \\hat y_i} = -\\frac{y_i}{\\hat y_i}",
-   why:"Term by term, using \\(\\frac{d}{du}\\log u = 1/u\\). Zero except at the true class, where it is \\(-1/\\hat y_t\\)."}
- ],
- num:"n10", check:{
-  q:"Two models are wrong on the same observation. Model A gave the true class probability 0.4, model B gave it 0.01. How do their losses compare?",
-  opts:["B is punished far more: 4.6 against 0.9","They are punished equally, both are wrong","A is punished more because it was closer","Neither is punished, only argmax matters"],
-  a:0,
-  why:["Correct: \\(-\\ln 0.4 \\approx 0.92\\) and \\(-\\ln 0.01 \\approx 4.6\\). Confident mistakes cost much more, and produce much larger gradients.",
-       "Cross entropy is graded, not binary. It reads how much probability the true class received.",
-       "The other way around: more probability on the truth means a smaller loss.",
-       "Argmax is used to read the answer, never to compute the loss."]
- }
-},
-{
- id:"b11", n:11, title:"The cross entropy derivative",
+ id:"b11", n:10, appKey:11, title:"The cross entropy derivative",
  short:"Cross entropy derivative",
- intuition:function(f){ return "<p>This is the central moment of the lecture. Two awkward derivatives, the one from Block 9 and the one from Block 10, "+
+ intuition:function(f){ return "<p>This is the central moment of the lecture. Two awkward derivatives, the one from Block 9 and the one from Block 6, "+
    "are multiplied together and summed over the three paths, and almost everything cancels. "+f.app[11]+"</p>"+
    "<p>The score \\(z_j\\) does not appear in the loss directly. It moves all three probabilities, and the probabilities move the loss, "+
-   "so this is the chain rule with three paths, exactly as in Block 2.</p>"; },
+   "so this is the chain rule with three paths, exactly as in Block 8.</p>"; },
  math:[
   {tex:"\\frac{\\partial L}{\\partial z_j} = \\sum_{i=1}^{3} \\frac{\\partial L}{\\partial \\hat y_i}\\cdot\\frac{\\partial \\hat y_i}{\\partial z_j}",
    why:"Three paths from the score to the loss, so three terms added."},
   {tex:"= \\sum_i \\left(-\\frac{y_i}{\\hat y_i}\\right)\\hat y_i\\left(\\delta_{ij}-\\hat y_j\\right)",
-   why:"Substituting Block 10 for the first factor and Block 9 for the second. Nothing simplified yet."},
+   why:"Substituting Block 6 for the first factor and Block 9 for the second. Nothing simplified yet."},
   {tex:"= -\\sum_i y_i\\left(\\delta_{ij}-\\hat y_j\\right)",punch:true,
    why:"The \\(\\hat y_i\\) underneath cancels the \\(\\hat y_i\\) in front. This single cancellation is what makes the result clean."},
   {tex:"= -\\sum_i y_i\\delta_{ij} + \\hat y_j\\sum_i y_i",
@@ -818,15 +813,16 @@ const BLOCKS=[
        "1 is the target, not the derivative."]
  }
 },
+
 {
- id:"b12", n:12, title:"Backpropagation, end to end",
+ id:"b12", n:11, appKey:12, title:"Backpropagation, end to end",
  short:"Backpropagation",
  intuition:function(f){ return "<p>Everything now joins up. Forward propagation produces a prediction, cross entropy scores it, "+
-   "the result of Block 11 starts the error travelling backwards, and the chain rule carries it to every knob. "+f.app[12]+"</p>"+
+   "the result of Block 10 starts the error travelling backwards, and the chain rule carries it to every knob. "+f.app[12]+"</p>"+
    "<p>The pattern in one sentence: <strong>the backward pass is the forward pass run in reverse, using the same weights transposed, "+
    "multiplied at each activation by its local slope.</strong></p>"; },
  math:[
-  {tex:"\\boldsymbol{\\delta}^{(2)} = \\hat{\\mathbf{y}} - \\mathbf{y}",why:"The error signal at the output scores, straight from Block 11."},
+  {tex:"\\boldsymbol{\\delta}^{(2)} = \\hat{\\mathbf{y}} - \\mathbf{y}",why:"The error signal at the output scores, straight from Block 10."},
   {tex:"\\frac{\\partial L}{\\partial W^{(2)}_{ij}} = \\delta^{(2)}_i\\,a^{(1)}_j",punch:true,
    why:"Because \\(W^{(2)}_{ij}\\) appears once in \\(z^{(2)}_i\\), multiplied by \\(a^{(1)}_j\\). Blame equals error at the destination times signal at the source."},
   {tex:"\\frac{\\partial L}{\\partial a^{(1)}_j} = \\sum_i \\delta^{(2)}_i W^{(2)}_{ij} = \\left(W^{(2)\\top}\\boldsymbol{\\delta}^{(2)}\\right)_j",
@@ -835,7 +831,7 @@ const BLOCKS=[
    why:"One more link back through the activation. The circle dot means entry by entry, since the activation acts on each neuron separately."},
   {tex:"\\frac{\\partial L}{\\partial W^{(1)}_{jk}} = \\delta^{(1)}_j x_k, \\qquad \\frac{\\partial L}{\\partial b^{(1)}_j} = \\delta^{(1)}_j",
    why:"Identical in form to the output layer, with the data in place of the hidden activations."},
-  {tex:"\\theta_{new} = \\theta - \\eta\\nabla_\\theta L",punch:true,why:"And back to Block 5: every one of the fifteen knobs moves, in the same step."}
+  {tex:"\\theta_{new} = \\theta - \\eta\\nabla_\\theta L",punch:true,why:"And on to Block 12: every one of the fifteen knobs moves, in the same step."}
  ],
  num:"n12", check:{
   q:"A hidden neuron is saturated, so \\(\\sigma'(z) \\approx 0\\). What reaches the weights feeding into it?",
@@ -845,6 +841,33 @@ const BLOCKS=[
        "The weights below depend on \\(\\delta^{(1)}\\), which already carries the slope factor.",
        "The sign is unrelated. A near zero slope shrinks the signal whatever its sign.",
        "Multiplying by a number near zero shrinks rather than doubles."]
+ }
+},
+
+{
+ id:"b5", n:12, appKey:5, title:"Optimizing all parameters simultaneously",
+ short:"All parameters at once",
+ intuition:function(f){ return "<p>The network here has fifteen knobs. It is tempting to tune one, then the next, then the next. That is not what happens. "+
+   "<strong>All fifteen partial derivatives are read off the same evaluation, and all fifteen knobs move in the same step.</strong> "+f.app[5]+"</p>"+
+   "<p>A partial derivative \\(\\partial L/\\partial w_k\\) answers one question: if I nudge this knob alone, holding all others still, how does the error respond? "+
+   "Collect all the answers into a list and you have the <strong>gradient vector</strong>.</p>"; },
+ math:[
+  {tex:"\\theta = \\left(W^{(1)}_{11},\\,W^{(1)}_{12},\\,\\ldots,\\,b^{(2)}_3\\right)",why:"Every weight and bias in the network, stacked into one long list. Here it has 15 entries."},
+  {tex:"\\nabla_\\theta L = \\left(\\frac{\\partial L}{\\partial \\theta_1},\\ \\ldots,\\ \\frac{\\partial L}{\\partial \\theta_{15}}\\right)",
+   why:"One partial derivative per knob. Each is measured with the others held still."},
+  {tex:"\\theta_{new} = \\theta - \\eta\\,\\nabla_\\theta L",punch:true,
+   why:"One line covering all fifteen updates. Every entry uses the same \\(\\eta\\) and the same evaluation point."},
+  {tex:"\\text{parameters} \\to \\text{loss} \\to \\text{partial derivatives} \\to \\text{gradient} \\to \\text{simultaneous update}",
+   why:"The chain that this block joins together, and that Block 11 executes end to end."}
+ ],
+ num:"n5", check:{
+  q:"Why is the gradient computed at one point rather than after each individual knob is moved?",
+  opts:["Because one backward pass yields every partial derivative at once","Because the knobs are independent of each other","Because it is more accurate to move one knob at a time","Because the learning rate would otherwise be negative"],
+  a:0,
+  why:["Correct. That efficiency is the whole reason backpropagation exists: one pass gives the entire gradient.",
+       "They are not independent, which is precisely why they must be evaluated together at the same point.",
+       "Moving one at a time still converges here, but it costs one gradient evaluation per knob, which is impossible at scale.",
+       "The learning rate is chosen by you and is always positive."]
  }
 }
 ];
@@ -1198,7 +1221,7 @@ function boardSteps(id){
       tex:"\\mathbf{x}\\to \\mathbf{z}^{(1)}\\to \\mathbf{a}^{(1)}\\to \\mathbf{z}^{(2)}\\to \\hat{\\mathbf{y}}",
       num:"\u0177 = ["+o.p.map(f3).join(", ")+"]"},
      {say:"Score the prediction.",tex:"L = -\\log \\hat y_t",num:"L = "+f3(L0)+"  (true class: "+f.classes[TRUE]+")"},
-     {say:"Backward starts here, from Block 11.",draw:function(g2){ netDiagram(g2,5,o,{back:1}); },
+     {say:"Backward starts here, from Block 10.",draw:function(g2){ netDiagram(g2,5,o,{back:1}); },
       tex:"\\boldsymbol{\\delta}^{(2)} = \\hat{\\mathbf{y}}-\\mathbf{y}",num:"\u03b4\u207d\u00b2\u207e = ["+g.d2.map(f3).join(", ")+"]"},
      {say:"Blame the output weights: error at the destination times signal at the source.",
       draw:function(g2){ netDiagram(g2,5,o,{back:2}); },
@@ -1280,13 +1303,98 @@ function paramVals(){
           NET.b2[0],NET.b2[1],NET.b2[2]];
 }
 
+/* ===================== CHART HELPER ===================== */
+/* one place for every graph in the lecture: axes with ticks, curves, points, markers, legend */
+function chart(host,cfg){
+  const W=cfg.w||360, H=cfg.h||215, padL=44, padB=30, padT=cfg.padT||16, padR=14;
+  const xr=cfg.xr, yr=cfg.yr;
+  const X=function(v){ return padL+(v-xr[0])/(xr[1]-xr[0])*(W-padL-padR); };
+  const Y=function(v){ return H-padB-(v-yr[0])/(yr[1]-yr[0])*(H-padB-padT); };
+  const svg=sv("svg",{viewBox:"0 0 "+W+" "+H,class:"chart"});
+  function line(x1,y1,x2,y2,col,w,dash){
+    svg.appendChild(sv("line",{x1:x1,y1:y1,x2:x2,y2:y2,stroke:col,"stroke-width":w||1,"stroke-dasharray":dash||""}));
+  }
+  function label(x,y,t,col,anchor,size){
+    const e=sv("text",{x:x,y:y});
+    e.setAttribute("style","font-family:var(--mono);font-size:"+(size||9.5)+"px;fill:"+(col||"var(--muted)")+
+      ";text-anchor:"+(anchor||"middle")+";dominant-baseline:central");
+    e.textContent=t; svg.appendChild(e);
+  }
+  /* grid and ticks */
+  const nx=cfg.xticks||4, ny=cfg.yticks||4;
+  for(let i=0;i<=nx;i++){
+    const v=xr[0]+(xr[1]-xr[0])*i/nx;
+    line(X(v),padT,X(v),H-padB,"rgba(16,27,51,.06)",1);
+    label(X(v),H-padB+13,cfg.xfmt?cfg.xfmt(v):f2(v));
+  }
+  for(let i=0;i<=ny;i++){
+    const v=yr[0]+(yr[1]-yr[0])*i/ny;
+    line(padL,Y(v),W-padR,Y(v),"rgba(16,27,51,.06)",1);
+    label(padL-6,Y(v),cfg.yfmt?cfg.yfmt(v):f2(v),null,"end");
+  }
+  line(padL,H-padB,W-padR,H-padB,"var(--line-strong)",1.2);
+  line(padL,padT,padL,H-padB,"var(--line-strong)",1.2);
+  if(yr[0]<0&&yr[1]>0) line(padL,Y(0),W-padR,Y(0),"var(--line-strong)",1,"4 3");
+  label(W-padR,H-8,cfg.xlab||"",null,"end",10);
+  label(padL-6,padT-8,cfg.ylab||"",null,"end",10);
+  /* curves */
+  (cfg.series||[]).forEach(function(S){
+    const pts=[]; const steps=cfg.steps||160;
+    for(let k=0;k<=steps;k++){
+      const x=xr[0]+(xr[1]-xr[0])*k/steps;
+      let y=S.fn(x);
+      if(!isFinite(y)) continue;
+      y=Math.max(yr[0],Math.min(yr[1],y));
+      pts.push([X(x),Y(y)]);
+    }
+    let d=""; pts.forEach(function(q,i){ d+=(i?" L":"M")+q[0]+","+q[1]; });
+    svg.appendChild(sv("path",{d:d,fill:"none",stroke:S.color,"stroke-width":S.w||2.2,
+      "stroke-dasharray":S.dash||"","stroke-linejoin":"round"}));
+  });
+  /* vertical markers */
+  (cfg.vlines||[]).forEach(function(v){
+    line(X(v.x),padT,X(v.x),H-padB,v.color||"var(--rose)",1.2,v.dash||"4 3");
+    if(v.label) label(X(v.x),padT+6,v.label,v.color||"var(--rose)");
+  });
+  /* free lines, e.g. tangents */
+  (cfg.segs||[]).forEach(function(g){
+    line(X(g.x1),Y(g.y1),X(g.x2),Y(g.y2),g.color||"var(--amber)",g.w||1.8,g.dash||"6 4");
+  });
+  /* points */
+  (cfg.pts||[]).forEach(function(q){
+    svg.appendChild(sv("circle",{cx:X(q.x),cy:Y(Math.max(yr[0],Math.min(yr[1],q.y))),r:q.r||5,
+      fill:q.color||"var(--rose)",stroke:"#fff","stroke-width":1.2}));
+    if(q.label) label(X(q.x)+q.r0||X(q.x)+9,Y(q.y)-10,q.label,q.color||"var(--rose)","start");
+  });
+  /* trail of small dots */
+  (cfg.trail||[]).forEach(function(q,i,arr){
+    svg.appendChild(sv("circle",{cx:X(q.x),cy:Y(Math.max(yr[0],Math.min(yr[1],q.y))),r:2.8,
+      fill:"var(--amber)",opacity:0.25+0.75*i/Math.max(1,arr.length-1)}));
+  });
+  /* legend */
+  const leg=(cfg.series||[]).filter(function(S){ return S.label; });
+  leg.forEach(function(S,i){
+    const y=padT+4+i*13, x=W-padR-104;
+    line(x,y,x+16,y,S.color,2.4,S.dash||"");
+    label(x+21,y,S.label,S.color,"start",9.5);
+  });
+  clear(host); host.appendChild(svg);
+}
+function chartBlock(host){
+  const d=document.createElement("div");
+  d.innerHTML='<div class="ch"></div><p class="hint cap"></p>';
+  host.appendChild(d);
+  return {chart:d.querySelector(".ch"), cap:d.querySelector(".cap")};
+}
+
 /* ===================== NUMERICAL EXAMPLES ===================== */
 const NUMERIC={
  n1:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="sliders"></div><div class="step out"></div><div class="msg m"></div>';
+   c.innerHTML='<div class="sliders"></div><div class="step out"></div><div class="g"></div><div class="msg m"></div>';
    host.appendChild(c);
    const S=c.querySelector(".sliders");
+   const G=chartBlock(c.querySelector(".g"));
    let built=false;
    function draw(){
      const f=F(), v=neuronVals();
@@ -1303,6 +1411,13 @@ const NUMERIC={
      c.querySelector(".out").innerHTML=
        "z = "+f2(N1.w[0])+"\u00d7"+f2(N1.x[0])+" + ("+f2(N1.w[1])+")\u00d7"+f2(N1.x[1])+" + "+f2(N1.b)+
        " = <b>"+f3(v.z)+"</b><br>a = \u03c3("+f3(v.z)+") = <b>"+f3(v.a)+"</b>";
+     chart(G.chart,{xr:[0,1],yr:[0,1],xlab:"x\u2081, "+f.x[0],ylab:"a",
+       series:[{fn:function(x){ return sig(N1.w[0]*x+N1.w[1]*N1.x[1]+N1.b); },color:"var(--teal)",label:"a = \u03c3(z)"}],
+       pts:[{x:N1.x[0],y:v.a}],vlines:[{x:N1.x[0]}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> the curve is the neuron's answer for every possible value of "+f.x[0]+
+       ", holding the other input fixed. The red dot is the "+f.unit+" you are looking at now. "+
+       "Make w\u2081 larger and the curve steepens into a sharper decision. Make it negative and the curve flips. "+
+       "Move the bias and the whole curve slides sideways, which is exactly what a threshold does.";
      c.querySelector(".m").innerHTML="The data sliders change the "+f.unit+" being looked at. The weight and bias sliders change the model itself. "+
        "Only the second kind is what learning adjusts.";
    }
@@ -1310,8 +1425,9 @@ const NUMERIC={
  },
  n2:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="sl"></div><div class="step out"></div><div class="msg good m"></div>';
+   c.innerHTML='<div class="sl"></div><div class="step out"></div><div class="g"></div><div class="msg good m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g"));
    let x=1.5;
    const g1=function(v){return 2*v+1;}, f1=function(u){return u*u;};
    slider(c.querySelector(".sl"),"x",-2,3,0.1,x,function(v){x=v;draw();});
@@ -1322,6 +1438,14 @@ const NUMERIC={
        "u = 2x+1 = <b>"+f3(u)+"</b><br>y = u\u00b2 = <b>"+f3(y)+"</b><br><br>"+
        "dy/du = 2u = <b>"+f3(dy)+"</b><br>du/dx = <b>"+f3(du)+"</b><br>"+
        "product = "+f3(dy)+" \u00d7 "+f3(du)+" = <b>"+f3(tot)+"</b>";
+     chart(G.chart,{xr:[-2,3],yr:[-8,26],yticks:5,xlab:"x",ylab:"",
+       series:[{fn:function(v){ return f1(g1(v)); },color:"var(--teal)",label:"y = (2x+1)\u00b2"},
+               {fn:function(v){ return 2*g1(v)*2; },color:"var(--amber)",label:"dy/dx"}],
+       segs:[{x1:x-0.8,y1:y-0.8*tot,x2:x+0.8,y2:y+0.8*tot,color:"var(--rose)"}],
+       pts:[{x:x,y:y}],vlines:[{x:x}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> the teal curve is the composed function, the red dashed line is its tangent at your x, "+
+       "and the amber curve is the slope of the teal curve at every point. The height of the amber curve equals the steepness of the red line. "+
+       "Where the teal curve is flat, the amber curve crosses zero, and a knob sitting there receives no learning signal.";
      c.querySelector(".m").innerHTML="Measured directly from the function by nudging x: <strong>"+f4(num)+
        "</strong>. From the chain rule: <strong>"+f4(tot)+"</strong>. The rule is not an approximation.";
    }
@@ -1330,8 +1454,9 @@ const NUMERIC={
  n3:function(host){
    const c=document.createElement("div");
    c.innerHTML='<div class="sl"></div><div class="row" style="margin:8px 0"><button class="btn primary st">Take one step</button>'+
-     '<button class="btn rs">Reset</button></div><div class="step out"></div><div class="msg m"></div>';
+     '<button class="btn rs">Reset</button></div><div class="step out"></div><div class="g"></div><div class="g2"></div><div class="msg m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g")), G2=chartBlock(c.querySelector(".g2"));
    const J=function(w){return 0.6*(w-1.4)*(w-1.4)+0.4;}, dJ=function(w){return 1.2*(w-1.4);};
    let w=-1.2, eta=0.5, hist=[];
    slider(c.querySelector(".sl"),"learning rate \u03b7",0.05,1.8,0.05,eta,function(v){eta=v;draw();});
@@ -1346,6 +1471,25 @@ const NUMERIC={
        "next w = "+f3(w)+" - "+f2(eta)+"\u00d7("+f3(gr)+") = <b>"+f3(w-eta*gr)+"</b><br>"+
        "next L = <b>"+f3(J(w-eta*gr))+"</b>"+
        (hist.length?"<br><br>steps taken: "+hist.length:"");
+     chart(G.chart,{xr:[-3,4],yr:[0,6],xlab:"parameter w",ylab:"L(w)",
+       series:[{fn:J,color:"var(--teal)",label:"loss"}],
+       segs:[{x1:w-0.8,y1:J(w)-0.8*gr,x2:w+0.8,y2:J(w)+0.8*gr,color:"var(--amber)"}],
+       trail:hist.map(function(h){ return {x:h.w,y:h.L}; }),
+       pts:[{x:w,y:J(w)},{x:w-eta*gr,y:J(w-eta*gr),color:"var(--violet)"}],
+       vlines:[{x:w}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> the red dot is where you stand, the amber line is the slope you feel, "+
+       "and the violet dot is where the next step lands. The faint amber trail is the path so far. "+
+       "Notice the steps shrink by themselves as the ground flattens, because the step length is the slope times \u03b7.";
+     if(hist.length){
+       chart(G2.chart,{xr:[0,Math.max(6,hist.length)],yr:[0,Math.max(1,hist[0].L*1.1)],
+         xlab:"step",ylab:"L",xfmt:function(v){ return String(Math.round(v)); },
+         series:[{fn:function(t){ const k=Math.round(t); return k<hist.length?hist[k].L:J(w); },color:"var(--rose)",w:2,label:"loss per step"}],
+         steps:Math.max(6,hist.length)});
+       G2.cap.innerHTML="The same run seen as a learning curve: loss against step number. This is the plot you actually watch when training a real model.";
+     } else {
+       chart(G2.chart,{xr:[0,6],yr:[0,3],xlab:"step",ylab:"L",series:[]});
+       G2.cap.innerHTML="Press <strong>Take one step</strong> and this learning curve fills in, one point per step.";
+     }
      const rising=J(w-eta*gr)>J(w);
      c.querySelector(".m").className="msg m"+(rising?" bad":"");
      c.querySelector(".m").innerHTML=rising
@@ -1356,8 +1500,9 @@ const NUMERIC={
  },
  n4:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="step out"></div><div class="bars bb"></div><div class="msg m"></div>';
+   c.innerHTML='<div class="step out"></div><div class="bars bb"></div><div class="g"></div><div class="msg m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g"));
    function draw(){
      const f=F(), o=fwd(NET,XIN);
      c.querySelector(".out").innerHTML=
@@ -1366,6 +1511,14 @@ const NUMERIC={
        "a\u207d\u00b9\u207e = \u03c3(z\u207d\u00b9\u207e) = ["+o.a1.map(f3).join(", ")+"]<br>"+
        "z\u207d\u00b2\u207e = ["+o.z2.map(f3).join(", ")+"]<br>"+
        "\u0177 = softmax(z\u207d\u00b2\u207e) = ["+o.p.map(f3).join(", ")+"]";
+     chart(G.chart,{xr:[-4,4],yr:[0,1],xlab:"z",ylab:"\u03c3(z)",
+       series:[{fn:sig,color:"var(--teal)",label:"activation"}],
+       pts:[{x:o.z1[0],y:o.a1[0],color:"var(--rose)"},{x:o.z1[1],y:o.a1[1],color:"var(--violet)"}],
+       vlines:[{x:o.z1[0],color:"var(--rose)"},{x:o.z1[1],color:"var(--violet)"}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> where the two hidden units land on the activation curve. "+
+       "Red is hidden unit 1 at z = "+f3(o.z1[0])+", violet is hidden unit 2 at z = "+f3(o.z1[1])+
+       ". Both sit on the steep middle of the curve, which is the healthy place to be: the slope there is large, "+
+       "so learning signal passes through easily. Units pushed out to the flat ends stop learning, as Block 2 shows.";
      bars(c.querySelector(".bb"),f.classes,o.p,o.p.indexOf(Math.max.apply(null,o.p)),TRUE);
      c.querySelector(".m").innerHTML="The network currently predicts <strong>"+
        f.classes[o.p.indexOf(Math.max.apply(null,o.p))]+"</strong> while the truth is <strong>"+f.classes[TRUE]+
@@ -1377,29 +1530,42 @@ const NUMERIC={
    const c=document.createElement("div");
    c.innerHTML='<div class="sl"></div><div class="row" style="margin:8px 0">'+
      '<button class="btn primary st">Update all 15 at once</button><button class="btn rs">Reset the network</button></div>'+
-     '<div class="scrollx tb"></div><div class="msg m"></div>';
+     '<div class="g"></div><div class="scrollx tb"></div><div class="msg m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g"));
+   const H5=[];
    slider(c.querySelector(".sl"),"learning rate \u03b7",0.05,2,0.05,ETA,function(v){ETA=v;draw();});
-   c.querySelector(".st").addEventListener("click",function(){ stepNet(NET,ETA); refresh(); });
-   c.querySelector(".rs").addEventListener("click",function(){ NET=freshNet(); refresh(); });
+   c.querySelector(".st").addEventListener("click",function(){ H5.push(loss(fwd(NET,XIN).p,TRUE)); stepNet(NET,ETA); refresh(); });
+   c.querySelector(".rs").addEventListener("click",function(){ NET=freshNet(); H5.length=0; refresh(); });
    function draw(){
      const o=fwd(NET,XIN), g=bwd(NET,o,TRUE);
      const nm=paramNames(), gr=paramGrads(g), vl=paramVals();
+     const bigK=gr.map(Math.abs).indexOf(Math.max.apply(null,gr.map(Math.abs)));
+     chart(G.chart,{xr:[-0.5,14.5],yr:[Math.min(-0.7,Math.min.apply(null,gr)*1.2),Math.max(0.7,Math.max.apply(null,gr)*1.2)],
+       xlab:"parameter number k",ylab:"\u2202L/\u2202\u03b8",xticks:5,xfmt:function(v){ return String(Math.round(v+1)); },
+       series:[{fn:function(t){ const k=Math.round(t); return (k>=0&&k<15)?gr[k]:0; },color:"var(--violet)",w:2,label:"gradient"}],
+       steps:14, pts:gr.map(function(v,k){ return {x:k,y:v,r:4,color:v>0?"var(--rose)":"var(--teal)"}; })});
+     G.cap.innerHTML="<strong>What to look at:</strong> this is the gradient vector drawn as a graph, one dot per knob. "+
+       "Teal dots are knobs that should increase, red dots knobs that should decrease, and the height is how strongly. "+
+       "Knob "+(bigK+1)+" ("+nm[bigK]+") has the largest pull, so it moves furthest in this step. "+
+       "Every dot comes from the same backward pass, and every dot moves at the same time.";
      let t='<table class="grid"><tr><th>k</th><th>parameter</th><th>value</th><th>\u2202L/\u2202\u03b8</th><th>new value</th></tr>';
      nm.forEach(function(n,k){
        t+="<tr><td>"+(k+1)+'</td><td>'+n+"</td><td>"+f3(vl[k])+'</td><td class="'+(gr[k]>0?"neg":"pos")+'">'+
          f3(gr[k])+'</td><td class="up">'+f3(vl[k]-ETA*gr[k])+"</td></tr>";
      });
      c.querySelector(".tb").innerHTML=t+"</table>";
-     c.querySelector(".m").innerHTML="Loss now: <strong>"+f3(loss(o.p,TRUE))+
-       "</strong>. Every row of this table is filled in from the <em>same</em> backward pass, and pressing the button moves all fifteen at once.";
+     c.querySelector(".m").innerHTML="Loss now: <strong>"+f3(loss(o.p,TRUE))+"</strong>"+
+       (H5.length?", down from "+f3(H5[0])+" after "+H5.length+" simultaneous updates":"")+
+       ". Every row of this table is filled in from the <em>same</em> backward pass, and pressing the button moves all fifteen at once.";
    }
    sub(draw); draw();
  },
  n6:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="sl"></div><div class="scrollx tb"></div><div class="msg m"></div>';
+   c.innerHTML='<div class="sl"></div><div class="g"></div><div class="g2"></div><div class="scrollx tb"></div><div class="msg m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g")), G2=chartBlock(c.querySelector(".g2"));
    let z=1.0;
    slider(c.querySelector(".sl"),"input z",-6,6,0.1,z,function(v){z=v;draw();});
    function draw(){
@@ -1409,6 +1575,23 @@ const NUMERIC={
      tb+="<tr><td>tanh</td><td>"+f3(t)+"</td><td>"+f3(1-t*t)+"</td><td>centred on zero</td><td>still flat in both tails</td></tr>";
      tb+="<tr><td>ReLU</td><td>"+f3(r)+"</td><td>"+(z>0?"1.000":"0.000")+"</td><td>cheap, no fading on the right</td><td>slope 0 on the left, a stuck neuron stays stuck</td></tr>";
      c.querySelector(".tb").innerHTML=tb+"</table>";
+     chart(G.chart,{xr:[-6,6],yr:[-1.2,2],xlab:"z",ylab:"f(z)",
+       series:[{fn:sig,color:"var(--teal)",label:"sigmoid"},
+               {fn:Math.tanh,color:"var(--rose)",label:"tanh"},
+               {fn:function(v){ return Math.max(0,v); },color:"var(--amber)",label:"ReLU"}],
+       pts:[{x:z,y:s,color:"var(--teal)"},{x:z,y:t,color:"var(--rose)"},{x:z,y:r,color:"var(--amber)"}],
+       vlines:[{x:z,color:"var(--ink)"}]});
+     G.cap.innerHTML="<strong>The functions.</strong> Sigmoid is trapped between 0 and 1, tanh between -1 and 1, ReLU is a straight line cut off at zero. "+
+       "The vertical line is your input z.";
+     chart(G2.chart,{xr:[-6,6],yr:[0,1.15],xlab:"z",ylab:"slope f\u2032(z)",
+       series:[{fn:function(v){ const q=sig(v); return q*(1-q); },color:"var(--teal)",label:"sigmoid\u2032"},
+               {fn:function(v){ const q=Math.tanh(v); return 1-q*q; },color:"var(--rose)",label:"tanh\u2032"},
+               {fn:function(v){ return v>0?1:0; },color:"var(--amber)",label:"ReLU\u2032"}],
+       pts:[{x:z,y:s*(1-s),color:"var(--teal)"},{x:z,y:1-t*t,color:"var(--rose)"}],
+       vlines:[{x:z,color:"var(--ink)"}]});
+     G2.cap.innerHTML="<strong>This second graph is the important one.</strong> It is the slope of each function, and the slope is what multiplies the "+
+       "learning signal on the way back. Sigmoid never exceeds 0.25, so ten sigmoid layers shrink the signal by 0.25 to the power ten. "+
+       "Slide z out past \u00b14 and watch both the teal and red curves fall to the floor while ReLU stays at 1.";
      c.querySelector(".m").innerHTML=(z>4||z<-4)
        ? "At z = "+f2(z)+" both sigmoid and tanh are saturated: their slopes are near zero, so a learning signal arriving here is almost erased. ReLU is unaffected on the right."
        : "Move the slider out to \u00b15 and watch the sigmoid and tanh slopes collapse toward zero while ReLU keeps a slope of 1 on the right.";
@@ -1417,10 +1600,22 @@ const NUMERIC={
  },
  n7:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="scrollx tb"></div><div class="step out"></div>';
+   c.innerHTML='<div class="scrollx tb"></div><div class="step out"></div><div class="g"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g"));
    function draw(){
-     const o=fwd(NET,XIN);
+     const f=F(), o=fwd(NET,XIN);
+     const cols=["var(--teal)","var(--amber)","var(--rose)"];
+     chart(G.chart,{xr:[0,2],yr:[0,1],xlab:"x\u2081, "+f.x3[0],ylab:"probability",
+       series:[0,1,2].map(function(i){
+         return {fn:function(v){ return fwd(NET,[v,XIN[1]]).p[i]; },color:cols[i],label:f.classes[i].slice(0,12)};
+       }),
+       pts:[0,1,2].map(function(i){ return {x:XIN[0],y:o.p[i],color:cols[i],r:4}; }),
+       vlines:[{x:XIN[0],color:"var(--ink)"}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> three outputs at once, as the first input sweeps from 0 to 2 with the second held still. "+
+       "At every value of x\u2081 the three curves add up to exactly 1, because softmax forces it. "+
+       "Where two curves cross is where the network changes its mind, and the vertical line marks the "+f.unit+" in the table above. "+
+       "This is what \u2018multiple outputs\u2019 means in practice: not three separate models, but three curves tied together.";
      let t='<table class="grid"><tr><th>quantity</th><th>shape</th><th>values</th></tr>';
      t+="<tr><td>x</td><td>2 \u00d7 1</td><td>"+XIN.map(f2).join(", ")+"</td></tr>";
      t+="<tr><td>W\u207d\u00b9\u207e</td><td>2 \u00d7 2</td><td>"+NET.W1.map(function(r){return "["+r.map(f2).join(", ")+"]";}).join(" ")+"</td></tr>";
@@ -1437,8 +1632,9 @@ const NUMERIC={
  },
  n8:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="sl"></div><div class="step out"></div><div class="bars bb"></div><div class="msg m"></div>';
+   c.innerHTML='<div class="sl"></div><div class="step out"></div><div class="bars bb"></div><div class="g"></div><div class="msg m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g"));
    let z=[0.30,0.68,-0.44], built=false;
    function draw(){
      const f=F();
@@ -1453,6 +1649,17 @@ const NUMERIC={
        "sum S = <b>"+f3(Ssum)+"</b><br>\u0177 = e^z / S = ["+p.map(f3).join(", ")+"]<br>"+
        "sum of \u0177 = <b>"+f3(p.reduce(function(a,v){return a+v;},0))+"</b>";
      bars(c.querySelector(".bb"),f.classes,p,am,-1);
+     const cols=["var(--teal)","var(--amber)","var(--rose)"];
+     chart(G.chart,{xr:[-4,4],yr:[0,1],xlab:"score z\u2081",ylab:"probability",
+       series:[0,1,2].map(function(i){
+         return {fn:function(v){ return softmax([v,z[1],z[2]])[i]; },color:cols[i],label:f.classes[i].slice(0,12)};
+       }),
+       pts:[0,1,2].map(function(i){ return {x:z[0],y:p[i],color:cols[i],r:4}; }),
+       vlines:[{x:z[0],color:"var(--ink)"}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> sweep the first score while the other two stay fixed. "+
+       "Its probability rises as a smooth S, and the other two are pushed down to make room, because the three must always sum to 1. "+
+       "Argmax would be a single vertical jump at the crossing point, with slope zero everywhere else, and that is exactly why it cannot be trained on. "+
+       "The steepness of these curves at your marker is what Block 9 computes.";
      c.querySelector(".m").innerHTML="argmax picks <strong>"+f.classes[am]+
        "</strong>. Add the same constant to all three sliders and the probabilities will not move at all.";
    }
@@ -1460,10 +1667,20 @@ const NUMERIC={
  },
  n9:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="scrollx tb"></div><div class="step out"></div><div class="msg good m"></div>';
+   c.innerHTML='<div class="scrollx tb"></div><div class="g"></div><div class="step out"></div><div class="msg good m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g"));
    function draw(){
      const o=fwd(NET,XIN), p=o.p;
+     const z2=o.z2;
+     chart(G.chart,{xr:[-4,4],yr:[-0.3,0.35],xlab:"score z\u2081",ylab:"derivative",
+       series:[{fn:function(v){ const q=softmax([v,z2[1],z2[2]]); return q[0]*(1-q[0]); },color:"var(--teal)",label:"\u2202\u01771/\u2202z1"},
+               {fn:function(v){ const q=softmax([v,z2[1],z2[2]]); return -q[0]*q[1]; },color:"var(--rose)",label:"\u2202\u01771/\u2202z2"},
+               {fn:function(v){ const q=softmax([v,z2[1],z2[2]]); return -q[0]*q[2]; },color:"var(--amber)",label:"\u2202\u01771/\u2202z3"}],
+       vlines:[{x:z2[0],color:"var(--ink)"}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> the diagonal entry in teal is always positive and peaks at 0.25 when the probability is one half, "+
+       "which is the moment the class is most uncertain and therefore most responsive. The two off diagonal entries in red and amber are always negative. "+
+       "At every value of z\u2081 the three curves add to zero, which is the row sum property in the table above, seen as a picture.";
      let t='<table class="grid"><tr><th></th><th>\u2202/\u2202z\u2081</th><th>\u2202/\u2202z\u2082</th><th>\u2202/\u2202z\u2083</th><th>row sum</th></tr>';
      for(let i=0;i<3;i++){
        t+='<tr><th>\u2202\u0177'+(i+1)+"</th>"; let rs=0;
@@ -1486,8 +1703,9 @@ const NUMERIC={
  },
  n10:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="sl"></div><div class="step out"></div><div class="msg m"></div>';
+   c.innerHTML='<div class="sl"></div><div class="step out"></div><div class="g"></div><div class="g2"></div><div class="msg m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g")), G2=chartBlock(c.querySelector(".g2"));
    let p=0.34;
    slider(c.querySelector(".sl"),"\u0177 on true class",0.01,1,0.01,p,function(v){p=v;draw();});
    function draw(){
@@ -1497,6 +1715,20 @@ const NUMERIC={
        "L = -log("+f2(p)+") = <b>"+f3(-Math.log(p))+"</b><br>"+
        "\u2202L/\u2202\u0177 = -1/"+f2(p)+" = <b>"+f2(-1/p)+"</b><br><br>"+
        "for comparison, squared error (1-\u0177)\u00b2 = "+f3((1-p)*(1-p));
+     chart(G.chart,{xr:[0.01,1],yr:[0,4.6],xlab:"\u0177 on the true class",ylab:"loss",yticks:4,
+       series:[{fn:function(v){ return -Math.log(Math.max(0.005,v)); },color:"var(--teal)",label:"-log \u0177"},
+               {fn:function(v){ return (1-v)*(1-v); },color:"var(--amber)",label:"(1-\u0177)\u00b2"}],
+       pts:[{x:p,y:-Math.log(p)}],vlines:[{x:p}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> both curves are zero when the true class gets probability 1, so both look reasonable. "+
+       "The difference is on the left. Cross entropy climbs without limit, while squared error flattens out below 1. "+
+       "Give the truth 1 percent probability and cross entropy charges 4.6 while squared error charges only 0.98.";
+     chart(G2.chart,{xr:[0.01,1],yr:[-12,0],xlab:"\u0177 on the true class",ylab:"\u2202L/\u2202\u0177",yticks:4,
+       series:[{fn:function(v){ return Math.max(-12,-1/Math.max(0.005,v)); },color:"var(--teal)",label:"cross entropy"},
+               {fn:function(v){ return -2*(1-v); },color:"var(--amber)",label:"squared error"}],
+       pts:[{x:p,y:Math.max(-12,-1/p)}],vlines:[{x:p}]});
+     G2.cap.innerHTML="<strong>And this is why it matters.</strong> These are the slopes of the two curves above, which is what actually drives learning. "+
+       "As the model gets more badly wrong, cross entropy shouts louder and louder, while squared error goes quiet, "+
+       "never asking for more than a correction of size 2. A loss that falls silent exactly where the model is worst is a bad loss for classification.";
      c.querySelector(".m").innerHTML=p<0.15
        ? "A confident mistake: the loss is "+f2(-Math.log(p))+" and the derivative is "+f2(-1/p)+
          ", a very loud request to be corrected."
@@ -1506,10 +1738,23 @@ const NUMERIC={
  },
  n11:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="step out"></div><div class="msg good m"></div>';
+   c.innerHTML='<div class="step out"></div><div class="g"></div><div class="msg good m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g"));
    function draw(){
      const f=F(), o=fwd(NET,XIN), p=o.p, yv=oneHot(TRUE);
+     const z2=o.z2, cols=["var(--teal)","var(--amber)","var(--rose)"];
+     chart(G.chart,{xr:[-4,4],yr:[-1,1],xlab:"score of the true class, z"+(TRUE+1),ylab:"\u2202L/\u2202z",
+       series:[0,1,2].map(function(i){
+         return {fn:function(v){ const zz=z2.slice(); zz[TRUE]=v; const q=softmax(zz); return q[i]-yv[i]; },
+                 color:cols[i],label:f.classes[i].slice(0,12)};
+       }),
+       pts:[0,1,2].map(function(i){ return {x:z2[TRUE],y:p[i]-yv[i],color:cols[i],r:4}; }),
+       vlines:[{x:z2[TRUE],color:"var(--ink)"}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> the error signal \u0177 - y for all three classes, as the score of the true class is swept. "+
+       "The true class curve lives entirely between -1 and 0: it is most negative when the model is most wrong, and rises to zero once the model is sure and right. "+
+       "The other two are always positive, pushing their scores down. Every curve is bounded, which is why this signal never explodes, "+
+       "unlike the -1/\u0177 of Block 6 that it was built from.";
      const long=[0,1,2].map(function(j){
        let s=0;
        for(let i=0;i<3;i++){
@@ -1534,17 +1779,21 @@ const NUMERIC={
    const c=document.createElement("div");
    c.innerHTML='<div class="row" style="margin-bottom:8px"><button class="btn go">Run one full learning step</button>'+
      '<button class="btn primary go5">Run 5 steps</button><button class="btn rs">Reset the network</button></div>'+
-     '<div class="scrollx tb"></div><div class="bars bb" style="margin-top:10px"></div><div class="msg m"></div>';
+     '<div class="scrollx tb"></div><div class="bars bb" style="margin-top:10px"></div><div class="g"></div><div class="msg m"></div>';
    host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g"));
+   const HL=[], HP=[];
    let before=null;
-   c.querySelector(".go").addEventListener("click",function(){ before=fwd(NET,XIN); stepNet(NET,ETA); refresh(); });
-   c.querySelector(".go5").addEventListener("click",function(){ before=fwd(NET,XIN); for(let i=0;i<5;i++) stepNet(NET,ETA); refresh(); });
-   c.querySelector(".rs").addEventListener("click",function(){ NET=freshNet(); before=null; refresh(); });
+   function record(){ const o=fwd(NET,XIN); HL.push(loss(o.p,TRUE)); HP.push(o.p[TRUE]); }
+   c.querySelector(".go").addEventListener("click",function(){ before=fwd(NET,XIN); record(); stepNet(NET,ETA); refresh(); });
+   c.querySelector(".go5").addEventListener("click",function(){ before=fwd(NET,XIN);
+     for(let i=0;i<5;i++){ record(); stepNet(NET,ETA); } refresh(); });
+   c.querySelector(".rs").addEventListener("click",function(){ NET=freshNet(); before=null; HL.length=0; HP.length=0; refresh(); });
    function draw(){
      const f=F(), o=fwd(NET,XIN), g=bwd(NET,o,TRUE);
      let t='<table class="cmp"><tr><th>stage</th><th>value</th></tr>';
      t+="<tr><td>1. inputs</td><td>x = ["+XIN.map(f2).join(", ")+"]</td></tr>";
-     t+="<tr><td>2. parameters</td><td>15 numbers, see Block 5</td></tr>";
+     t+="<tr><td>2. parameters</td><td>15 numbers, all of them, see Block 12</td></tr>";
      t+="<tr><td>3. forward, hidden</td><td>z = ["+o.z1.map(f3).join(", ")+"], a = ["+o.a1.map(f3).join(", ")+"]</td></tr>";
      t+="<tr><td>4. prediction</td><td>\u0177 = ["+o.p.map(f3).join(", ")+"] \u2192 "+f.classes[o.p.indexOf(Math.max.apply(null,o.p))]+"</td></tr>";
      t+="<tr><td>5. loss</td><td><strong>"+f3(loss(o.p,TRUE))+"</strong></td></tr>";
@@ -1560,6 +1809,18 @@ const NUMERIC={
      }
      c.querySelector(".tb").innerHTML=t+"</table>";
      bars(c.querySelector(".bb"),f.classes,o.p,o.p.indexOf(Math.max.apply(null,o.p)),TRUE);
+     const L=HL.concat([loss(o.p,TRUE)]), P=HP.concat([o.p[TRUE]]);
+     chart(G.chart,{xr:[0,Math.max(8,L.length-1)],yr:[0,Math.max(1.3,L[0]*1.15)],
+       xlab:"learning step",ylab:"",xfmt:function(v){ return String(Math.round(v)); },xticks:Math.min(8,Math.max(4,L.length-1)),
+       series:[{fn:function(t){ const k=Math.round(t); return k<L.length?L[k]:L[L.length-1]; },color:"var(--rose)",w:2.2,label:"loss"},
+               {fn:function(t){ const k=Math.round(t); return (k<P.length?P[k]:P[P.length-1])*Math.max(1.3,L[0]*1.15); },
+                color:"var(--teal)",w:2,label:"\u0177 on true class"}],
+       steps:Math.max(8,L.length-1),
+       pts:[{x:L.length-1,y:L[L.length-1],color:"var(--rose)",r:4}]});
+     G.cap.innerHTML="<strong>What to look at:</strong> the red curve is the loss falling and the teal curve is the probability on <strong>"+
+       f.classes[TRUE]+"</strong> rising, on a common scale. They are mirror images, because the loss <em>is</em> minus the log of that probability. "+
+       (L.length>1?"After "+(L.length-1)+" steps the loss has gone from "+f3(L[0])+" to "+f3(L[L.length-1])+"."
+        :"Press a button and the curve starts drawing itself, one point per learning step.");
      c.querySelector(".m").className="msg m"+(before&&loss(o.p,TRUE)<loss(before.p,TRUE)?" good":"");
      c.querySelector(".m").innerHTML=before
        ? "The probability on <strong>"+f.classes[TRUE]+"</strong> moved from "+f3(before.p[TRUE])+" to "+f3(o.p[TRUE])+
@@ -1571,12 +1832,645 @@ const NUMERIC={
  }
 };
 
+
+/* ===================== INTERACTIVE NODE AND EDGE DIAGRAMS ===================== */
+/* one drawing engine, used by every block. nodes are circles, connections are edges,
+   and both are clickable: clicking explains what that piece is and what its number means. */
+function gview(host,opts){
+  opts=opts||{};
+  host.innerHTML='<div class="row gtools"></div><svg class="gsvg" viewBox="0 0 '+(opts.w||520)+' '+(opts.h||240)+'"></svg><div class="gexp"></div>';
+  return {tools:host.querySelector(".gtools"),svg:host.querySelector("svg.gsvg"),exp:host.querySelector(".gexp")};
+}
+function gtool(V,label,cb,on){
+  const b=document.createElement("button");
+  b.className="btn sm"+(on?" primary":"");
+  b.textContent=label;
+  b.addEventListener("click",function(){
+    [].forEach.call(V.tools.querySelectorAll("button"),function(x){ x.classList.remove("primary"); });
+    b.classList.add("primary"); cb();
+  });
+  V.tools.appendChild(b);
+  return b;
+}
+function gdraw(V,spec,sel,onSel){
+  const svg=V.svg;
+  clear(svg);
+  const N={};
+  (spec.nodes||[]).forEach(function(n){ N[n.id]=n; });
+  /* edges first so nodes sit on top */
+  (spec.edges||[]).forEach(function(e){
+    const a=N[e.from], b=N[e.to];
+    if(!a||!b) return;
+    const dx=b.x-a.x, dy=b.y-a.y, L=Math.sqrt(dx*dx+dy*dy)||1, ux=dx/L, uy=dy/L;
+    const ra=(a.r||22)+2, rb=(b.r||22)+9;
+    const x1=a.x+ux*ra, y1=a.y+uy*ra, x2=b.x-ux*rb, y2=b.y-uy*rb;
+    const on=sel&&sel.kind==="e"&&sel.id===e.id;
+    const col=on?"var(--amber)":(e.color||"var(--line-strong)");
+    const g=sv("g",{class:"gedge"});
+    g.appendChild(sv("line",{x1:x1,y1:y1,x2:x2,y2:y2,stroke:col,
+      "stroke-width":on?(e.w||2)+1.6:(e.w||2),"stroke-dasharray":e.dash||""}));
+    const ang=Math.atan2(dy,dx);
+    g.appendChild(sv("path",{d:"M"+x2+","+y2+" L"+(x2-9*Math.cos(ang-0.38))+","+(y2-9*Math.sin(ang-0.38))+
+      " L"+(x2-9*Math.cos(ang+0.38))+","+(y2-9*Math.sin(ang+0.38))+" Z",fill:col}));
+    if(e.label){
+      const mx=(x1+x2)/2+(e.lx||0), my=(y1+y2)/2+(e.ly||-8);
+      const t=sv("text",{x:mx,y:my});
+      t.setAttribute("style","font-family:var(--mono);font-size:"+(e.fs||10)+"px;fill:"+
+        (on?"var(--amber)":(e.lcolor||col))+";text-anchor:middle;paint-order:stroke;stroke:var(--panel);stroke-width:3px;font-weight:"+(on?"700":"400"));
+      t.textContent=e.label;
+      g.appendChild(t);
+    }
+    g.appendChild(sv("line",{x1:x1,y1:y1,x2:x2,y2:y2,stroke:"transparent","stroke-width":16}));
+    g.addEventListener("click",function(){ onSel({kind:"e",id:e.id}); });
+    svg.appendChild(g);
+  });
+  (spec.nodes||[]).forEach(function(n){
+    const on=sel&&sel.kind==="n"&&sel.id===n.id;
+    const g=sv("g",{class:"gnode"});
+    if(n.shape==="box"){
+      const w=n.bw||64,h=n.bh||40;
+      g.appendChild(sv("rect",{x:n.x-w/2,y:n.y-h/2,width:w,height:h,rx:9,
+        fill:on?"var(--amber)":(n.fill||"var(--panel)"),stroke:n.stroke||"var(--ink)","stroke-width":on?2.6:1.8}));
+    } else {
+      g.appendChild(sv("circle",{cx:n.x,cy:n.y,r:n.r||22,
+        fill:on?"var(--amber)":(n.fill||"var(--panel)"),stroke:n.stroke||"var(--ink)","stroke-width":on?2.8:1.8}));
+    }
+    const t=sv("text",{x:n.x,y:n.y});
+    t.setAttribute("style","font-family:var(--mono);font-size:"+(n.fs||11)+"px;fill:"+
+      (n.color||"var(--ink)")+";text-anchor:middle;dominant-baseline:central;font-weight:600");
+    t.textContent=n.label;
+    g.appendChild(t);
+    if(n.sub){
+      const s2=sv("text",{x:n.x+(n.subdx||0),y:n.y+(n.subdy||(n.r||22)+13)});
+      s2.setAttribute("style","font-family:var(--mono);font-size:9.5px;fill:var(--muted);text-anchor:middle");
+      s2.textContent=n.sub;
+      g.appendChild(s2);
+    }
+    g.addEventListener("click",function(){ onSel({kind:"n",id:n.id}); });
+    svg.appendChild(g);
+  });
+  (spec.captions||[]).forEach(function(c){
+    const t=sv("text",{x:c.x,y:c.y});
+    t.setAttribute("style","font-family:var(--mono);font-size:"+(c.fs||9.5)+"px;fill:"+(c.color||"var(--muted)")+
+      ";text-anchor:"+(c.anchor||"middle")+";letter-spacing:.08em;text-transform:"+(c.up?"uppercase":"none"));
+    t.textContent=c.t;
+    svg.appendChild(t);
+  });
+}
+
+/* geometry shared by the full network diagrams */
+const LX=[80,250,430], LY1=[80,155], LY2=[50,120,190];
+function netNodes(o,mode){
+  const f=F();
+  const ns=[];
+  [0,1].forEach(function(j){
+    ns.push({id:"x"+j,x:LX[0],y:LY1[j],label:mode==="weights"?("x"+(j+1)):f2(o.x[j]),
+      sub:f.x3[j].slice(0,13),fill:"rgba(15,122,131,.10)"});
+  });
+  [0,1].forEach(function(j){
+    ns.push({id:"h"+j,x:LX[1],y:LY1[j],
+      label:mode==="backward"?f3(bwdCache().d1[j]):(mode==="weights"?("h"+(j+1)):f3(o.a1[j])),
+      sub:mode==="backward"?("\u03b4"+(j+1)):("h"+(j+1)+", a="+f3(o.a1[j])),fill:"rgba(255,255,255,1)"});
+  });
+  [0,1,2].forEach(function(i){
+    ns.push({id:"y"+i,x:LX[2],y:LY2[i],
+      label:mode==="backward"?f3(bwdCache().d2[i]):(mode==="weights"?("\u0177"+(i+1)):f3(o.p[i])),
+      sub:f.classes[i].slice(0,14),
+      fill:i===TRUE?"rgba(166,43,84,.13)":"var(--panel)",
+      stroke:i===TRUE?"var(--rose)":"var(--ink)"});
+  });
+  return ns;
+}
+let _bc=null;
+function bwdCache(){ const o=fwd(NET,XIN); _bc=bwd(NET,o,TRUE); return _bc; }
+function netEdges(o,mode){
+  const es=[], g=bwdCache();
+  for(let i=0;i<2;i++) for(let j=0;j<2;j++){
+    const w=NET.W1[i][j];
+    es.push({id:"W1-"+i+"-"+j,from:"x"+j,to:"h"+i,
+      label:mode==="backward"?f3(g.dW1[i][j]):f2(w),
+      color:mode==="backward"?"var(--violet)":(w>0?"var(--teal)":"var(--rose)"),
+      w:Math.min(4,0.8+Math.abs(mode==="backward"?g.dW1[i][j]*4:w)*1.8),
+      ly:(i===j?-9:11)});
+  }
+  for(let i=0;i<3;i++) for(let j=0;j<2;j++){
+    const w=NET.W2[i][j];
+    es.push({id:"W2-"+i+"-"+j,from:"h"+j,to:"y"+i,
+      label:mode==="backward"?f3(g.dW2[i][j]):f2(w),
+      color:mode==="backward"?"var(--violet)":(w>0?"var(--teal)":"var(--rose)"),
+      w:Math.min(4,0.8+Math.abs(mode==="backward"?g.dW2[i][j]*3:w)*1.8),
+      ly:(j===0?-9:11)});
+  }
+  if(mode==="backward") es.forEach(function(e){ const t=e.from; e.from=e.to; e.to=t; e.dash="6 4"; });
+  return es;
+}
+function netExplain(sel,o,mode){
+  const f=F(), g=bwdCache();
+  if(!sel) return "<b>Click a circle or a line.</b><span class='t'>Circles are neurons and carry values. Lines are weights and carry the signal from one neuron to the next.</span>";
+  if(sel.kind==="n"){
+    const id=sel.id;
+    if(id[0]==="x"){ const j=+id[1];
+      return "<b>Input "+(j+1)+"</b>: "+f.x3[j]+" = "+f2(o.x[j])+
+        "<span class='t'>Data, not a parameter. Learning never changes this number, it only changes how much attention the weights pay to it.</span>"; }
+    if(id[0]==="h"){ const j=+id[1];
+      return "<b>Hidden neuron "+(j+1)+"</b><br>z = "+f2(NET.W1[j][0])+"\u00d7"+f2(o.x[0])+" + ("+f2(NET.W1[j][1])+")\u00d7"+f2(o.x[1])+
+        " + "+f2(NET.b1[j])+" = "+f3(o.z1[j])+"<br>a = \u03c3("+f3(o.z1[j])+") = "+f3(o.a1[j])+
+        "<br>slope \u03c3\u2032 = "+f3(dsig(o.a1[j]))+",  \u03b4 = "+f3(g.d1[j])+
+        "<span class='t'>Two lines arrive, are weighed and added, then bent. On the way back, the error is multiplied by that slope.</span>"; }
+    const i=+id[1];
+    return "<b>Output "+(i+1)+", "+f.classes[i]+"</b><br>z = "+f2(NET.W2[i][0])+"\u00d7"+f3(o.a1[0])+" + ("+f2(NET.W2[i][1])+")\u00d7"+f3(o.a1[1])+
+      " + "+f2(NET.b2[i])+" = "+f3(o.z2[i])+"<br>\u0177 = "+f3(o.p[i])+",  y = "+oneHot(TRUE)[i]+
+      ",  \u03b4 = \u0177 - y = "+f3(g.d2[i])+
+      "<span class='t'>"+(i===TRUE?"This is the true class, so its \u03b4 is negative and gradient descent will raise its score."
+        :"Not the true class, so its \u03b4 is positive and its score will be pushed down.")+"</span>";
+  }
+  const parts=sel.id.split("-"), lay=parts[0], i=+parts[1], j=+parts[2];
+  if(lay==="W1")
+    return "<b>W\u207d\u00b9\u207e["+(i+1)+","+(j+1)+"] = "+f2(NET.W1[i][j])+"</b><br>from input "+(j+1)+" ("+f.x3[j]+
+      ") into hidden neuron "+(i+1)+"<br>\u2202L/\u2202W = \u03b4"+(i+1)+" \u00d7 x"+(j+1)+" = "+f3(g.d1[i])+" \u00d7 "+f2(o.x[j])+" = "+f3(g.dW1[i][j])+
+      "<br>after one step: "+f3(NET.W1[i][j]-ETA*g.dW1[i][j])+
+      "<span class='t'>First index is the destination, second is the source. The gradient is the error arriving at the destination times the signal leaving the source.</span>";
+  return "<b>W\u207d\u00b2\u207e["+(i+1)+","+(j+1)+"] = "+f2(NET.W2[i][j])+"</b><br>from hidden neuron "+(j+1)+
+    " into output "+(i+1)+" ("+f.classes[i]+")<br>\u2202L/\u2202W = \u03b4"+(i+1)+" \u00d7 a"+(j+1)+" = "+f3(g.d2[i])+" \u00d7 "+f3(o.a1[j])+" = "+f3(g.dW2[i][j])+
+    "<br>after one step: "+f3(NET.W2[i][j]-ETA*g.dW2[i][j])+
+    "<span class='t'>"+(NET.W2[i][j]>0?"A positive weight: more of this hidden signal means more of this class."
+      :"A negative weight: more of this hidden signal means less of this class.")+"</span>";
+}
+function fullNet(host,defMode,caps){
+  const V=gview(host,{w:520,h:250});
+  let mode=defMode||"values", sel=null;
+  gtool(V,"values",function(){ mode="values"; draw(); },mode==="values");
+  gtool(V,"weights",function(){ mode="weights"; draw(); },mode==="weights");
+  gtool(V,"gradients",function(){ mode="backward"; draw(); },mode==="backward");
+  function draw(){
+    const o=fwd(NET,XIN);
+    const spec={nodes:netNodes(o,mode),edges:netEdges(o,mode),
+      captions:[{x:LX[0],y:22,t:"inputs",up:true},{x:LX[1],y:22,t:"hidden layer",up:true},{x:LX[2],y:22,t:"outputs",up:true},
+        {x:260,y:236,t:mode==="backward"?"gradients travel right to left":"signal travels left to right",
+         color:mode==="backward"?"var(--violet)":"var(--muted)"}]};
+    gdraw(V,spec,sel,function(s){ sel=(sel&&sel.kind===s.kind&&sel.id===s.id)?null:s; draw(); });
+    V.exp.innerHTML=netExplain(sel,o,mode)+(caps&&!sel?"<span class='t'>"+caps+"</span>":"");
+  }
+  sub(draw); draw();
+  return {draw:draw};
+}
+
+const GRAPHS={
+ /* ---- block 1: one neuron, drawn ---- */
+ b1:function(host){
+   const V=gview(host,{w:520,h:230});
+   let sel=null;
+   function draw(){
+     const f=F(), v=neuronVals();
+     const spec={
+       nodes:[
+         {id:"x1",x:70,y:70,label:f2(N1.x[0]),sub:f.x[0].slice(0,14),fill:"rgba(15,122,131,.10)"},
+         {id:"x2",x:70,y:160,label:f2(N1.x[1]),sub:f.x[1].slice(0,14),fill:"rgba(15,122,131,.10)"},
+         {id:"sum",x:250,y:115,label:f3(v.z),sub:"z, the total",r:26,fill:"rgba(16,27,51,.05)"},
+         {id:"act",x:360,y:115,label:"\u03c3",shape:"box",bw:60,bh:44,fill:"rgba(222,145,38,.16)",stroke:"var(--amber)",fs:15,sub:"activation"},
+         {id:"out",x:465,y:115,label:f3(v.a),sub:"a, the output",fill:"rgba(15,122,131,.18)"},
+         {id:"bias",x:250,y:205,label:f2(N1.b),sub:"bias b",r:17,fs:10,fill:"rgba(222,145,38,.14)",stroke:"var(--amber)"}
+       ],
+       edges:[
+         {id:"w1",from:"x1",to:"sum",label:"w\u2081 = "+f2(N1.w[0]),color:N1.w[0]>0?"var(--teal)":"var(--rose)",w:Math.min(4,0.8+Math.abs(N1.w[0]))},
+         {id:"w2",from:"x2",to:"sum",label:"w\u2082 = "+f2(N1.w[1]),ly:12,color:N1.w[1]>0?"var(--teal)":"var(--rose)",w:Math.min(4,0.8+Math.abs(N1.w[1]))},
+         {id:"eb",from:"bias",to:"sum",color:"var(--amber)",w:1.6,dash:"5 4"},
+         {id:"e3",from:"sum",to:"act"},{id:"e4",from:"act",to:"out"}
+       ],
+       captions:[{x:70,y:24,t:"data",up:true},{x:250,y:24,t:"weighted sum",up:true},{x:465,y:24,t:"prediction",up:true}]
+     };
+     gdraw(V,spec,sel,function(s){ sel=(sel&&sel.id===s.id)?null:s; draw(); });
+     const E={
+       x1:"<b>Input 1</b>: "+f.x[0]+" = "+f2(N1.x[0])+"<span class='t'>Data. Learning never changes it.</span>",
+       x2:"<b>Input 2</b>: "+f.x[1]+" = "+f2(N1.x[1])+"<span class='t'>Data. Learning never changes it either.</span>",
+       w1:"<b>Weight w\u2081 = "+f2(N1.w[0])+"</b><br>contribution = "+f2(N1.w[0])+" \u00d7 "+f2(N1.x[0])+" = "+f3(N1.w[0]*N1.x[0])+
+          "<span class='t'>A parameter. Its sign says which way this input votes, its size says how loudly.</span>",
+       w2:"<b>Weight w\u2082 = "+f2(N1.w[1])+"</b><br>contribution = "+f2(N1.w[1])+" \u00d7 "+f2(N1.x[1])+" = "+f3(N1.w[1]*N1.x[1])+
+          "<span class='t'>Negative here, so this input votes against.</span>",
+       bias:"<b>Bias b = "+f2(N1.b)+"</b><span class='t'>Added no matter what the inputs are. It moves the threshold at which the neuron switches on.</span>",
+       sum:"<b>z = "+f3(v.z)+"</b><br>"+f2(N1.w[0])+"\u00d7"+f2(N1.x[0])+" + ("+f2(N1.w[1])+")\u00d7"+f2(N1.x[1])+" + "+f2(N1.b)+
+          "<span class='t'>Everything the neuron knows, compressed into one number.</span>",
+       act:"<b>\u03c3(z) = 1/(1+e^-z)</b><span class='t'>The bend. Without it the whole network would be one straight line, as Block 2 shows.</span>",
+       out:"<b>a = "+f3(v.a)+"</b><span class='t'>The neuron's answer, between 0 and 1. In a real network this becomes the input of the next neuron.</span>",
+       e3:"<b>the total enters the activation</b>",e4:"<b>the bent total leaves as the output</b>",
+       eb:"<b>the bias joins the sum</b><span class='t'>It has no input of its own, which is why its line is dashed.</span>"
+     };
+     V.exp.innerHTML=sel?E[sel.id]:"<b>Click any circle or line.</b><span class='t'>Teal lines carry a positive weight, red lines a negative one, and thickness is size. Move the sliders below and watch the diagram change.</span>";
+   }
+   sub(draw); draw();
+ },
+
+ /* ---- block 2: the chain as a graph ---- */
+ b2:function(host){
+   const V=gview(host,{w:520,h:210});
+   let sel=null;
+   function draw(){
+     const v=neuronVals(), da=v.a*(1-v.a);
+     const spec={
+       nodes:[
+         {id:"w",x:60,y:105,label:"w\u2081",sub:f2(N1.w[0]),fill:"rgba(222,145,38,.18)",stroke:"var(--amber)"},
+         {id:"z",x:200,y:105,label:"z",sub:f3(v.z)},
+         {id:"a",x:340,y:105,label:"a",sub:f3(v.a)},
+         {id:"L",x:470,y:105,label:"L",sub:"loss",fill:"rgba(166,43,84,.13)",stroke:"var(--rose)"}
+       ],
+       edges:[
+         {id:"e1",from:"w",to:"z",label:"\u2202z/\u2202w\u2081 = "+f2(N1.x[0]),color:"var(--teal)"},
+         {id:"e2",from:"z",to:"a",label:"\u2202a/\u2202z = "+f3(da),color:"var(--teal)"},
+         {id:"e3",from:"a",to:"L",label:"\u2202L/\u2202a",color:"var(--teal)"}
+       ],
+       captions:[{x:260,y:24,t:"forward: each box feeds the next",up:true},
+                 {x:260,y:180,t:"backward: multiply the three rates",up:true,color:"var(--amber)"}]
+     };
+     gdraw(V,spec,sel,function(s){ sel=(sel&&sel.id===s.id)?null:s; draw(); });
+     const E={
+       e1:"<b>\u2202z/\u2202w\u2081 = x\u2081 = "+f2(N1.x[0])+"</b><span class='t'>In z = w\u2081x\u2081 + w\u2082x\u2082 + b the knob w\u2081 appears once, multiplied by x\u2081. So nudging it moves z by x\u2081 times as much.</span>",
+       e2:"<b>\u2202a/\u2202z = \u03c3(1-\u03c3) = "+f3(da)+"</b><span class='t'>The slope of the activation at this point. This is the gate: when it is near zero, nothing gets through.</span>",
+       e3:"<b>\u2202L/\u2202a</b><span class='t'>How much the loss responds to this neuron's output. Blocks 10 and 11 compute it exactly.</span>",
+       w:"<b>The knob we want to improve</b><span class='t'>It does not touch the loss directly. It touches z, which touches a, which touches L.</span>",
+       z:"<b>z = "+f3(v.z)+"</b><span class='t'>An intermediate value. The chain rule needs it because the derivative passes through it.</span>",
+       a:"<b>a = "+f3(v.a)+"</b><span class='t'>The neuron's output, and the second link of the chain.</span>",
+       L:"<b>The loss</b><span class='t'>One number saying how wrong the prediction was.</span>"
+     };
+     V.exp.innerHTML=sel?E[sel.id]:"<b>Click each of the three lines in turn.</b><span class='t'>Each line carries one local rate. The derivative you want is the product of all three along the path from the knob to the loss.</span>";
+   }
+   sub(draw); draw();
+ },
+
+ /* ---- block 3: which knob, and the slope on its edge ---- */
+ b3:function(host){ fullNet(host,"backward",
+   "Every line is a knob. Its number here is the slope of the loss with respect to that knob, which is exactly what gradient descent divides the step by. Switch to weights to see the values that will be updated."); },
+
+ /* ---- block 4: the forward pass, step by step on the diagram ---- */
+ b4:function(host){
+   const V=gview(host,{w:520,h:250});
+   let stage=0, sel=null;
+   const names=["nothing yet","z\u207d\u00b9\u207e computed","a\u207d\u00b9\u207e = \u03c3(z\u207d\u00b9\u207e)","z\u207d\u00b2\u207e computed","\u0177 = softmax(z\u207d\u00b2\u207e)"];
+   gtool(V,"\u25b6 step forward",function(){ stage=Math.min(4,stage+1); draw(); },true);
+   gtool(V,"reset",function(){ stage=0; draw(); });
+   function draw(){
+     const f=F(), o=fwd(NET,XIN);
+     const ns=netNodes(o,"values");
+     ns.forEach(function(n){
+       if(n.id[0]==="h"){ const j=+n.id[1];
+         n.label=stage>=2?f3(o.a1[j]):(stage>=1?f3(o.z1[j]):"?");
+         n.fill=stage>=1?"var(--panel)":"rgba(16,27,51,.04)"; }
+       if(n.id[0]==="y"){ const i=+n.id[1];
+         n.label=stage>=4?f3(o.p[i]):(stage>=3?f3(o.z2[i]):"?");
+         n.fill=stage>=3?(i===TRUE?"rgba(166,43,84,.13)":"var(--panel)"):"rgba(16,27,51,.04)"; }
+     });
+     const es=netEdges(o,"values");
+     es.forEach(function(e){
+       const lay=e.id.split("-")[0];
+       const lit=(lay==="W1"&&stage>=1)||(lay==="W2"&&stage>=3);
+       if(!lit){ e.color="rgba(124,137,163,.28)"; e.label=""; }
+     });
+     gdraw(V,{nodes:ns,edges:es,captions:[
+       {x:LX[0],y:22,t:"inputs",up:true},{x:LX[1],y:22,t:"hidden",up:true},{x:LX[2],y:22,t:"outputs",up:true},
+       {x:260,y:236,t:"stage "+stage+" of 4: "+names[stage],color:"var(--amber)"}]},
+       sel,function(s){ sel=(sel&&sel.kind===s.kind&&sel.id===s.id)?null:s; draw(); });
+     V.exp.innerHTML=sel?netExplain(sel,o,"values"):
+       "<b>Press step forward four times.</b><span class='t'>The lines light up as the signal uses them, and each layer of circles fills in only once the layer before it is done. That ordering is the whole meaning of the word forward.</span>";
+   }
+   sub(draw); draw();
+ },
+
+ /* ---- block 5: all fifteen knobs on one diagram ---- */
+ b5:function(host){ fullNet(host,"backward",
+   "Every line and every circle carries its own partial derivative, and all of them were produced by one backward pass. Click any line to see its gradient and the value it will take after the step."); },
+
+ /* ---- block 6: the activation as a gate on the path ---- */
+ b6:function(host){
+   const V=gview(host,{w:520,h:220});
+   let z=1.0, sel=null;
+   const sl=document.createElement("div");
+   V.tools.appendChild(sl);
+   slider(sl,"z into the neuron",-6,6,0.1,z,function(v){ z=v; draw(); });
+   function draw(){
+     const a=sig(z), d=a*(1-a);
+     const gate=Math.max(0.6,d*10);
+     const spec={
+       nodes:[
+         {id:"in",x:70,y:100,label:f2(z),sub:"z",fill:"rgba(15,122,131,.10)"},
+         {id:"f",x:250,y:100,label:"\u03c3",shape:"box",bw:70,bh:48,fs:16,fill:"rgba(222,145,38,.16)",stroke:"var(--amber)",sub:"activation"},
+         {id:"out",x:440,y:100,label:f3(a),sub:"a",fill:"rgba(15,122,131,.18)"}
+       ],
+       edges:[
+         {id:"e1",from:"in",to:"f",label:"forward",color:"var(--teal)",w:2.4},
+         {id:"e2",from:"f",to:"out",label:"forward",color:"var(--teal)",w:2.4},
+         {id:"b1",from:"out",to:"f",label:"error arrives",ly:26,color:"var(--violet)",w:2.4,dash:"6 4"},
+         {id:"b2",from:"f",to:"in",label:"\u00d7 \u03c3\u2032 = "+f3(d),ly:26,color:d<0.05?"rgba(124,137,163,.45)":"var(--violet)",w:gate,dash:"6 4"}
+       ],
+       captions:[{x:260,y:22,t:"the same neuron, seen from both directions",up:true},
+         {x:260,y:196,t:d<0.05?"the gate is almost shut: learning stops here":"the gate is open: the signal passes",
+          color:d<0.05?"var(--rose)":"var(--teal)"}]
+     };
+     gdraw(V,spec,sel,function(s){ sel=(sel&&sel.id===s.id)?null:s; draw(); });
+     const E={
+       e1:"<b>Forward</b>: z = "+f2(z)+" enters the activation.",
+       e2:"<b>Forward</b>: a = \u03c3("+f2(z)+") = "+f3(a)+" leaves it.",
+       b1:"<b>Backward</b><span class='t'>The error signal from the layer above arrives here.</span>",
+       b2:"<b>Backward, multiplied by the slope</b><br>\u03c3\u2032("+f2(z)+") = "+f3(a)+" \u00d7 "+f3(1-a)+" = "+f3(d)+
+          "<span class='t'>The thickness of this line is the fraction of the signal that survives. Slide z out to \u00b16 and watch the line thin to nothing: that is the vanishing gradient, drawn.</span>",
+       "in":"<b>z = "+f2(z)+"</b><span class='t'>The weighted total arriving at the neuron.</span>",
+       f:"<b>The activation</b><span class='t'>Forward it bends the value. Backward it multiplies the error by its slope. Same box, two jobs.</span>",
+       out:"<b>a = "+f3(a)+"</b><span class='t'>Between 0 and 1, whatever z was.</span>"
+     };
+     V.exp.innerHTML=sel?E[sel.id]:"<b>Slide z and watch the lower violet line.</b><span class='t'>It is the return path, and its thickness is the slope of the activation. Near z = 0 the gate is wide open. Out in the tails it closes and the neurons behind it stop learning.</span>";
+   }
+   sub(draw); draw();
+ },
+
+ /* ---- block 7: the matrix and the diagram are the same object ---- */
+ b7:function(host){
+   const V=gview(host,{w:520,h:250});
+   let sel=null;
+   function draw(){
+     const o=fwd(NET,XIN);
+     const ns=netNodes(o,"weights"), es=netEdges(o,"values");
+     es.forEach(function(e){
+       const p=e.id.split("-");
+       e.label=(p[0]==="W1"?"W\u00b9":"W\u00b2")+"["+(+p[1]+1)+","+(+p[2]+1)+"]";
+     });
+     gdraw(V,{nodes:ns,edges:es,captions:[
+       {x:LX[0],y:22,t:"2 inputs",up:true},{x:LX[1],y:22,t:"2 hidden",up:true},{x:LX[2],y:22,t:"3 outputs",up:true},
+       {x:165,y:236,t:"W\u207d\u00b9\u207e is 2\u00d72: four lines",color:"var(--teal)"},
+       {x:390,y:236,t:"W\u207d\u00b2\u207e is 3\u00d72: six lines",color:"var(--teal)"}]},
+       sel,function(s){ sel=(sel&&sel.kind===s.kind&&sel.id===s.id)?null:s; draw(); });
+     V.exp.innerHTML=sel?netExplain(sel,o,"values"):
+       "<b>Every entry of the weight matrix is one line in this picture.</b><span class='t'>Count them: four lines between the inputs and the hidden layer, which is why W\u207d\u00b9\u207e has shape 2 by 2. Six lines into three outputs, so W\u207d\u00b2\u207e is 3 by 2. Click a line to read its two indices, destination first.</span>";
+   }
+   sub(draw); draw();
+ },
+
+ /* ---- block 8: scores into probabilities into a decision ---- */
+ b8:function(host){
+   const V=gview(host,{w:520,h:250});
+   let sel=null;
+   function draw(){
+     const f=F(), o=fwd(NET,XIN), am=o.p.indexOf(Math.max.apply(null,o.p));
+     const ys=[55,125,195];
+     const ns=[],es=[];
+     [0,1,2].forEach(function(i){
+       ns.push({id:"z"+i,x:70,y:ys[i],label:f3(o.z2[i]),sub:"z"+(i+1),fill:"rgba(16,27,51,.04)"});
+       ns.push({id:"p"+i,x:330,y:ys[i],label:f3(o.p[i]),sub:f.classes[i].slice(0,13),
+         fill:i===am?"rgba(166,43,84,.16)":"var(--panel)",stroke:i===am?"var(--rose)":"var(--ink)"});
+       es.push({id:"s"+i,from:"z"+i,to:"soft",color:"var(--line-strong)",w:1.6});
+       es.push({id:"o"+i,from:"soft",to:"p"+i,color:"var(--teal)",w:2,label:"e^z/S"});
+       es.push({id:"a"+i,from:"p"+i,to:"arg",color:i===am?"var(--rose)":"rgba(124,137,163,.3)",w:i===am?2.6:1.2});
+     });
+     ns.push({id:"soft",x:200,y:125,label:"softmax",shape:"box",bw:86,bh:52,fs:11,
+       fill:"rgba(222,145,38,.16)",stroke:"var(--amber)",sub:"S = "+f3(o.z2.reduce(function(a,v){ return a+Math.exp(v); },0))});
+     ns.push({id:"arg",x:460,y:125,label:"argmax",shape:"box",bw:74,bh:48,fs:11,
+       fill:"rgba(166,43,84,.12)",stroke:"var(--rose)",sub:f.classes[am].slice(0,14)});
+     gdraw(V,{nodes:ns,edges:es,captions:[
+       {x:70,y:22,t:"raw scores",up:true},{x:330,y:22,t:"probabilities",up:true},{x:460,y:22,t:"decision",up:true},
+       {x:260,y:236,t:"the three probabilities always sum to 1",color:"var(--teal)"}]},
+       sel,function(s){ sel=(sel&&sel.id===s.id)?null:s; draw(); });
+     let h="<b>Click the softmax box, then a probability circle, then argmax.</b><span class='t'>Three unbounded scores go in on the left and one decision comes out on the right. Everything in between is arithmetic you can check.</span>";
+     if(sel){
+       const id=sel.id;
+       if(id==="soft") h="<b>softmax</b><br>S = sum of e^z = "+f3(o.z2.reduce(function(a,v){ return a+Math.exp(v); },0))+
+         "<span class='t'>Every score enters the denominator, which is why every output depends on every input. That coupling is what Block 9 measures.</span>";
+       else if(id==="arg") h="<b>argmax \u2192 "+f.classes[am]+"</b><span class='t'>It only reads which circle is largest. Nudge the scores a little and this box does not move at all, so its derivative is zero and it cannot be trained on.</span>";
+       else if(id[0]==="z"){ const i=+id[1];
+         h="<b>Score z"+(i+1)+" = "+f3(o.z2[i])+"</b><br>e^z = "+f3(Math.exp(o.z2[i]))+
+           "<span class='t'>Not a probability: it can be negative and it obeys no total.</span>"; }
+       else if(id[0]==="p"){ const i=+id[1];
+         h="<b>\u0177"+(i+1)+" = "+f3(o.p[i])+", "+f.classes[i]+"</b><br>= e^"+f3(o.z2[i])+" / S = "+f3(Math.exp(o.z2[i]))+" / "+
+           f3(o.z2.reduce(function(a,v){ return a+Math.exp(v); },0))+"<span class='t'>Positive, below one, and one of three that add to one.</span>"; }
+       else h="<b>the score flows into the shared denominator</b><span class='t'>Every line here matters to every output.</span>";
+     }
+     V.exp.innerHTML=h;
+   }
+   sub(draw); draw();
+ },
+
+ /* ---- block 9: the nine derivatives as nine edges ---- */
+ b9:function(host){
+   const V=gview(host,{w:520,h:250});
+   let sel=null;
+   function draw(){
+     const f=F(), o=fwd(NET,XIN), p=o.p, ys=[60,130,200];
+     const ns=[],es=[];
+     [0,1,2].forEach(function(j){ ns.push({id:"z"+j,x:90,y:ys[j],label:"z"+(j+1),sub:f3(o.z2[j]),fill:"rgba(16,27,51,.04)"}); });
+     [0,1,2].forEach(function(i){ ns.push({id:"p"+i,x:410,y:ys[i],label:"\u0177"+(i+1),sub:f3(p[i]),
+       fill:"rgba(15,122,131,.10)"}); });
+     [0,1,2].forEach(function(i){ [0,1,2].forEach(function(j){
+       const v=(i===j)?p[i]*(1-p[i]):-p[i]*p[j];
+       es.push({id:"d-"+i+"-"+j,from:"z"+j,to:"p"+i,label:f3(v),fs:9,
+         color:v>0?"var(--teal)":"var(--rose)",w:Math.min(4.5,0.7+Math.abs(v)*11),
+         ly:(i===j?-8:(i<j?-8:12))});
+     }); });
+     gdraw(V,{nodes:ns,edges:es,captions:[
+       {x:90,y:22,t:"scores",up:true},{x:410,y:22,t:"probabilities",up:true},
+       {x:250,y:236,t:"nine edges, one per derivative: teal positive, red negative",color:"var(--muted)"}]},
+       sel,function(s){ sel=(sel&&sel.id===s.id)?null:s; draw(); });
+     let h="<b>Every score is joined to every probability, so there are nine derivatives.</b>"+
+       "<span class='t'>The three teal edges are the diagonal, where raising a score raises its own probability. The six red edges are the cost paid by the others. Click any edge.</span>";
+     if(sel&&sel.id[0]==="d"){
+       const q=sel.id.split("-"), i=+q[1], j=+q[2];
+       const v=(i===j)?p[i]*(1-p[i]):-p[i]*p[j];
+       h=(i===j)
+        ? "<b>\u2202\u0177"+(i+1)+"/\u2202z"+(j+1)+", the case i = j</b><br>= \u0177"+(i+1)+"(1 - \u0177"+(i+1)+") = "+f3(p[i])+" \u00d7 "+f3(1-p[i])+" = <b>"+f4(v)+"</b>"+
+          "<span class='t'>Positive: pushing this score up pushes its own probability up. Largest when the probability is one half, which is where the class is least decided.</span>"
+        : "<b>\u2202\u0177"+(i+1)+"/\u2202z"+(j+1)+", the case i \u2260 j</b><br>= -\u0177"+(i+1)+"\u0177"+(j+1)+" = -"+f3(p[i])+" \u00d7 "+f3(p[j])+" = <b>"+f4(v)+"</b>"+
+          "<span class='t'>Negative: raising the score of class "+(j+1)+" steals probability from class "+(i+1)+". It has to, since the three must still add to one.</span>";
+     } else if(sel&&sel.id[0]==="p"){
+       const i=+sel.id[1];
+       let rs=0; [0,1,2].forEach(function(j){ rs+=(i===j)?p[i]*(1-p[i]):-p[i]*p[j]; });
+       h="<b>\u0177"+(i+1)+" = "+f3(p[i])+", "+f.classes[i]+"</b><br>the three edges arriving here sum to "+f3(rs)+
+         "<span class='t'>Zero, always. Nudging any score cannot change the total probability, so the responses must cancel.</span>";
+     } else if(sel&&sel.id[0]==="z"){
+       h="<b>Score z"+(+sel.id[1]+1)+" = "+f3(o.z2[+sel.id[1]])+"</b><span class='t'>Three edges leave it, because it moves all three probabilities at once.</span>";
+     }
+     V.exp.innerHTML=h;
+   }
+   sub(draw); draw();
+ },
+
+ /* ---- block 10: only one path reaches the loss ---- */
+ b10:function(host){
+   const V=gview(host,{w:520,h:230});
+   let sel=null;
+   function draw(){
+     const f=F(), o=fwd(NET,XIN), p=o.p, yv=oneHot(TRUE), ys=[50,115,180];
+     const ns=[],es=[];
+     [0,1,2].forEach(function(i){
+       const t=(i===TRUE);
+       ns.push({id:"p"+i,x:90,y:ys[i],label:f3(p[i]),sub:f.classes[i].slice(0,14)+(t?" (true)":""),
+         fill:t?"rgba(166,43,84,.14)":"rgba(16,27,51,.03)",stroke:t?"var(--rose)":"var(--line-strong)",
+         color:t?"var(--ink)":"var(--muted)"});
+       ns.push({id:"y"+i,x:250,y:ys[i],label:String(yv[i]),sub:"y"+(i+1),r:16,fs:10,
+         fill:t?"rgba(166,43,84,.14)":"rgba(16,27,51,.03)",stroke:t?"var(--rose)":"var(--line-strong)"});
+       es.push({id:"m"+i,from:"p"+i,to:"y"+i,label:t?"\u00d7 1":"\u00d7 0",
+         color:t?"var(--rose)":"rgba(124,137,163,.35)",w:t?2.6:1.2,dash:t?"":"5 4"});
+       es.push({id:"l"+i,from:"y"+i,to:"L",color:t?"var(--rose)":"rgba(124,137,163,.25)",w:t?2.6:1,dash:t?"":"5 4"});
+     });
+     ns.push({id:"L",x:430,y:115,label:f3(loss(p,TRUE)),sub:"L = -log \u0177",r:28,
+       fill:"rgba(166,43,84,.14)",stroke:"var(--rose)"});
+     gdraw(V,{nodes:ns,edges:es,captions:[
+       {x:90,y:20,t:"predicted",up:true},{x:250,y:20,t:"one hot truth",up:true},{x:430,y:20,t:"loss",up:true},
+       {x:250,y:216,t:"two of the three paths are multiplied by zero",color:"var(--muted)"}]},
+       sel,function(s){ sel=(sel&&sel.id===s.id)?null:s; draw(); });
+     let h="<b>Look at which lines are solid.</b><span class='t'>Only the true class reaches the loss. The other two are multiplied by y = 0 and vanish, which is why the sum over three terms collapses to a single logarithm.</span>";
+     if(sel){
+       const id=sel.id, i=+id[1];
+       if(id==="L") h="<b>L = -log("+f3(p[TRUE])+") = "+f3(loss(p,TRUE))+"</b><span class='t'>One number. It reads only the probability given to "+f.classes[TRUE]+".</span>";
+       else if(id[0]==="p") h="<b>\u0177"+(i+1)+" = "+f3(p[i])+"</b><span class='t'>"+(i===TRUE?"This is the one the loss cares about.":"Ignored by the loss, except that it took probability away from the true class.")+"</span>";
+       else if(id[0]==="y") h="<b>y"+(i+1)+" = "+yv[i]+"</b><span class='t'>The truth as a number, so it can multiply.</span>";
+       else h="<b>path "+(i+1)+": y"+(i+1)+" = "+yv[i]+"</b><span class='t'>"+(i===TRUE?"Multiplied by 1, so this term survives.":"Multiplied by 0, so this term disappears entirely.")+"</span>";
+     }
+     V.exp.innerHTML=h;
+   }
+   sub(draw); draw();
+ },
+
+ /* ---- block 11: three paths, added, cancelling to p - y ---- */
+ b11:function(host){
+   const V=gview(host,{w:520,h:250});
+   let sel=null, show=0;
+   gtool(V,"add the three paths",function(){ show=Math.min(3,show+1); draw(); },true);
+   gtool(V,"reset",function(){ show=0; sel=null; draw(); });
+   function draw(){
+     const f=F(), o=fwd(NET,XIN), p=o.p, yv=oneHot(TRUE), ys=[55,125,195];
+     const j=TRUE;
+     const terms=[0,1,2].map(function(i){
+       const dLdy=(yv[i]===1)?-1/p[i]:0;
+       const dydz=(i===j)?p[i]*(1-p[i]):-p[i]*p[j];
+       return {dLdy:dLdy,dydz:dydz,v:dLdy*dydz};
+     });
+     const ns=[],es=[];
+     ns.push({id:"z",x:70,y:125,label:"z"+(j+1),sub:f3(o.z2[j]),fill:"rgba(222,145,38,.18)",stroke:"var(--amber)"});
+     [0,1,2].forEach(function(i){
+       const lit=i<show;
+       ns.push({id:"p"+i,x:250,y:ys[i],label:"\u0177"+(i+1),sub:f3(p[i]),
+         fill:lit?"rgba(15,122,131,.12)":"var(--panel)"});
+       es.push({id:"a"+i,from:"z",to:"p"+i,label:f3(terms[i].dydz),fs:9,
+         color:lit?"var(--teal)":"rgba(124,137,163,.35)",w:lit?2.6:1.2,ly:(i===1?-8:(i===0?-8:12))});
+       es.push({id:"b"+i,from:"p"+i,to:"L",label:terms[i].dLdy===0?"0":f2(terms[i].dLdy),fs:9,
+         color:lit?(terms[i].dLdy===0?"rgba(124,137,163,.4)":"var(--rose)"):"rgba(124,137,163,.35)",
+         w:lit&&terms[i].dLdy!==0?2.6:1.2,ly:(i===1?-8:(i===0?12:-8))});
+     });
+     ns.push({id:"L",x:440,y:125,label:"L",sub:f3(loss(p,TRUE)),fill:"rgba(166,43,84,.13)",stroke:"var(--rose)"});
+     const partial=terms.slice(0,show).reduce(function(a,t){ return a+t.v; },0);
+     gdraw(V,{nodes:ns,edges:es,captions:[
+       {x:250,y:22,t:"one score, three paths, one loss",up:true},
+       {x:250,y:236,t:show===0?"press the button to light the paths one at a time"
+          :("paths added: "+show+"  running total "+f4(partial)),color:"var(--amber)"}]},
+       sel,function(s){ sel=(sel&&sel.id===s.id)?null:s; draw(); });
+     let h="<b>The score z"+(j+1)+" never touches the loss directly.</b><span class='t'>It moves all three probabilities, and each of those moves the loss. Add the three contributions and watch the running total below the diagram.</span>";
+     if(show===3) h="<b>All three paths added: "+f4(partial)+"</b><br>and \u0177"+(j+1)+" - y"+(j+1)+" = "+f3(p[j])+" - "+yv[j]+" = <b>"+f4(p[j]-yv[j])+"</b>"+
+       "<span class='t'>The same number. Two of the three paths contributed nothing because their \u2202L/\u2202\u0177 is zero, and the surviving one cancelled down to prediction minus truth.</span>";
+     if(sel){
+       const id=sel.id, i=+id[1];
+       if(id==="z") h="<b>z"+(j+1)+" = "+f3(o.z2[j])+"</b><span class='t'>The score of the true class. Three lines leave it, one per probability.</span>";
+       else if(id==="L") h="<b>L = "+f3(loss(p,TRUE))+"</b><span class='t'>Three lines arrive, but only one carries anything.</span>";
+       else if(id[0]==="a") h="<b>\u2202\u0177"+(i+1)+"/\u2202z"+(j+1)+" = "+f4(terms[i].dydz)+"</b><span class='t'>From Block 9. "+
+         (i===j?"The diagonal case, positive.":"An off diagonal case, negative.")+"</span>";
+       else if(id[0]==="b") h="<b>\u2202L/\u2202\u0177"+(i+1)+" = "+(terms[i].dLdy===0?"0":f3(terms[i].dLdy))+"</b><span class='t'>From Block 6. "+
+         (terms[i].dLdy===0?"Zero, because this is not the true class, so the whole path contributes nothing.":"Equal to -1/\u0177 on the true class.")+"</span>";
+       else if(id[0]==="p") h="<b>\u0177"+(i+1)+" = "+f3(p[i])+"</b><br>path contribution = "+f4(terms[i].v)+
+         "<span class='t'>Multiply the two edges either side of this circle.</span>";
+     }
+     V.exp.innerHTML=h;
+   }
+   sub(draw); draw();
+ },
+
+ /* ---- block 12: forward then backward on the same picture ---- */
+ b12:function(host){
+   const V=gview(host,{w:520,h:250});
+   let dir="f", sel=null;
+   gtool(V,"forward",function(){ dir="f"; draw(); },true);
+   gtool(V,"backward",function(){ dir="b"; draw(); });
+   gtool(V,"one learning step",function(){ stepNet(NET,ETA); refresh(); });
+   gtool(V,"reset network",function(){ NET=freshNet(); refresh(); });
+   function draw(){
+     const o=fwd(NET,XIN), g=bwdCache();
+     const mode=dir==="f"?"values":"backward";
+     gdraw(V,{nodes:netNodes(o,mode),edges:netEdges(o,mode),captions:[
+       {x:LX[0],y:22,t:"inputs",up:true},{x:LX[1],y:22,t:"hidden",up:true},{x:LX[2],y:22,t:"outputs",up:true},
+       {x:260,y:236,t:dir==="f"?"forward: values move right, edges carry weights"
+         :"backward: error moves left, edges carry gradients",
+        color:dir==="f"?"var(--teal)":"var(--violet)"}]},
+       sel,function(s){ sel=(sel&&sel.kind===s.kind&&sel.id===s.id)?null:s; draw(); });
+     V.exp.innerHTML=sel?netExplain(sel,o,mode):
+       (dir==="f"
+        ? "<b>Forward.</b><span class='t'>Circles hold values, lines hold weights. Loss right now: "+f3(loss(o.p,TRUE))+".</span>"
+        : "<b>Backward, the same picture with the arrows reversed.</b><span class='t'>Circles now hold \u03b4, the error at that neuron, and lines hold \u2202L/\u2202W. Press one learning step and watch every number move at once.</span>");
+   }
+   sub(draw); draw();
+ }
+};
+
+
+/* prerequisite graph: which block needs which */
+function pathGraph(host){
+  if(!host) return;
+  const V=gview(host,{w:960,h:300});
+  const P=[
+    {id:"b1",n:1,t:"the neuron",x:70,y:70,grp:0},
+    {id:"b6",n:2,t:"activations",x:230,y:70,grp:0},
+    {id:"b7",n:3,t:"layers, matrices",x:400,y:70,grp:0},
+    {id:"b4",n:4,t:"forward pass",x:570,y:70,grp:0},
+    {id:"b8",n:5,t:"softmax, argmax",x:740,y:70,grp:0},
+    {id:"b10",n:6,t:"cross entropy",x:890,y:150,grp:1},
+    {id:"b3",n:7,t:"gradient descent",x:740,y:230,grp:2},
+    {id:"b2",n:8,t:"chain rule",x:570,y:230,grp:2},
+    {id:"b9",n:9,t:"softmax derivative",x:400,y:230,grp:2},
+    {id:"b11",n:10,t:"the cancellation",x:230,y:230,grp:2},
+    {id:"b12",n:11,t:"backpropagation",x:70,y:230,grp:3},
+    {id:"b5",n:12,t:"all knobs at once",x:70,y:150,grp:3}
+  ];
+  const NEED=[["b1","b6"],["b6","b7"],["b7","b4"],["b4","b8"],["b8","b10"],["b10","b3"],
+              ["b3","b2"],["b2","b9"],["b9","b11"],["b10","b11"],["b11","b12"],["b12","b5"]];
+  const COL=["rgba(15,122,131,.14)","rgba(166,43,84,.14)","rgba(222,145,38,.16)","rgba(75,63,151,.14)"];
+  const STR=["var(--teal)","var(--rose)","var(--amber)","var(--violet)"];
+  let sel=null;
+  function draw(){
+    const nodes=P.map(function(q){
+      return {id:q.id,x:q.x,y:q.y,shape:"box",bw:150,bh:48,fs:10.5,
+        label:String(q.n).padStart(2,"0")+"  "+q.t,sub:"",
+        fill:COL[q.grp],stroke:STR[q.grp]};
+    });
+    const edges=NEED.map(function(e,k){
+      return {id:"n"+k,from:e[0],to:e[1],color:"var(--line-strong)",w:1.8};
+    });
+    gdraw(V,{nodes:nodes,edges:edges,captions:[
+      {x:400,y:22,t:"build the machine",up:true,color:"var(--teal)"},
+      {x:890,y:105,t:"measure",up:true,color:"var(--rose)"},
+      {x:520,y:284,t:"work out how to improve it",up:true,color:"var(--amber)"},
+      {x:70,y:284,t:"assemble and scale",up:true,color:"var(--violet)"}]},
+      sel,function(s){ location.hash="#"+s.id; });
+    V.exp.innerHTML="<b>Read the arrows as the word needs.</b><span class='t'>"+
+      "Gradient descent at 07 needs a loss, which is why cross entropy is at 06 and not at the end. "+
+      "The chain rule at 08 needs something to differentiate, so it arrives once there is a network and a loss. "+
+      "The cancellation at 10 needs both the softmax derivative at 09 and the cross entropy at 06, which is why two arrows reach it. "+
+      "Backpropagation at 11 needs everything before it, and only then does 12 scale one update to all fifteen knobs.</span>";
+  }
+  draw();
+}
+
 /* ===================== RENDER THE LECTURE ===================== */
 function renderBlocks(){
+  SUBS.length=0;
   const main=byId("blocks");
   clear(main);
   const rail=byId("rail-list");
   clear(rail);
+  const path=document.createElement("section");
+  path.id="path";
+  path.innerHTML='<div class="card"><div class="blockhead"><div><div class="no">Before you start</div>'+
+    '<h2>The path, and why it runs this way</h2></div></div>'+
+    '<p style="max-width:74ch">An arrow means <strong>needs</strong>. You cannot differentiate a loss you have not defined, '+
+    'and you cannot define a loss without a prediction to score, so the first half of this lecture builds the machine and the second half teaches it. '+
+    'Click any box to jump to that block.</p>'+
+    '<div class="viz" id="pathviz"></div></div>';
+  main.appendChild(path);
+  const pli=document.createElement("li");
+  pli.innerHTML='<a href="#path" data-sec="path"><span class="num">\u2192</span>The path</a>';
+  rail.appendChild(pli);
+
   BLOCKS.forEach(function(B){
     const li=document.createElement("li");
     li.innerHTML='<a href="#'+B.id+'" data-sec="'+B.id+'"><span class="num">'+
@@ -1591,7 +2485,9 @@ function renderBlocks(){
         '<div class="bgrid"><div class="explain">'+
           '<div class="beat a"><i>A</i>Intuition</div><div class="intuition"></div>'+
           '<div class="beat b"><i>B</i>Visual representation</div>'+
-          '<p class="hint vis">Press <strong>Show board</strong> above. The board draws this block step by step, and you can write on it with the pen.</p>'+
+          '<div class="viz"></div>'+
+          '<p class="hint" style="margin-top:7px">Click any circle or any connecting line in the diagram above. '+
+          'For the same thing written progressively, press <strong>Show board</strong>.</p>'+
           '<div class="beat c"><i>C</i>Mathematical formulation</div><ol class="deriv"></ol>'+
           '<div class="beat d"><i>D</i>Numerical example</div><div class="numeric"></div>'+
           '<div class="beat e"><i>E</i>Application</div><div class="applied"></div>'+
@@ -1606,8 +2502,9 @@ function renderBlocks(){
     ol.innerHTML=B.math.map(function(m){
       return '<li'+(m.punch?' class="punch"':"")+'><div class="mathblock">\\['+m.tex+'\\]</div><div class="why">'+m.why+"</div></li>";
     }).join("");
-    sec.querySelector(".applied").innerHTML="<strong>"+f.name+".</strong> "+f.app[B.n];
+    sec.querySelector(".applied").innerHTML="<strong>"+f.name+".</strong> "+f.app[B.appKey];
     NUMERIC[B.num](sec.querySelector(".numeric"));
+    GRAPHS[B.id](sec.querySelector(".viz"));
     buildCheck(sec.querySelector(".check"),B.check);
 
     /* board toggle */
@@ -1632,6 +2529,7 @@ function renderBlocks(){
   const li=document.createElement("li");
   li.innerHTML='<a href="#summary" data-sec="summary"><span class="num">\u2605</span>Summary</a>';
   rail.appendChild(li);
+  pathGraph(byId("pathviz"));
   drawMap();
   window.MATH(main);
   spy();
