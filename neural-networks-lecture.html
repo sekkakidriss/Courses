@@ -77,6 +77,9 @@ section{scroll-margin-top:14px;margin-bottom:30px}
 .beat{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin:18px 0 6px;
   display:flex;align-items:center;gap:8px}
 .beat:first-child{margin-top:0}
+.intuition{max-width:72ch}
+.intuition p:last-child{margin-bottom:0}
+.applied{max-width:72ch}
 .beat i{width:19px;height:19px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
   font-style:normal;font-size:10px;color:#fff}
 .beat.a i{background:var(--teal)} .beat.b i{background:var(--violet)} .beat.c i{background:var(--rose)}
@@ -123,7 +126,15 @@ svg.chart{width:100%;height:auto;display:block;background:rgba(16,27,51,.025);bo
 .viz{border:1px solid var(--line);border-radius:11px;padding:11px;background:rgba(16,27,51,.02)}
 svg.gsvg{width:100%;height:auto;display:block}
 .gnode,.gedge{cursor:pointer}
-.gnode circle,.gnode rect{transition:fill .15s,stroke .15s}
+.gnode circle,.gnode rect{transition:fill .15s,stroke .15s,stroke-width .15s}
+svg.gsvg .gnode,svg.gsvg .gedge{transition:opacity .16s ease}
+svg.gsvg .gedge line:first-child{transition:stroke-width .15s ease}
+svg.gsvg .gedge .elabel{opacity:0;transition:opacity .12s ease}
+svg.gsvg .gedge.sel .elabel,svg.gsvg .gedge.hl .elabel{opacity:1}
+svg.gsvg .gedge.hl line:first-child{stroke-width:3.4}
+svg.gsvg .gnode.hl circle,svg.gsvg .gnode.hl rect{stroke-width:2.6}
+svg.gsvg.hover-on .gnode.dim,svg.gsvg.hover-on .gedge.dim{opacity:.16}
+svg.gsvg.hover-on .gedge.dim .elabel{opacity:0}
 .gexp{font-family:var(--mono);font-size:12.4px;line-height:1.7;background:var(--panel);border:1px solid var(--line);
   border-radius:9px;padding:9px 11px;margin-top:9px;min-height:46px}
 .gexp b{color:var(--rose)}
@@ -178,6 +189,29 @@ svg.gsvg{width:100%;height:auto;display:block}
 .mapwrap .mnode{cursor:pointer}
 .mapwrap .mnode:hover rect{fill:var(--amber)}
 footer{border-top:1px solid var(--line);padding:20px 0 60px;color:var(--muted);font-size:13.4px}
+/* ---------- surf aids: progress bar, back-to-top, rail check ---------- */
+#progress{position:fixed;top:0;left:0;height:3px;width:0%;z-index:300;
+  background:linear-gradient(90deg,var(--teal),var(--rose));transition:width .1s linear}
+#totop{position:fixed;right:22px;bottom:22px;z-index:150;width:42px;height:42px;border-radius:50%;
+  background:var(--ink);color:#fff;border:1px solid var(--ink);font-size:17px;cursor:pointer;
+  box-shadow:0 10px 26px -12px rgba(16,27,51,.6);opacity:0;pointer-events:none;transform:translateY(8px);
+  transition:opacity .2s,transform .2s}
+#totop.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+#totop:hover{background:var(--teal)}
+.rail a .done{color:var(--teal);font-weight:700;margin-left:5px}
+section.reveal{opacity:0;transform:translateY(14px)}
+section.reveal.in{opacity:1;transform:translateY(0);transition:opacity .5s ease,transform .5s ease}
+/* block to block navigation */
+.blocknav{display:flex;justify-content:space-between;gap:10px;margin-top:18px;padding-top:13px;border-top:1px solid var(--line)}
+.blocknav a{text-decoration:none;color:var(--ink);max-width:47%}
+.blocknav span{flex:1}
+/* keyboard focus, everywhere */
+.btn:focus-visible,.bbtn:focus-visible,.opt:focus-visible,.fieldcard:focus-visible,
+.rail a:focus-visible,.fieldbox button:focus-visible,.pdot:focus-visible,
+.blocknav a:focus-visible,.board:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.board:focus-visible{outline-color:var(--amber);outline-offset:3px}
+.gnode:focus-visible circle,.gnode:focus-visible rect,.gedge:focus-visible line{stroke:var(--amber);stroke-width:3}
+.gnode:focus,.gedge:focus{outline:none}
 @media (max-width:1100px){ .bgrid.with-board{grid-template-columns:1fr} .bgrid.with-board .boardcol{position:static} }
 @media (max-width:940px){
   .shell{grid-template-columns:1fr;gap:12px}
@@ -185,14 +219,57 @@ footer{border-top:1px solid var(--line);padding:20px 0 60px;color:var(--muted);f
   .rail ol{display:flex;gap:5px}
   .rail a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent;padding:6px 9px}
   .rail a.on{border-left:0;border-bottom-color:var(--rose)}
-  .fieldbox{display:none}
+/* ---- part banners (I-IV) ---- */
+.part-banner{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;padding:5px 14px;border-radius:20px;display:inline-block;margin:20px 0 8px}
+.part-banner.p1{background:rgba(15,122,131,.12);color:var(--teal)}
+.part-banner.p2{background:rgba(166,43,84,.10);color:var(--rose)}
+.part-banner.p3{background:rgba(222,145,38,.14);color:var(--amber)}
+.part-banner.p4{background:rgba(75,63,151,.12);color:var(--violet)}
+/* ---- bridge / why-are-we-here ---- */
+.bridge{border-left:3px solid var(--teal);border-radius:0 9px 9px 0;padding:9px 13px;background:rgba(15,122,131,.06);margin-bottom:14px;font-size:14px;line-height:1.55}
+.bridge.milestone{border-left-color:var(--amber);background:rgba(222,145,38,.07)}
+/* ---- predict panel ---- */
+.predict-wrap{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:12px}
+.predict-wrap .pq{font-weight:600;margin-bottom:8px;font-size:14px}
+.predict-wrap .panswer{display:none;margin-top:8px;padding:9px 12px;border-radius:8px;background:rgba(15,122,131,.09);border-left:3px solid var(--teal);font-size:13.5px}
+.predict-wrap .panswer.on{display:block}
+/* ---- numcheck panel ---- */
+.numcheck-wrap{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;background:rgba(16,27,51,.02)}
+.numcheck-wrap .nq{font-weight:600;margin-bottom:6px;font-size:14px}
+.numcheck-wrap .ngiven{font-family:var(--mono);font-size:12px;background:rgba(16,27,51,.04);border-radius:7px;padding:7px 10px;margin-bottom:9px;line-height:1.9}
+.numcheck-wrap .ninput-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.numcheck-wrap .ninput-row input{font-family:var(--mono);font-size:14px;padding:5px 9px;border:1px solid var(--line);border-radius:7px;width:110px;color:var(--ink);background:var(--panel)}
+.numcheck-wrap .ninput-row input:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal)}
+.numcheck-wrap .nfb{margin-top:8px;font-size:13.5px;padding:8px 11px;border-radius:8px;display:none}
+.numcheck-wrap .nfb.good{display:block;background:rgba(15,122,131,.12);border-left:3px solid var(--teal)}
+.numcheck-wrap .nfb.bad{display:block;background:rgba(166,43,84,.09);border-left:3px solid var(--rose)}
+.numcheck-wrap .show-ans{display:none}
+/* ---- capstone section ---- */
+.capstone-loop{display:grid;gap:10px;margin:10px 0}
+.loop-step{border:1px solid var(--line);border-radius:9px;padding:10px 13px;background:var(--panel);font-size:13.5px}
+.loop-step .ls-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;font-weight:700}
+.loop-step .ls-val{font-family:var(--mono);font-size:13px;color:var(--ink)}
+  .fieldbox{margin-top:10px}
+  .fieldbox button{display:inline-block;width:auto;margin:0 5px 5px 0}
   .fieldcards{grid-template-columns:1fr}
   ol.deriv li{grid-template-columns:18px 1fr} ol.deriv .why{grid-column:2}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}html{scroll-behavior:auto}}
+@media print{
+  #chooser{display:none!important}
+  body{background:#fff;background-image:none;font-size:11.5pt}
+  .rail,.gtools,.board,.btn,.bbtn,.blocknav,footer,.backlink{display:none!important}
+  .shell{grid-template-columns:1fr;padding:0}
+  .card{box-shadow:none;border-color:#999}
+  section,.card,ol.deriv li,table{break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
 </style>
 </head>
 <body>
+
+<div id="progress" role="progressbar" aria-label="Reading progress"></div>
+<button id="totop" aria-label="Back to top" title="Back to top">&uarr;</button>
 
 <!-- ============ FIELD SELECTION SCREEN ============ -->
 <div id="chooser">
@@ -226,6 +303,7 @@ footer{border-top:1px solid var(--line);padding:20px 0 60px;color:var(--muted);f
   <nav class="rail" aria-label="Blocks">
     <ol id="rail-list"></ol>
     <div class="fieldbox" id="rail-field"></div>
+    <div class="fieldbox" id="score" aria-live="polite"></div>
   </nav>
   <main id="blocks"></main>
 </div>
@@ -255,7 +333,6 @@ window.MATH=function(el){
 const FIELDS={
   fin:{key:"fin",name:"Finance and economics",unit:"quarter",subject:"a quarter",
     x:["credit growth","interest rate change"],
-    x3:["credit growth","interest rate change","oil price change"],
     classes:["contraction","stable","expansion"],
     intro:"Two indicators of the current quarter go in, and the model says which regime the next quarter belongs to.",
     bullets:["inputs: two macro indicators","output: contraction, stable or expansion","one observation is one quarter"],
@@ -275,7 +352,6 @@ const FIELDS={
     }},
   epi:{key:"epi",name:"Epidemiology and public health",unit:"patient",subject:"a patient",
     x:["fever score","contact count"],
-    x3:["fever score","contact count","days since onset"],
     classes:["low risk","moderate risk","high risk"],
     intro:"Two clinical indicators of a patient go in, and the model says which risk category the patient belongs to.",
     bullets:["inputs: two clinical indicators","output: low, moderate or high risk","one observation is one patient"],
@@ -295,7 +371,6 @@ const FIELDS={
     }},
   cv:{key:"cv",name:"Computer vision",unit:"image",subject:"an image",
     x:["pixel brightness x\u2081","pixel brightness x\u2082"],
-    x3:["pixel brightness x\u2081","pixel brightness x\u2082","pixel brightness x\u2083"],
     classes:["cat","dog","bird"],
     intro:"Two pixel intensities of a tiny image go in, and the model says which of three categories the image belongs to.",
     bullets:["inputs: pixel intensities between 0 and 1","output: cat, dog or bird","one observation is one image"],
@@ -431,7 +506,7 @@ function G(svg){
       svg.appendChild(sv("path",{d:d,fill:"none",stroke:col,"stroke-width":w||2,"stroke-dasharray":dash||""}));
     },
     axes:function(x0,y0,w,h,xlab,ylab){
-      svg.appendChild(sv("line",{x1:x0,y1:y0,x2:x0+w,y2:y0,stroke:"#5B7surrogate","stroke-width":1}));
+      svg.appendChild(sv("line",{x1:x0,y1:y0,x2:x0+w,y2:y0,stroke:"#5B7A99","stroke-width":1}));
       svg.appendChild(sv("line",{x1:x0,y1:y0,x2:x0,y2:y0-h,stroke:"#5B7A99","stroke-width":1}));
       this.txt(x0+w,y0+14,xlab||"",{anchor:"end",fs:10});
       this.txt(x0+4,y0-h-4,ylab||"",{fs:10});
@@ -443,13 +518,17 @@ function G(svg){
 function makeBoard(host,title,stepsFn){
   const el=document.createElement("div");
   el.className="board";
+  el.setAttribute("tabindex","0");
+  el.setAttribute("role","group");
+  el.setAttribute("aria-label",title+". Step through it with the left and right arrow keys.");
   el.innerHTML=
     '<div class="bh"><span class="t">'+title+'</span>'+
     '<span class="c"></span>'+
     '<div class="row" style="gap:5px">'+
-      '<button class="bbtn prev">&#9664;</button>'+
-      '<button class="bbtn next">Next &#9654;</button>'+
-      '<button class="bbtn reset">Reset</button>'+
+      '<button class="bbtn prev" title="Previous step">&#9664;</button>'+
+      '<button class="bbtn next" title="Next step">Next &#9654;</button>'+
+      '<button class="bbtn all" title="Write every step at once">All</button>'+
+      '<button class="bbtn reset" title="Clear the board">Reset</button>'+
       '<button class="bbtn pen">Pen</button>'+
       '<div class="pens" style="display:none"></div>'+
     '</div></div>'+
@@ -479,11 +558,22 @@ function makeBoard(host,title,stepsFn){
     cnt.textContent="step "+i+" / "+S.length;
     el.querySelector(".prev").disabled=i<=0;
     el.querySelector(".next").disabled=i>=S.length;
+    el.querySelector(".all").disabled=i>=S.length;
     fitInk();
   }
-  el.querySelector(".next").addEventListener("click",function(){ i++; render(); });
-  el.querySelector(".prev").addEventListener("click",function(){ i=Math.max(0,i-1); render(); });
-  el.querySelector(".reset").addEventListener("click",function(){ i=0; strokes=[]; render(); });
+  function go(k){ i=Math.max(0,Math.min(steps().length,k)); render(); }
+  el.querySelector(".next").addEventListener("click",function(){ go(i+1); });
+  el.querySelector(".prev").addEventListener("click",function(){ go(i-1); });
+  el.querySelector(".all").addEventListener("click",function(){ go(steps().length); });
+  el.querySelector(".reset").addEventListener("click",function(){ strokes=[]; go(0); });
+  el.addEventListener("keydown",function(ev){
+    if(ev.target!==el) return;
+    const k=ev.key;
+    if(k==="ArrowRight"||k==="ArrowDown"){ go(i+1); ev.preventDefault(); }
+    else if(k==="ArrowLeft"||k==="ArrowUp"){ go(i-1); ev.preventDefault(); }
+    else if(k==="Home"){ go(0); ev.preventDefault(); }
+    else if(k==="End"){ go(steps().length); ev.preventDefault(); }
+  });
   /* pen layer */
   const cv=el.querySelector("canvas.ink"), ctx=cv.getContext?cv.getContext("2d"):null;
   const COLS=["#F2F5F8","#DE9126","#7FE3C9","#FF8FA3"];
@@ -560,7 +650,11 @@ const BLOCKS=[
   {tex:"a = \\sigma(z) = \\frac{1}{1+e^{-z}}",why:"Bend the total into the range 0 to 1 so it can be read as a strength or a probability."},
   {tex:"a = \\sigma\\left(\\sum_{j=1}^{2} w_jx_j + b\\right)",punch:true,why:"The whole neuron on one line. Everything later is copies of this."}
  ],
- num:"n1", check:{
+ num:"n1", part:1,
+ bridge:"Every neural network is built from one repeated idea. This block introduces it: a neuron that multiplies each input by a weight, adds a bias, and bends the total through an activation function. All eleven blocks that follow are extensions of this single idea.",
+ predict:{q:"The weight w\u2081 = 1.5 and input x\u2081 = 0.9. If you double w\u2081 to 3.0 while holding everything else fixed, how much does z change?",a:"z increases by 1.5 \u00d7 0.9 = 1.35. The new z = 1.25 + 1.35 = 2.60. Doubling a weight doubles that input\u2019s contribution, because z = w\u2081x\u2081 + w\u2082x\u2082 + b and only the first term changed."},
+ numcheck:{given:"x\u2081 = 0.90,  x\u2082 = 0.20,  w\u2081 = 1.50,  w\u2082 = \u22122.00,  b = 0.30",q:"Calculate  z = w\u2081x\u2081 + w\u2082x\u2082 + b",ans:1.25,tol:0.02,correct:"z = 1.50\u00d70.90 + (\u22122.00)\u00d70.20 + 0.30 = 1.35 \u2212 0.40 + 0.30 = <strong>1.25</strong>. This weighted total is everything the neuron knows before the activation bends it.",wrong:"Compute each term: 1.50\u00d70.90 = 1.35, then (\u22122.00)\u00d70.20 = \u22120.40, then add bias 0.30. Sum all three carefully, paying attention to the negative sign on w\u2082."},
+ check:{
   q:"If learning sets \\(w_1 = 0\\), what does that tell you?",
   opts:["The first input has no influence on this neuron","The first input is very important","The neuron always outputs zero","The bias must also be zero"],
   a:0,
@@ -585,7 +679,11 @@ const BLOCKS=[
   {tex:"W^{(2)}\\left(W^{(1)}\\mathbf{x}+\\mathbf{b}^{(1)}\\right)+\\mathbf{b}^{(2)} = \\left(W^{(2)}W^{(1)}\\right)\\mathbf{x} + \\mathbf{b}'",punch:true,
    why:"With no activation, two layers collapse into the single matrix \\(W^{(2)}W^{(1)}\\). This is why an activation is compulsory, not decorative."}
  ],
- num:"n6", check:{
+ num:"n6", part:1,
+ bridge:"You have a neuron that computes z = \u03a3w\u1d62x\u1d62 + b. Without a nonlinear bend, stacking two layers collapses to one linear layer \u2014 depth buys nothing. The activation is the only nonlinear ingredient, and its <strong>slope</strong> controls how much learning signal can flow backward through it.",
+ predict:{q:"The slider is at z = 5. Will the slope \u03c3\u2032(z) be large or small compared to \u03c3\u2032(0)?",a:"Very small. \u03c3\u2032(5) \u2248 0.0066, versus \u03c3\u2032(0) = 0.25. The neuron is saturated: almost no learning signal passes back. This is the vanishing gradient problem, visible in the slope graph."},
+ numcheck:{given:"z = 1.25 (the pre-activation total from Block 1)",q:"Calculate  \u03c3(z) = 1 / (1 + e\u207b\u1d63), using z = 1.25",ans:0.78,tol:0.02,correct:"\u03c3(1.25) = 1/(1 + e\u207b\xb9\xb7\xb2\u2075) \u2248 1/(1 + 0.287) \u2248 <strong>0.778</strong>. This is the activation a of the neuron: the output after bending z into the range (0, 1).",wrong:"\u03c3(z) = 1/(1 + e^{-z}). With z = 1.25: e^{-1.25} \u2248 0.287, so 1/(1 + 0.287) \u2248 0.778. Check that you used the natural exponential e \u2248 2.718."},
+ check:{
   q:"A sigmoid neuron sits at \\(z = 6\\), so \\(\\sigma(z) \\approx 0.9975\\). What is its slope, and what does that mean?",
   opts:["About 0.0025, so almost no learning signal passes back through it","About 1, so the signal passes freely","Exactly 0, so the neuron is broken","About 0.25, the maximum"],
   a:0,
@@ -611,7 +709,11 @@ const BLOCKS=[
   {tex:"(2\\times 2)(2\\times 1) + (2\\times 1) = (2\\times 1)",
    why:"Shapes: the inner numbers must match, and the result takes the outer ones. The output layer is \\((3\\times2)(2\\times1) = (3\\times1)\\)."}
  ],
- num:"n7", check:{
+ num:"n7", part:1,
+ bridge:"You know how one neuron works. Now you need two hidden neurons reading the same inputs. Writing them line by line is fine; stacking those lines into a matrix is all matrix notation is. <strong>Matrix multiplication is not a new concept \u2014 it is compact shorthand for what you already know.</strong>",
+ predict:{q:"Our network has 2 inputs and 2 hidden neurons. What is the shape of W\u207d\xb9\u207e, and why does it have that shape?",a:"W\u207d\xb9\u207e \u2208 \u211d\u00b2\u02e3\u00b2. Two rows (one per destination hidden neuron) and two columns (one per source input). The rule is always: shape = (destinations) \u00d7 (sources)."},
+ numcheck:{given:"W\u207d\xb9\u207e = [[0.50, \u22120.20], [0.30, 0.80]],  x = [1.00, 0.50],  b\u207d\xb9\u207e = [0.10, \u22120.10]",q:"Calculate  z\u2081\u207d\xb9\u207e = W\u207d\xb9\u207e\u2081\u2081 \u00d7 x\u2081 + W\u207d\xb9\u207e\u2081\u2082 \u00d7 x\u2082 + b\u207d\xb9\u207e\u2081",ans:0.50,tol:0.02,correct:"z\u2081\u207d\xb9\u207e = 0.50\u00d71.00 + (\u22120.20)\u00d70.50 + 0.10 = 0.50 \u2212 0.10 + 0.10 = <strong>0.50</strong>. This is row 1 of W\u207d\xb9\u207e dotted with x, plus bias b\u2081.",wrong:"Multiply row 1 of W\u207d\xb9\u207e by x element-wise: 0.50\u00d71.00 = 0.50, (\u22120.20)\u00d70.50 = \u22120.10. Add both terms and then add b\u2081 = 0.10."},
+ check:{
   q:"In \\(W^{(2)}_{31}\\), which neurons does this weight connect?",
   opts:["From hidden neuron 1 to output neuron 3","From output neuron 3 to hidden neuron 1","From input 3 to hidden neuron 1","It is a bias, not a connection"],
   a:0,
@@ -635,7 +737,11 @@ const BLOCKS=[
   {tex:"z^{(2)}_i = \\sum_{j=1}^{2} W^{(2)}_{ij}a^{(1)}_j + b^{(2)}_i",why:"The output layer does to the hidden values exactly what the hidden layer did to the data."},
   {tex:"\\hat{y} = \\mathrm{softmax}\\left(\\mathbf{z}^{(2)}\\right)",punch:true,why:"Three scores turned into three probabilities, which Block 5 explains in full."}
  ],
- num:"n4", check:{
+ num:"n4", part:1,
+ bridge:"You have the neuron, the activation, and matrix notation. Forward propagation runs the whole thing left to right: two inputs become two hidden activations, which become three output logits, which softmax converts to probabilities. After this block you can trace the complete path from data to prediction.",
+ predict:{q:"a\u2081\u207d\xb9\u207e = \u03c3(z\u2081\u207d\xb9\u207e) = \u03c3(0.50). Before computing: is this above or below 0.5, and why?",a:"Above 0.5. Whenever the input to \u03c3 is positive, the output is greater than 0.5, because \u03c3(0) = 0.5 exactly and the sigmoid is increasing. Since z = 0.50 > 0, \u03c3(0.50) > 0.5."},
+ numcheck:{given:"z\u2081\u207d\xb9\u207e = 0.50 (the first hidden pre-activation from Block 3)",q:"Calculate  a\u2081\u207d\xb9\u207e = \u03c3(0.50) = 1 / (1 + e\u207b\u2070\u22c5\u2075\u2070)",ans:0.62,tol:0.02,correct:"\u03c3(0.50) = 1/(1 + e^{-0.5}) \u2248 1/(1 + 0.607) \u2248 <strong>0.622</strong>. This activation value travels into the second layer and is multiplied by W\u207d\u00b2\u207e to produce the output logits.",wrong:"\u03c3(z) = 1/(1 + e^{-z}). With z = 0.50: e^{-0.5} \u2248 0.607, so 1/(1 + 0.607) \u2248 0.622. Check that you are taking e^{-0.5}, not e^{+0.5}."},
+ check:{
   q:"In the forward pass, which quantities change when new data arrives, and which stay put?",
   opts:["\\(x, z, a, \\hat y\\) change; \\(W\\) and \\(b\\) stay","Everything changes","Only \\(\\hat y\\) changes","\\(W\\) and \\(b\\) change; \\(x\\) stays"],
   a:0,
@@ -662,11 +768,15 @@ const BLOCKS=[
   {tex:"\\frac{e^{z_i+c}}{\\sum_j e^{z_j+c}} = \\frac{e^{c}e^{z_i}}{e^{c}\\sum_j e^{z_j}} = \\hat y_i",
    why:"Adding the same constant to every score changes nothing, which is why implementations subtract the largest score first to avoid overflow."}
  ],
- num:"n8", check:{
+ num:"n8", part:2,
+ bridge:"The network now produces three raw scores called <strong>logits</strong>. They can be negative and do not sum to any particular value, so they are not probabilities. Softmax converts them into a valid probability distribution (positive, summing to 1). Argmax reads the prediction.",
+ predict:{q:"If you add 10 to every logit simultaneously, what happens to the softmax probabilities?",a:"Nothing changes. Adding a constant c to all logits cancels: e^{z+c} / \u03a3e^{z+c} = e^c\u00d7e^z / (e^c\u00d7\u03a3e^z) = e^z / \u03a3e^z. This is why implementations subtract the maximum logit first \u2014 for numerical stability, not mathematical correctness."},
+ numcheck:{given:"z\u207d\u00b2\u207e = [0.30, 0.68, \u22120.44] (the three output logits from our network)",q:"Calculate  e^{z\u2081} = e^{0.30}",ans:1.35,tol:0.03,correct:"e^{0.30} \u2248 <strong>1.350</strong>. This is the first step of softmax: exponentiate every logit so all values are positive before dividing by their sum S.",wrong:"e^{0.30} means Euler\u2019s number e \u2248 2.718 raised to the power 0.30. The result is approximately 1.35. Check that you are computing e^{+0.30}, not 10^{0.30}."},
+ check:{
   q:"Why can argmax not be used as the output during training?",
-  opts:["Its derivative is zero everywhere, so it gives no direction to move in","It is too slow to compute","It does not preserve the order of the scores","It can return negative values"],
+  opts:["Its derivative is zero wherever it exists, so it gives no direction to move in","It is too slow to compute","It does not preserve the order of the scores","It can return negative values"],
   a:0,
-  why:["Correct. A tiny change in the scores leaves the index unchanged, so the derivative carries no information and learning has nothing to follow.",
+  why:["Correct. A tiny change in the scores leaves the index unchanged, so the derivative is zero, and at a tie it does not exist at all. Either way there is nothing for learning to follow.",
        "It is in fact the cheapest operation in the network.",
        "It does preserve order, which is why it agrees with softmax at prediction time.",
        "It returns an index, never a negative value."]
@@ -683,12 +793,16 @@ const BLOCKS=[
   {tex:"\\mathbf{y} = (y_1,y_2,y_3), \\quad y_i=1 \\text{ for the true class, } 0 \\text{ otherwise}",
    why:"One hot encoding. The truth written as numbers so it can be multiplied."},
   {tex:"L = -\\sum_i y_i \\log(\\hat y_i)",punch:true,why:"Cross entropy between the truth and the prediction."},
-  {tex:"= -\\bigl(0\\cdot\\log\\hat y_1 + 1\\cdot\\log\\hat y_t + 0\\cdot\\log\\hat y_3\\bigr) = -\\log \\hat y_t",punch:true,
+  {tex:"= -\\bigl(y_1\\log\\hat y_1 + y_2\\log\\hat y_2 + y_3\\log\\hat y_3\\bigr) = -\\log \\hat y_t",punch:true,
    why:"Every term except the true class is multiplied by zero. The sum was never doing any work."},
   {tex:"\\frac{\\partial L}{\\partial \\hat y_i} = -\\frac{y_i}{\\hat y_i}",
    why:"Term by term, using \\(\\frac{d}{du}\\log u = 1/u\\). Zero except at the true class, where it is \\(-1/\\hat y_t\\)."}
  ],
- num:"n10", check:{
+ num:"n10", part:2,
+ bridge:"Softmax gives you probabilities. Now you need a single number that says how wrong they are. The loss must be 0 when perfect, and grow without bound when you are <em>confidently</em> wrong. Cross entropy uses \u2212ln to achieve exactly this: confident mistakes are punished exponentially more.",
+ predict:{q:"Model A gave the true class 40% probability. Model B gave it 1%. Before computing: roughly how much larger is Model B\u2019s loss?",a:"About 5\u00d7 larger. L_A = \u2212ln(0.40) \u2248 0.92 and L_B = \u2212ln(0.01) \u2248 4.61. Confident mistakes cost exponentially more, and produce proportionally larger gradients \u2014 which is exactly what you want from a classification loss."},
+ numcheck:{given:"\u0177_{true} = 0.340 (our network\u2019s current probability on the true class)",q:"Calculate  L = \u2212ln(\u0177_{true}) = \u2212ln(0.340)",ans:1.08,tol:0.03,correct:"\u2212ln(0.340) \u2248 <strong>1.079</strong>. To drive the loss toward zero, the network must increase its confidence on the true class toward 1.",wrong:"L = \u2212ln(0.340). Natural log: ln(0.34) \u2248 \u22121.079, so \u2212ln(0.34) \u2248 1.079. If you got about 0.469, you used log base 10; multiply by ln(10) \u2248 2.303."},
+ check:{
   q:"Two models are wrong on the same observation. Model A gave the true class probability 0.4, model B gave it 0.01. How do their losses compare?",
   opts:["B is punished far more: 4.6 against 0.9","They are punished equally, both are wrong","A is punished more because it was closer","Neither is punished, only argmax matters"],
   a:0,
@@ -710,10 +824,14 @@ const BLOCKS=[
   {tex:"L(w) \\text{ measures the mistake as a function of the knob}",why:"Change the knob and the mistake changes. That dependence is what makes improvement possible."},
   {tex:"\\frac{\\partial L}{\\partial w} > 0 \\;\\Rightarrow\\; \\text{increasing } w \\text{ increases the loss}",why:"So you must move the other way, which is where the minus sign comes from."},
   {tex:"\\theta_{new} = \\theta_{old} - \\eta\\,\\frac{\\partial L}{\\partial \\theta}",punch:true,why:"The update rule. \\(\\eta\\) is the learning rate, a small positive number you choose."},
-  {tex:"L(\\theta - \\eta\\nabla L) \\approx L(\\theta) - \\eta\\left(\\frac{\\partial L}{\\partial\\theta}\\right)^{2} \\le L(\\theta)",
-   why:"Why it works: substituting the step into the tangent line approximation gives a square, and a square is never negative, so the loss goes down for small enough \\(\\eta\\)."}
+  {tex:"L(\\theta - \\eta\\nabla L) \\approx L(\\theta) - \\eta\\lVert\\nabla L\\rVert^{2} \\le L(\\theta)",
+   why:"Why it works: substituting the step into the tangent approximation gives a squared length, which is never negative, so the loss goes down for small enough \\(\\eta\\)."}
  ],
- num:"n3", check:{
+ num:"n3", part:3,
+ bridge:"You can make a prediction and measure how wrong it is. Now: which direction should the parameters move to reduce the error? Gradient descent answers this by walking downhill on the loss surface. The gradient points uphill, so subtracting a fraction of it \u2014 a step of size \u03b7 \u2014 moves downhill.",
+ predict:{q:"The gradient \u2202L/\u2202w is <em>negative</em> at the current parameter value. Should w increase or decrease, and why?",a:"w should increase. The update rule is w_new = w \u2212 \u03b7 \u00d7 (\u2202L/\u2202w). When the gradient is negative, subtracting a negative number adds to w. A negative gradient literally means: \u2018the loss falls when w increases.\u2019"},
+ numcheck:{given:"w = \u22121.20,  gradient \u2202L/\u2202w = \u22123.12,  learning rate \u03b7 = 0.50",q:"Calculate  w_new = w \u2212 \u03b7 \u00d7 (\u2202L/\u2202w)",ans:0.36,tol:0.02,correct:"w_new = \u22121.20 \u2212 0.50 \u00d7 (\u22123.12) = \u22121.20 + 1.56 = <strong>0.36</strong>. The negative gradient pulls w to the right, toward the minimum of the loss landscape.",wrong:"Substitute into w_new = w \u2212 \u03b7 \u00d7 gradient: \u22121.20 \u2212 0.50 \u00d7 (\u22123.12). Be careful: subtracting a negative number is addition. \u22121.20 \u2212 (\u22121.56) = \u22121.20 + 1.56."},
+ check:{
   q:"You set the learning rate very large and the loss starts increasing every step. What has happened?",
   opts:["The step jumps past the valley and lands higher on the other side","The gradient was computed with the wrong sign","The loss function has no minimum","The model has too few parameters"],
   a:0,
@@ -738,7 +856,11 @@ const BLOCKS=[
    why:"The same rule inside a neuron. The weight touches \\(z\\), \\(z\\) touches \\(a\\), \\(a\\) touches the loss \\(L\\)."},
   {tex:"\\frac{\\partial z}{\\partial w_1} = x_1",why:"In \\(z = w_1x_1+w_2x_2+b\\) the knob \\(w_1\\) appears once, multiplied by \\(x_1\\). Everything else is constant with respect to it."}
  ],
- num:"n2", check:{
+ num:"n2", part:3,
+ bridge:"Gradient descent needs \u2202L/\u2202w for every weight. But weights do not touch the loss directly \u2014 a weight touches z, which touches a, which touches L. The chain rule decomposes this path into a product of local, easily computable rates. <strong>Rates multiply along a chain.</strong>",
+ predict:{q:"In the chain w \u2192 z \u2192 a \u2192 L, the activation slope \u2202a/\u2202z at a particular z is 0.001 (a saturated sigmoid). What happens to the gradient reaching w?",a:"Almost nothing. The total \u2202L/\u2202w = (\u2202L/\u2202a) \u00d7 (\u2202a/\u2202z) \u00d7 (\u2202z/\u2202w) contains the factor 0.001, making the whole product \u22481000\u00d7 smaller. The weight barely moves \u2014 this is the vanishing gradient problem, caused by a saturated activation."},
+ numcheck:{given:"\u2202L/\u2202a\u2081 = \u22120.69,  \u03c3\u2032(a\u2081) = 0.235,  \u2202z\u2081/\u2202W\u207d\xb9\u207e\u2081\u2081 = x\u2081 = 1.00",q:"Calculate  \u2202L/\u2202W\u207d\xb9\u207e\u2081\u2081 = (\u2202L/\u2202a) \u00d7 (\u2202a/\u2202z) \u00d7 (\u2202z/\u2202w)",ans:-0.16,tol:0.03,correct:"\u22120.69 \u00d7 0.235 \u00d7 1.00 \u2248 <strong>\u22120.162</strong>. This is the exact gradient for the top-left weight of the first layer. Three local rates, multiplied together.",wrong:"Multiply the three factors: \u22120.69 \u00d7 0.235 \u00d7 1.00. The result is negative (around \u22120.16). Each factor is the derivative of one link in the chain."},
+ check:{
   q:"In a chain of three links, one link has a derivative of 0.01 and the others are about 1. What happens to the signal reaching the first knob?",
   opts:["It is roughly a hundred times smaller","It is unchanged","It doubles","It becomes negative"],
   a:0,
@@ -771,12 +893,16 @@ const BLOCKS=[
   {tex:"\\frac{\\partial \\hat y_i}{\\partial z_j} = \\hat y_i\\left(\\delta_{ij} - \\hat y_j\\right)",punch:true,
    why:"Both cases in one line: set \\(i=j\\) and it reads \\(\\hat y_i(1-\\hat y_i)\\), set \\(i \\ne j\\) and it reads \\(-\\hat y_i\\hat y_j\\)."}
  ],
- num:"n9", check:{
+ num:"n9", part:3,
+ bridge:"The chain rule needs the derivative of softmax. Softmax maps 3 scores to 3 probabilities, so its derivative is a 3\u00d73 table \u2014 the Jacobian. Every output depends on every input through the shared denominator S, which is why you need 9 entries. The sign pattern follows directly from the constraint that probabilities must sum to 1.",
+ predict:{q:"Should the diagonal entries (i = j) of the softmax Jacobian be positive or negative? What about off-diagonal entries?",a:"Diagonal <strong>positive</strong>: raising a score increases its own probability. Off-diagonal <strong>negative</strong>: raising one score steals probability from the others (since they must still sum to 1). The row sums are all zero for the same reason."},
+ numcheck:{given:"\u0177 = [0.340, 0.497, 0.162] (our network\u2019s softmax output)",q:"Calculate  \u2202\u0177\u2081/\u2202z\u2082 = \u2212\u0177\u2081 \u00d7 \u0177\u2082",ans:-0.17,tol:0.03,correct:"\u2212 0.340 \u00d7 0.497 \u2248 <strong>\u22120.169</strong>. Negative because raising z\u2082 increases \u0177\u2082 and therefore steals probability from \u0177\u2081. The off-diagonal formula is always \u2212\u0177\u1d62\u0177\u2c7c.",wrong:"Use the off-diagonal formula: \u2202\u0177\u1d62/\u2202z\u2c7c = \u2212\u0177\u1d62 \u00d7 \u0177\u2c7c with i = 1, j = 2. Substitute \u0177\u2081 = 0.340 and \u0177\u2082 = 0.497. The result must be negative."},
+ check:{
   q:"Why must every row of the nine derivatives sum to zero?",
   opts:["Because the probabilities always sum to 1, so their total cannot change","Because softmax is symmetric","Because the scores sum to zero","Because the derivative of a constant is zero, and \\(z_j\\) is constant"],
   a:0,
   why:["Correct. If the sum of the outputs is fixed at 1, then nudging any input cannot change that sum, so the responses must cancel exactly.",
-       "Softmax is not symmetric in general, and the row sum property does not come from symmetry.",
+       "The nine derivatives do form a symmetric table, but symmetry says nothing about what a row adds up to. The row sums come from the constraint on the probabilities, not from symmetry.",
        "The scores can sum to anything at all. It is the probabilities that are constrained.",
        "\\(z_j\\) is the variable being differentiated, not a constant."]
  }
@@ -800,10 +926,14 @@ const BLOCKS=[
    why:"Expand the bracket and split into two sums. \\(\\hat y_j\\) has no \\(i\\) in it, so it comes outside."},
   {tex:"\\sum_i y_i\\delta_{ij} = y_j, \\qquad \\sum_i y_i = 1",
    why:"The delta keeps only the term \\(i=j\\), and a one hot vector has exactly one entry equal to 1."},
-  {tex:"\\frac{\\partial L}{\\partial z_i} = \\hat y_i - y_i",punch:true,
+  {tex:"\\frac{\\partial L}{\\partial z_j} = \\hat y_j - y_j",punch:true,
    why:"Prediction minus truth. No exponentials, no divisions, nothing that can overflow. This is why softmax and cross entropy are implemented as a single fused step."}
  ],
- num:"n11", check:{
+ num:"n11", part:3,
+ bridge:"\u2605 <strong>Major result.</strong> You have \u2202L/\u2202\u0177\u1d62 from cross entropy and \u2202\u0177\u1d62/\u2202z\u2c7c from the softmax Jacobian. The chain rule multiplies them and sums over three paths. Almost everything cancels, leaving <strong>\u0177\u2c7c \u2212 y\u2c7c</strong>: prediction minus truth. This is the most elegant simplification in the entire derivation.",
+ predict:{q:"Before the algebra: the derivative \u2202L/\u2202z\u2c7c combines cross-entropy and softmax. Do you expect a complicated or a simple result, and why?",a:"Surprisingly simple. The \u0177\u1d62 in the denominator of \u2202L/\u2202\u0177\u1d62 (from cross entropy) cancels the \u0177\u1d62 factor in \u2202\u0177\u1d62/\u2202z\u2c7c (from softmax). The result is just \u0177\u2c7c \u2212 y\u2c7c: prediction minus truth \u2014 no exponentials, no divisions."},
+ numcheck:{given:"\u0177 = [0.340, 0.497, 0.162],  y = [1, 0, 0] (true class is class 0)",q:"Calculate  \u2202L/\u2202z\u2081 = \u0177\u2081 \u2212 y\u2081",ans:-0.66,tol:0.02,correct:"0.340 \u2212 1 = <strong>\u22120.660</strong>. Negative means: increasing z\u2081 reduces the loss. Gradient descent will therefore raise the score for the true class. The formula \u0177 \u2212 y directly encodes how far off the prediction is.",wrong:"\u2202L/\u2202z\u2c7c = \u0177\u2c7c \u2212 y\u2c7c. For the true class j = 1: \u0177\u2081 = 0.340 and y\u2081 = 1 (one-hot). Subtract: 0.340 \u2212 1.000 = \u22120.660."},
+ check:{
   q:"The true class got probability 0.34. What is the error signal on its own score, and what will gradient descent do with it?",
   opts:["\\(0.34-1=-0.66\\), and the update will raise that score","\\(0.34-1=-0.66\\), and the update will lower that score","\\(0.34\\), and the update will lower it","1, since the class is true"],
   a:0,
@@ -833,7 +963,11 @@ const BLOCKS=[
    why:"Identical in form to the output layer, with the data in place of the hidden activations."},
   {tex:"\\theta_{new} = \\theta - \\eta\\nabla_\\theta L",punch:true,why:"And on to Block 12: every one of the fifteen knobs moves, in the same step."}
  ],
- num:"n12", check:{
+ num:"n12", part:4,
+ bridge:"Every piece is in place: the chain rule, the softmax derivative, and the elegant result \u2202L/\u2202z\u2c7c = \u0177\u2c7c \u2212 y\u2c7c. Backpropagation assembles them into one efficient algorithm that computes <em>all</em> parameter gradients in a single backward pass \u2014 the same cost as one forward pass.",
+ predict:{q:"The gradient \u2202L/\u2202W\u207d\u00b2\u207e\u2081\u2c7c = \u03b4\u2081\u207d\u00b2\u207e \u00d7 a\u2c7c\u207d\xb9\u207e. Before computing: should the gradient for the true-class output row be positive or negative?",a:"Negative. \u03b4\u2081\u207d\u00b2\u207e = \u0177\u2081 \u2212 y\u2081 = 0.340 \u2212 1 = \u22120.660. Since the error signal is negative, the gradient is negative too. The update will therefore increase those weights, strengthening the connection that helps predict the true class."},
+ numcheck:{given:"\u03b4\u2081\u207d\u00b2\u207e = \u22120.660,  a\u2081\u207d\xb9\u207e = 0.622 (first hidden activation)",q:"Calculate  \u2202L/\u2202W\u207d\u00b2\u207e\u2081\u2081 = \u03b4\u2081\u207d\u00b2\u207e \u00d7 a\u2081\u207d\xb9\u207e",ans:-0.41,tol:0.03,correct:"\u22120.660 \u00d7 0.622 \u2248 <strong>\u22120.411</strong>. Negative gradient: the update (w \u2212 \u03b7\u00d7gradient) will increase this weight, which strengthens the path from hidden neuron 1 to the true class output.",wrong:"Multiply the error at the destination (\u03b4\u2081\u207d\u00b2\u207e = \u22120.660) by the signal from the source (a\u2081\u207d\xb9\u207e = 0.622). The result is their product. Both are positive in magnitude, and \u03b4 is negative, so the product is negative."},
+ check:{
   q:"A hidden neuron is saturated, so \\(\\sigma'(z) \\approx 0\\). What reaches the weights feeding into it?",
   opts:["Almost nothing, because the signal is multiplied by that slope","The full signal, since the weights are separate","A negative signal","The signal doubles"],
   a:0,
@@ -860,7 +994,11 @@ const BLOCKS=[
   {tex:"\\text{parameters} \\to \\text{loss} \\to \\text{partial derivatives} \\to \\text{gradient} \\to \\text{simultaneous update}",
    why:"The chain that this block joins together, and that Block 11 executes end to end."}
  ],
- num:"n5", check:{
+ num:"n5", part:4,
+ bridge:"Backpropagation has given you fifteen gradients \u2014 all from the same single evaluation. The final step: move all fifteen parameters simultaneously. <strong>Not one at a time. Not sequentially. One gradient vector, one update step, every parameter moves together.</strong>",
+ predict:{q:"After one gradient step with a small enough \u03b7, will the loss necessarily decrease? What condition must hold?",a:"Yes, if \u03b7 is small enough. The update guarantees L(\u03b8 \u2212 \u03b7\u2207L) \u2248 L(\u03b8) \u2212 \u03b7\u2016\u2207L\u2016\u00b2 \u2264 L(\u03b8), as long as \u03b7 is small enough for the tangent approximation to hold. A large \u03b7 breaks this guarantee \u2014 the step jumps past the valley."},
+ numcheck:{given:"W\u207d\u00b2\u207e\u2081\u2081 = 1.000,  gradient \u2202L/\u2202W\u207d\u00b2\u207e\u2081\u2081 = \u22120.411,  \u03b7 = 0.50",q:"Calculate  W\u207d\u00b2\u207e\u2081\u2081_new = W\u207d\u00b2\u207e\u2081\u2081 \u2212 \u03b7 \u00d7 gradient",ans:1.21,tol:0.02,correct:"1.000 \u2212 0.50 \u00d7 (\u22120.411) = 1.000 + 0.205 = <strong>1.205</strong>. The weight increased because the gradient was negative. Every one of the 15 parameters undergoes this same arithmetic in the same step.",wrong:"Apply w_new = w \u2212 \u03b7 \u00d7 gradient: 1.000 \u2212 0.50 \u00d7 (\u22120.411). Subtracting a negative number adds. The result is 1.000 + 0.205."},
+ check:{
   q:"Why is the gradient computed at one point rather than after each individual knob is moved?",
   opts:["Because one backward pass yields every partial derivative at once","Because the knobs are independent of each other","Because it is more accurate to move one knob at a time","Because the learning rate would otherwise be negative"],
   a:0,
@@ -868,6 +1006,37 @@ const BLOCKS=[
        "They are not independent, which is precisely why they must be evaluated together at the same point.",
        "Moving one at a time still converges here, but it costs one gradient evaluation per knob, which is impossible at scale.",
        "The learning rate is chosen by you and is always positive."]
+ }
+}
+,
+{
+ id:"b13", n:13, appKey:12, title:"Train the network from start to finish",
+ short:"Training loop",
+ part:4,
+ bridge:"This is the entire course in one block. You will run the complete training loop: forward pass, measure the loss, run backpropagation, update all 15 parameters, and watch the loss fall. Repeat until the network has learned.",
+ intuition:function(f){ return "<p>Every block of this course is one link in a chain. This final block closes the loop: "+
+   "data goes in, a prediction comes out, the loss measures the mistake, backpropagation attributes it, "+
+   "and gradient descent corrects it. <strong>Then we do it again.</strong></p>"+
+   "<p>Use the table below to follow the numbers through every stage. The buttons let you run "+
+   "one or five complete training steps and watch the loss fall on the graph.</p>"; },
+ math:[
+  {tex:"\\mathbf{x}\\to\\mathbf{z}^{(1)}\\to\\mathbf{a}^{(1)}\\to\\mathbf{z}^{(2)}\\to\\hat{\\mathbf{y}}",why:"Forward pass: left to right through the network."},
+  {tex:"L = -\\log\\hat y_t",why:"Loss: one number saying how wrong the prediction is."},
+  {tex:"\\boldsymbol{\\delta}^{(2)}=\\hat{\\mathbf{y}}-\\mathbf{y},\\quad \\boldsymbol{\\delta}^{(1)}=(W^{(2)\\top}\\boldsymbol{\\delta}^{(2)})\\odot\\sigma'(\\mathbf{z}^{(1)})",
+   why:"Backward pass: error signals at every layer."},
+  {tex:"\\theta_{new} = \\theta - \\eta\\,\\nabla_\\theta L",punch:true,why:"All 15 parameters update simultaneously. This is the moment learning happens."},
+  {tex:"\\text{DATA}\\to\\text{FORWARD}\\to\\text{LOSS}\\to\\text{BACKWARD}\\to\\text{UPDATE}\\to\\text{REPEAT}",
+   punch:true,why:"The complete story of this course, as one chain. Repeating this loop on all training data is neural-network training."}
+ ],
+ num:"n13",
+ check:{
+  q:"What does one complete training step consist of?",
+  opts:["Forward pass, measure loss, backward pass, update all parameters","Backward pass only, to compute gradients","Forward pass only, to compute the prediction","Update each parameter one at a time, running a forward pass after each"],
+  a:0,
+  why:["Correct. All four stages happen in every step, and all parameters update together at the end.",
+       "The backward pass alone cannot update anything; you need the forward pass to produce the values the gradients refer to.",
+       "The forward pass gives the prediction, but without the loss and gradients there is nothing to update.",
+       "Updating one at a time would require one forward pass per parameter \\u2014 millions of passes in a real network. Backpropagation avoids this entirely."]
  }
 }
 ];
@@ -1011,7 +1180,7 @@ function boardSteps(id){
         g2.txt(20,24,"\u03b8  =  ( "+names.slice(0,7).join(",  ")+",",{fs:11,color:"#F2F5F8"});
         g2.txt(40,48,names.slice(7).join(",  ")+" )",{fs:11,color:"#F2F5F8"});
         g2.txt(20,74,"15 parameters",{fs:10,color:"#9FB3C8"});
-      },tex:"\\theta = (\\theta_1,\\ldots,\\theta_{15})",num:"6 weights and 2 biases in layer 1, 6 weights and 3 biases in layer 2"},
+      },tex:"\\theta = (\\theta_1,\\ldots,\\theta_{15})",num:"4 weights and 2 biases in layer 1, 6 weights and 3 biases in layer 2"},
      {say:"One partial derivative per knob, all from the same evaluation.",draw:function(g2){
         names.forEach(function(nm,k){
           const x=20+(k%5)*90, y=110+Math.floor(k/5)*34;
@@ -1163,7 +1332,7 @@ function boardSteps(id){
       }},
      {say:"The general formula.",tex:"L = -\\sum_i y_i \\log(\\hat y_i)"},
      {say:"Two of the three terms are multiplied by zero.",
-      tex:"L = -\\bigl(0\\cdot\\log\\hat y_1 + 1\\cdot\\log \\hat y_t + 0\\cdot\\log\\hat y_3\\bigr) = -\\log\\hat y_t",
+      tex:"L = -\\bigl(y_1\\log\\hat y_1 + y_2\\log\\hat y_2 + y_3\\log\\hat y_3\\bigr) = -\\log\\hat y_t",
       num:"only the probability on the true class survives"},
      {say:"The shape of the penalty.",draw:function(g2){
         g2.axes(40,200,390,170,"\u0177 of the true class","L");
@@ -1201,7 +1370,7 @@ function boardSteps(id){
       num:"the \u0177\u1d62 underneath cancels the \u0177\u1d62 in front"},
      {say:"Expand and split the sum.",tex:"= -\\sum_i y_i\\delta_{ij} + \\hat y_j\\sum_i y_i"},
      {say:"Use the two facts about one hot vectors.",tex:"\\sum_i y_i\\delta_{ij} = y_j,\\qquad \\sum_i y_i = 1"},
-     {say:"The result.",tex:"\\frac{\\partial L}{\\partial z_i} = \\hat y_i - y_i",
+     {say:"The result.",tex:"\\frac{\\partial L}{\\partial z_j} = \\hat y_j - y_j",
       num:"\u0177 - y = ["+p.map(function(v,i){ return f3(v-yv[i]); }).join(", ")+"]",
       draw:function(g2){
         p.forEach(function(v,i){
@@ -1239,9 +1408,41 @@ function boardSteps(id){
       num:"row 1: ["+g.dW1[0].map(f3).join(", ")+"]   row 2: ["+g.dW1[1].map(f3).join(", ")+"]"},
      {say:"Update all fifteen knobs at once.",tex:"\\theta_{new} = \\theta - \\eta\\nabla_\\theta L",
       num:"with \u03b7 = "+f2(ETA)+", for example W\u207d\u00b2\u207e[1,1]: "+f3(NET.W2[0][0])+" \u2192 "+f3(NET.W2[0][0]-ETA*g.dW2[0][0])},
-     {say:"Press the update button in the numerical example to see the new prediction and the new loss.",
+     {say:"Press Run one full learning step below to see the new prediction and the new loss.",
       tex:"L_{new} < L_{old} \\quad\\text{(for a small enough } \\eta)",
       num:"loss now: "+f3(L0)}
+    ];
+  }
+  if(id==="b13"){
+    return [
+     {say:"The complete loop: data in, better prediction out.",draw:function(g2){
+        g2.box(20,20,420,200,"",{stroke:"#5B7A99",dash:"5 4"});
+        g2.txt(230,200,"one full training step",{anchor:"middle",fs:10,color:"#9FB3C8"});
+        g2.txt(230,44,"x \u2192 z\u207d\u00b9\u207e \u2192 a\u207d\u00b9\u207e \u2192 z\u207d\u00b2\u207e \u2192 \u0177",{anchor:"middle",fs:11,color:"#7FE3C9"});
+        g2.txt(230,84,"L = \u2212 log \u0177\u209c",{anchor:"middle",fs:11,color:"#FF8FA3"});
+        g2.txt(230,124,"\u03b4\u207d\u00b2\u207e = \u0177 \u2212 y   \u2192   dW\u207d\u00b2\u207e, db\u207d\u00b2\u207e   \u2192   d\u03b4\u207d\u00b9\u207e   \u2192   dW\u207d\u00b9\u207e, db\u207d\u00b9\u207e",{anchor:"middle",fs:11,color:"#DE9126"});
+        g2.txt(230,162,"\u03b8 \u2190 \u03b8 \u2212 \u03b7\u2207L   (all 15 at once)",{anchor:"middle",fs:11,color:"#CBD8E4"});
+      },tex:"\\text{data}\\to\\text{predict}\\to\\text{loss}\\to\\text{gradients}\\to\\text{update}\\to\\text{repeat}"},
+     {say:"Forward pass: numbers flow left to right.",
+      draw:function(g2){ netDiagram(g2,5,fwd(NET,XIN)); },
+      tex:"\\mathbf{z}^{(1)}=W^{(1)}\\mathbf{x}+\\mathbf{b}^{(1)},\\quad\\mathbf{a}^{(1)}=\\sigma(\\mathbf{z}^{(1)}),\\quad\\hat{\\mathbf{y}}=\\mathrm{softmax}(W^{(2)}\\mathbf{a}^{(1)}+\\mathbf{b}^{(2)})",
+      num:"\\u0177 = ["+fwd(NET,XIN).p.map(f3).join(", ")+"]"},
+     {say:"Measure the prediction.",
+      tex:"L = -\\log\\hat y_t",
+      num:"L = "+f3(loss(fwd(NET,XIN).p,TRUE))+"  (true class: "+F().classes[TRUE]+")"},
+     {say:"Backward pass: error travels right to left.",
+      draw:function(g2){ netDiagram(g2,5,fwd(NET,XIN),{back:5}); },
+      tex:"\\boldsymbol{\\delta}^{(2)} = \\hat{\\mathbf{y}}-\\mathbf{y},\\quad \\boldsymbol{\\delta}^{(1)} = (W^{(2)\\top}\\boldsymbol{\\delta}^{(2)})\\odot\\sigma'(\\mathbf{z}^{(1)})",
+      num:"\\u03b4\u207d\u00b2\u207e = ["+bwd(NET,fwd(NET,XIN),TRUE).d2.map(f3).join(", ")+"]"},
+     {say:"Collect all 15 gradients and update.",
+      tex:"\\theta_{new} = \\theta - \\eta\\,\\nabla_\\theta L",
+      num:"one backward pass yields all 15 gradients simultaneously; \\u03b7 = "+f2(ETA)},
+     {say:"New forward pass: is the loss lower?",
+      tex:"L_{new} < L_{old} \\quad\\text{for small enough } \\eta",
+      num:"repeat this loop and watch the loss curve fall"},
+     {say:"This loop is neural network training.",
+      tex:"\\text{DATA}\\to\\text{FORWARD}\\to\\text{LOSS}\\to\\text{BACKWARD}\\to\\text{UPDATE}\\to\\text{REPEAT}",
+      num:"understanding every arrow in this chain is the goal of the whole course"}
     ];
   }
   return [{say:"No board script.",tex:""}];
@@ -1306,7 +1507,7 @@ function paramVals(){
 /* ===================== CHART HELPER ===================== */
 /* one place for every graph in the lecture: axes with ticks, curves, points, markers, legend */
 function chart(host,cfg){
-  const W=cfg.w||360, H=cfg.h||215, padL=44, padB=30, padT=cfg.padT||16, padR=14;
+  const W=cfg.w||520, H=cfg.h||300, padL=44, padB=40, padT=cfg.padT||26, padR=14;
   const xr=cfg.xr, yr=cfg.yr;
   const X=function(v){ return padL+(v-xr[0])/(xr[1]-xr[0])*(W-padL-padR); };
   const Y=function(v){ return H-padB-(v-yr[0])/(yr[1]-yr[0])*(H-padB-padT); };
@@ -1335,8 +1536,8 @@ function chart(host,cfg){
   line(padL,H-padB,W-padR,H-padB,"var(--line-strong)",1.2);
   line(padL,padT,padL,H-padB,"var(--line-strong)",1.2);
   if(yr[0]<0&&yr[1]>0) line(padL,Y(0),W-padR,Y(0),"var(--line-strong)",1,"4 3");
-  label(W-padR,H-8,cfg.xlab||"",null,"end",10);
-  label(padL-6,padT-8,cfg.ylab||"",null,"end",10);
+  label(W-padR,H-9,cfg.xlab||"",null,"end",10.5);
+  label(padL-6,padT-16,cfg.ylab||"",null,"end",10.5);
   /* curves */
   (cfg.series||[]).forEach(function(S){
     const pts=[]; const steps=cfg.steps||160;
@@ -1364,20 +1565,28 @@ function chart(host,cfg){
   (cfg.pts||[]).forEach(function(q){
     svg.appendChild(sv("circle",{cx:X(q.x),cy:Y(Math.max(yr[0],Math.min(yr[1],q.y))),r:q.r||5,
       fill:q.color||"var(--rose)",stroke:"#fff","stroke-width":1.2}));
-    if(q.label) label(X(q.x)+q.r0||X(q.x)+9,Y(q.y)-10,q.label,q.color||"var(--rose)","start");
+    if(q.label) label(X(q.x)+(q.r0||9),Y(q.y)-10,q.label,q.color||"var(--rose)","start");
   });
   /* trail of small dots */
   (cfg.trail||[]).forEach(function(q,i,arr){
     svg.appendChild(sv("circle",{cx:X(q.x),cy:Y(Math.max(yr[0],Math.min(yr[1],q.y))),r:2.8,
       fill:"var(--amber)",opacity:0.25+0.75*i/Math.max(1,arr.length-1)}));
   });
-  /* legend */
+  /* legend: on its own backing panel sized to the text, so it stays readable
+     over a curve instead of blending into it or overflowing its box */
   const leg=(cfg.series||[]).filter(function(S){ return S.label; });
-  leg.forEach(function(S,i){
-    const y=padT+4+i*13, x=W-padR-104;
-    line(x,y,x+16,y,S.color,2.4,S.dash||"");
-    label(x+21,y,S.label,S.color,"start",9.5);
-  });
+  if(leg.length){
+    const maxLen=leg.reduce(function(m,S){ return Math.max(m,S.label.length); },0);
+    const lw=Math.min(W-padL-padR-10,Math.max(60,32+maxLen*6.1));
+    const lx=W-padR-lw-4, ly=padT-6, lh=leg.length*15+9;
+    svg.appendChild(sv("rect",{x:lx,y:ly,width:lw,height:lh,rx:6,
+      fill:"var(--panel)",opacity:0.92,stroke:"var(--line)","stroke-width":1}));
+    leg.forEach(function(S,i){
+      const y=padT+6+i*15, x=lx+6;
+      line(x,y,x+15,y,S.color,2.4,S.dash||"");
+      label(x+20,y,S.label,S.color,"start",10);
+    });
+  }
   clear(host); host.appendChild(svg);
 }
 function chartBlock(host){
@@ -1453,13 +1662,23 @@ const NUMERIC={
  },
  n3:function(host){
    const c=document.createElement("div");
-   c.innerHTML='<div class="sl"></div><div class="row" style="margin:8px 0"><button class="btn primary st">Take one step</button>'+
+   c.innerHTML='<div class="sl"></div>'+
+     '<div class="row" style="margin:5px 0 8px;gap:6px">'+
+     '<span class="hint">Preset:</span>'+
+     '<button class="btn sm eta-pre" data-v="0.08">too small (0.08)</button>'+
+     '<button class="btn sm eta-pre" data-v="0.50">good (0.50)</button>'+
+     '<button class="btn sm eta-pre" data-v="1.70">too large (1.70)</button>'+
+     '</div>'+
+     '<div class="row" style="margin:8px 0"><button class="btn primary st">Take one gradient step</button>'+
      '<button class="btn rs">Reset</button></div><div class="step out"></div><div class="g"></div><div class="g2"></div><div class="msg m"></div>';
    host.appendChild(c);
    const G=chartBlock(c.querySelector(".g")), G2=chartBlock(c.querySelector(".g2"));
    const J=function(w){return 0.6*(w-1.4)*(w-1.4)+0.4;}, dJ=function(w){return 1.2*(w-1.4);};
    let w=-1.2, eta=0.5, hist=[];
-   slider(c.querySelector(".sl"),"learning rate \u03b7",0.05,1.8,0.05,eta,function(v){eta=v;draw();});
+   const slCtrl=slider(c.querySelector(".sl"),"learning rate \u03b7",0.05,1.8,0.05,eta,function(v){eta=v;draw();});
+   [].forEach.call(c.querySelectorAll(".eta-pre"),function(b){
+     b.addEventListener("click",function(){ eta=parseFloat(b.dataset.v); slCtrl.set(eta); w=-1.2; hist=[]; draw(); });
+   });
    c.querySelector(".st").addEventListener("click",function(){
      const gr=dJ(w); hist.push({w:w,L:J(w),g:gr}); w=w-eta*gr; draw();
    });
@@ -1494,7 +1713,7 @@ const NUMERIC={
      c.querySelector(".m").className="msg m"+(rising?" bad":"");
      c.querySelector(".m").innerHTML=rising
        ? "At \u03b7 = "+f2(eta)+" the next loss is <strong>higher</strong> than the current one. The step jumped over the valley. Lower \u03b7 and try again."
-       : "The next loss is lower, as the derivation promised. Raise \u03b7 above about 1.6 and watch that promise break.";
+       : "The next loss is lower, as the derivation promised. Raise \u03b7 past about 1.67, which is 2 divided by the curvature of this loss, and watch that promise break.";
    }
    draw();
  },
@@ -1541,8 +1760,8 @@ const NUMERIC={
      const o=fwd(NET,XIN), g=bwd(NET,o,TRUE);
      const nm=paramNames(), gr=paramGrads(g), vl=paramVals();
      const bigK=gr.map(Math.abs).indexOf(Math.max.apply(null,gr.map(Math.abs)));
-     chart(G.chart,{xr:[-0.5,14.5],yr:[Math.min(-0.7,Math.min.apply(null,gr)*1.2),Math.max(0.7,Math.max.apply(null,gr)*1.2)],
-       xlab:"parameter number k",ylab:"\u2202L/\u2202\u03b8",xticks:5,xfmt:function(v){ return String(Math.round(v+1)); },
+     chart(G.chart,{xr:[0,14],yr:[Math.min(-0.7,Math.min.apply(null,gr)*1.2),Math.max(0.7,Math.max.apply(null,gr)*1.2)],
+       xlab:"parameter number k",ylab:"\u2202L/\u2202\u03b8",xticks:7,xfmt:function(v){ return String(Math.round(v)+1); },
        series:[{fn:function(t){ const k=Math.round(t); return (k>=0&&k<15)?gr[k]:0; },color:"var(--violet)",w:2,label:"gradient"}],
        steps:14, pts:gr.map(function(v,k){ return {x:k,y:v,r:4,color:v>0?"var(--rose)":"var(--teal)"}; })});
      G.cap.innerHTML="<strong>What to look at:</strong> this is the gradient vector drawn as a graph, one dot per knob. "+
@@ -1573,7 +1792,7 @@ const NUMERIC={
      let tb='<table class="grid"><tr><th>function</th><th>output</th><th>slope</th><th>useful because</th><th>limitation</th></tr>';
      tb+="<tr><td>sigmoid</td><td>"+f3(s)+"</td><td>"+f3(s*(1-s))+"</td><td>reads as a probability</td><td>slope at most 0.25, so it fades with depth</td></tr>";
      tb+="<tr><td>tanh</td><td>"+f3(t)+"</td><td>"+f3(1-t*t)+"</td><td>centred on zero</td><td>still flat in both tails</td></tr>";
-     tb+="<tr><td>ReLU</td><td>"+f3(r)+"</td><td>"+(z>0?"1.000":"0.000")+"</td><td>cheap, no fading on the right</td><td>slope 0 on the left, a stuck neuron stays stuck</td></tr>";
+     tb+="<tr><td>ReLU</td><td>"+f3(r)+"</td><td>"+(Math.abs(z)<1e-9?"undefined":(z>0?"1.000":"0.000"))+"</td><td>cheap, no fading on the right</td><td>slope 0 on the left, a stuck neuron stays stuck</td></tr>";
      c.querySelector(".tb").innerHTML=tb+"</table>";
      chart(G.chart,{xr:[-6,6],yr:[-1.2,2],xlab:"z",ylab:"f(z)",
        series:[{fn:sig,color:"var(--teal)",label:"sigmoid"},
@@ -1606,7 +1825,7 @@ const NUMERIC={
    function draw(){
      const f=F(), o=fwd(NET,XIN);
      const cols=["var(--teal)","var(--amber)","var(--rose)"];
-     chart(G.chart,{xr:[0,2],yr:[0,1],xlab:"x\u2081, "+f.x3[0],ylab:"probability",
+     chart(G.chart,{xr:[0,2],yr:[0,1],xlab:"x\u2081, "+f.x[0],ylab:"probability",
        series:[0,1,2].map(function(i){
          return {fn:function(v){ return fwd(NET,[v,XIN[1]]).p[i]; },color:cols[i],label:f.classes[i].slice(0,12)};
        }),
@@ -1829,6 +2048,66 @@ const NUMERIC={
        : "This table is the entire lecture on one "+f.unit+", in the order you learned it.";
    }
    sub(draw); draw();
+ },
+
+ /* ---- capstone: complete training loop ---- */
+ n13:function(host){
+   const c=document.createElement("div");
+   c.innerHTML=
+     '<div class="row" style="margin-bottom:8px">'+
+     '<button class="btn primary go1">Run one training step</button>'+
+     '<button class="btn go5">Run 5 steps</button>'+
+     '<button class="btn rs">Reset network</button></div>'+
+     '<div class="capstone-loop" id="cl"></div>'+
+     '<div class="bars bb" style="margin-top:10px"></div>'+
+     '<div class="g"></div><div class="msg m"></div>';
+   host.appendChild(c);
+   const G=chartBlock(c.querySelector(".g"));
+   const HL=[],HP=[];
+   let before=null;
+   function record(){ const o=fwd(NET,XIN); HL.push(loss(o.p,TRUE)); HP.push(o.p[TRUE]); }
+   function step(n){ before=fwd(NET,XIN); for(let i=0;i<n;i++){ record(); stepNet(NET,ETA); } refresh(); }
+   c.querySelector(".go1").addEventListener("click",function(){ step(1); });
+   c.querySelector(".go5").addEventListener("click",function(){ step(5); });
+   c.querySelector(".rs").addEventListener("click",function(){ NET=freshNet(); before=null; HL.length=0; HP.length=0; refresh(); });
+   function row(label,val){ return '<div class="loop-step"><div class="ls-label">'+label+'</div><div class="ls-val">'+val+'</div></div>'; }
+   function draw(){
+     const f=F(),o=fwd(NET,XIN),g=bwd(NET,o,TRUE);
+     const cl=c.querySelector("#cl");
+     cl.innerHTML=
+       row("1 \u2014 input","x = ["+XIN.map(f2).join(", ")+"]")+
+       row("2 \u2014 forward pass","z\u207d\u00b9\u207e = ["+o.z1.map(f3).join(", ")+"]  \u2192  a\u207d\u00b9\u207e = ["+o.a1.map(f3).join(", ")+"]")+
+       row("3 \u2014 prediction","\u0177 = ["+o.p.map(f3).join(", ")+"]  \u2192  <strong>"+f.classes[o.p.indexOf(Math.max.apply(null,o.p))]+"</strong>")+
+       row("4 \u2014 loss","L = \u2212 log \u0177\u209c = \u2212 log "+f3(o.p[TRUE])+" = <strong>"+f3(loss(o.p,TRUE))+"</strong>")+
+       row("5 \u2014 error signal (output)","\\u03b4\u207d\u00b2\u207e = \u0177 \u2212 y = ["+g.d2.map(f3).join(", ")+"]")+
+       row("6 \u2014 error signal (hidden)","\\u03b4\u207d\u00b9\u207e = W\u207d\u00b2\u207e\u1d40\\u03b4\u207d\u00b2\u207e \u2299 \\u03c3\u2032 = ["+g.d1.map(f3).join(", ")+"]")+
+       row("7 \u2014 gradients (sample)","\\u2202L/\\u2202W\u207d\u00b2\u207e row 1 = ["+g.dW2[0].map(f3).join(", ")+"],  \\u2202L/\\u2202W\u207d\u00b9\u207e row 1 = ["+g.dW1[0].map(f3).join(", ")+"]")+
+       (before
+         ? row("8 \u2014 update (\\u03b7 = "+f2(ETA)+")",
+             "all 15 parameters moved: loss "+f3(loss(before.p,TRUE))+" \u2192 <strong>"+f3(loss(o.p,TRUE))+"</strong>"+
+             (loss(o.p,TRUE)<loss(before.p,TRUE)?" \u2193 improving":" \u2191 check \\u03b7"))
+         : row("8 \u2014 update","press a button to run a step and see the before/after comparison"));
+     bars(c.querySelector(".bb"),f.classes,o.p,o.p.indexOf(Math.max.apply(null,o.p)),TRUE);
+     const L=HL.concat([loss(o.p,TRUE)]),P=HP.concat([o.p[TRUE]]);
+     chart(G.chart,{xr:[0,Math.max(8,L.length-1)],yr:[0,Math.max(1.3,L[0]*1.15)],
+       xlab:"training step",ylab:"",xfmt:function(v){return String(Math.round(v));},
+       xticks:Math.min(8,Math.max(4,L.length-1)),
+       series:[
+         {fn:function(t){const k=Math.round(t);return k<L.length?L[k]:L[L.length-1];},color:"var(--rose)",w:2.2,label:"loss"},
+         {fn:function(t){const k=Math.round(t);return (k<P.length?P[k]:P[P.length-1])*Math.max(1.3,L[0]*1.15);},
+          color:"var(--teal)",w:2,label:"\\u0177 on true class (scaled)"}],
+       steps:Math.max(8,L.length-1),
+       pts:[{x:L.length-1,y:L[L.length-1],color:"var(--rose)",r:4}]});
+     G.cap.innerHTML=L.length>1
+       ? "After "+(L.length-1)+" step"+(L.length>2?"s":"")+" the loss has gone from "+f3(L[0])+" to "+f3(L[L.length-1])+
+         ". The teal curve is the network\u2019s confidence on the true class rising as the red loss falls."
+       : "Press a button and watch the loss curve draw itself, one step at a time.";
+     c.querySelector(".m").innerHTML=before
+       ? "True class <strong>"+f.classes[TRUE]+"</strong>: confidence was "+f3(before.p[TRUE])+" and is now "+f3(o.p[TRUE])+
+         ". This table is the complete twelve-block story, executed on one "+f.unit+"."
+       : "This table is every concept from every block, assembled into one complete training step. Follow the numbers row by row.";
+   }
+   sub(draw); draw();
  }
 };
 
@@ -1838,7 +2117,7 @@ const NUMERIC={
    and both are clickable: clicking explains what that piece is and what its number means. */
 function gview(host,opts){
   opts=opts||{};
-  host.innerHTML='<div class="row gtools"></div><svg class="gsvg" viewBox="0 0 '+(opts.w||520)+' '+(opts.h||240)+'"></svg><div class="gexp"></div>';
+  host.innerHTML='<div class="row gtools"></div><svg class="gsvg" role="img" aria-label="Diagram. Its parts are clickable, and the reading below the diagram updates." viewBox="0 0 '+(opts.w||520)+' '+(opts.h||240)+'"></svg><div class="gexp" aria-live="polite"></div>';
   return {tools:host.querySelector(".gtools"),svg:host.querySelector("svg.gsvg"),exp:host.querySelector(".gexp")};
 }
 function gtool(V,label,cb,on){
@@ -1852,36 +2131,80 @@ function gtool(V,label,cb,on){
   V.tools.appendChild(b);
   return b;
 }
+/* how far from a node's centre an edge should stop, along the direction (ux,uy) */
+function nodePad(nd,ux,uy,extra){
+  if(nd.shape==="box"){
+    const hw=(nd.bw||64)/2, hh=(nd.bh||40)/2;
+    const tx=Math.abs(ux)>1e-6?hw/Math.abs(ux):Infinity;
+    const ty=Math.abs(uy)>1e-6?hh/Math.abs(uy):Infinity;
+    return Math.min(tx,ty)+extra;
+  }
+  return (nd.r||22)+extra;
+}
 function gdraw(V,spec,sel,onSel){
   const svg=V.svg;
   clear(svg);
+  svg.classList.remove("hover-on");
   const N={};
   (spec.nodes||[]).forEach(function(n){ N[n.id]=n; });
+  /* which nodes and edges light up when a given node or edge is hovered or focused */
+  const adj={};
+  (spec.nodes||[]).forEach(function(n){ adj[n.id]=[]; });
+  (spec.edges||[]).forEach(function(e){
+    if(!adj[e.from]) adj[e.from]=[];
+    if(!adj[e.to]) adj[e.to]=[];
+    adj[e.from].push(e.id); adj[e.to].push(e.id);
+  });
+  const nodeEls={}, edgeEls={};
   /* edges first so nodes sit on top */
   (spec.edges||[]).forEach(function(e){
     const a=N[e.from], b=N[e.to];
     if(!a||!b) return;
     const dx=b.x-a.x, dy=b.y-a.y, L=Math.sqrt(dx*dx+dy*dy)||1, ux=dx/L, uy=dy/L;
-    const ra=(a.r||22)+2, rb=(b.r||22)+9;
-    const x1=a.x+ux*ra, y1=a.y+uy*ra, x2=b.x-ux*rb, y2=b.y-uy*rb;
     const on=sel&&sel.kind==="e"&&sel.id===e.id;
     const col=on?"var(--amber)":(e.color||"var(--line-strong)");
-    const g=sv("g",{class:"gedge"});
-    g.appendChild(sv("line",{x1:x1,y1:y1,x2:x2,y2:y2,stroke:col,
-      "stroke-width":on?(e.w||2)+1.6:(e.w||2),"stroke-dasharray":e.dash||""}));
-    const ang=Math.atan2(dy,dx);
+    const g=sv("g",{class:"gedge"+(on?" sel":"")});
+    let x1,y1,x2,y2,shapeD,ang,midX,midY;
+    if(e.bow){
+      /* a bowed edge is a quadratic curve, its control point pushed off the straight
+         line by e.bow pixels, so a long jump can arc clear of the boxes it would
+         otherwise cut through. pad each end along its own arm of the curve, not the
+         straight a-to-b line, so the arrowhead lands flush with the true tangent */
+      const cx=(a.x+b.x)/2-uy*e.bow, cy=(a.y+b.y)/2+ux*e.bow;
+      const dxa=cx-a.x, dya=cy-a.y, La=Math.sqrt(dxa*dxa+dya*dya)||1;
+      const dxb=b.x-cx, dyb=b.y-cy, Lb=Math.sqrt(dxb*dxb+dyb*dyb)||1;
+      const ra=nodePad(a,dxa/La,dya/La,2), rb=nodePad(b,dxb/Lb,dyb/Lb,9);
+      x1=a.x+(dxa/La)*ra; y1=a.y+(dya/La)*ra; x2=b.x-(dxb/Lb)*rb; y2=b.y-(dyb/Lb)*rb;
+      shapeD="M"+x1+","+y1+" Q"+cx+","+cy+" "+x2+","+y2;
+      ang=Math.atan2(y2-cy,x2-cx);
+      midX=0.25*x1+0.5*cx+0.25*x2; midY=0.25*y1+0.5*cy+0.25*y2;
+      g.appendChild(sv("path",{d:shapeD,fill:"none",stroke:col,
+        "stroke-width":on?(e.w||2)+1.6:(e.w||2),"stroke-dasharray":e.dash||""}));
+    } else {
+      const ra=nodePad(a,ux,uy,2), rb=nodePad(b,ux,uy,9);
+      x1=a.x+ux*ra; y1=a.y+uy*ra; x2=b.x-ux*rb; y2=b.y-uy*rb;
+      shapeD=null; ang=Math.atan2(dy,dx); midX=(x1+x2)/2; midY=(y1+y2)/2;
+      g.appendChild(sv("line",{x1:x1,y1:y1,x2:x2,y2:y2,stroke:col,
+        "stroke-width":on?(e.w||2)+1.6:(e.w||2),"stroke-dasharray":e.dash||""}));
+    }
     g.appendChild(sv("path",{d:"M"+x2+","+y2+" L"+(x2-9*Math.cos(ang-0.38))+","+(y2-9*Math.sin(ang-0.38))+
       " L"+(x2-9*Math.cos(ang+0.38))+","+(y2-9*Math.sin(ang+0.38))+" Z",fill:col}));
     if(e.label){
-      const mx=(x1+x2)/2+(e.lx||0), my=(y1+y2)/2+(e.ly||-8);
-      const t=sv("text",{x:mx,y:my});
+      const mx=midX+(e.lx||0), my=midY+(e.ly||-8);
+      const t=sv("text",{x:mx,y:my,class:"elabel"});
       t.setAttribute("style","font-family:var(--mono);font-size:"+(e.fs||10)+"px;fill:"+
         (on?"var(--amber)":(e.lcolor||col))+";text-anchor:middle;paint-order:stroke;stroke:var(--panel);stroke-width:3px;font-weight:"+(on?"700":"400"));
       t.textContent=e.label;
       g.appendChild(t);
     }
-    g.appendChild(sv("line",{x1:x1,y1:y1,x2:x2,y2:y2,stroke:"transparent","stroke-width":16}));
+    if(shapeD) g.appendChild(sv("path",{d:shapeD,fill:"none",stroke:"transparent","stroke-width":16}));
+    else g.appendChild(sv("line",{x1:x1,y1:y1,x2:x2,y2:y2,stroke:"transparent","stroke-width":16}));
+    g.setAttribute("tabindex","0"); g.setAttribute("role","button");
+    if(e.label) g.setAttribute("aria-label","connection "+e.id+", "+e.label+". Hover or focus to preview, click to pin the reading below.");
     g.addEventListener("click",function(){ onSel({kind:"e",id:e.id}); });
+    g.addEventListener("keydown",function(ev){
+      if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); onSel({kind:"e",id:e.id}); } });
+    edgeEls[e.id]=g;
     svg.appendChild(g);
   });
   (spec.nodes||[]).forEach(function(n){
@@ -1906,7 +2229,12 @@ function gdraw(V,spec,sel,onSel){
       s2.textContent=n.sub;
       g.appendChild(s2);
     }
+    g.setAttribute("tabindex","0"); g.setAttribute("role","button");
+    g.setAttribute("aria-label",(n.sub?n.sub+", ":"")+"value "+n.label);
     g.addEventListener("click",function(){ onSel({kind:"n",id:n.id}); });
+    g.addEventListener("keydown",function(ev){
+      if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); onSel({kind:"n",id:n.id}); } });
+    nodeEls[n.id]=g;
     svg.appendChild(g);
   });
   (spec.captions||[]).forEach(function(c){
@@ -1915,6 +2243,43 @@ function gdraw(V,spec,sel,onSel){
       ";text-anchor:"+(c.anchor||"middle")+";letter-spacing:.08em;text-transform:"+(c.up?"uppercase":"none"));
     t.textContent=c.t;
     svg.appendChild(t);
+  });
+  /* hovering or keyboard-focusing a circle or line lights up everything connected to it
+     and fades the rest, which is how crossing connections stay readable */
+  function focusOn(kind,id){
+    const fn={}, fe={};
+    if(kind==="n"){
+      fn[id]=true;
+      (adj[id]||[]).forEach(function(eid){
+        fe[eid]=true;
+        const e=(spec.edges||[]).filter(function(x){ return x.id===eid; })[0];
+        if(e){ fn[e.from]=true; fn[e.to]=true; }
+      });
+    } else {
+      fe[id]=true;
+      const e=(spec.edges||[]).filter(function(x){ return x.id===id; })[0];
+      if(e){ fn[e.from]=true; fn[e.to]=true; }
+    }
+    Object.keys(nodeEls).forEach(function(k){ nodeEls[k].classList.toggle("hl",!!fn[k]); nodeEls[k].classList.toggle("dim",!fn[k]); });
+    Object.keys(edgeEls).forEach(function(k){ edgeEls[k].classList.toggle("hl",!!fe[k]); edgeEls[k].classList.toggle("dim",!fe[k]); });
+    svg.classList.add("hover-on");
+  }
+  function focusOff(){
+    Object.keys(nodeEls).forEach(function(k){ nodeEls[k].classList.remove("hl","dim"); });
+    Object.keys(edgeEls).forEach(function(k){ edgeEls[k].classList.remove("hl","dim"); });
+    svg.classList.remove("hover-on");
+  }
+  Object.keys(nodeEls).forEach(function(k){
+    nodeEls[k].addEventListener("mouseenter",function(){ focusOn("n",k); });
+    nodeEls[k].addEventListener("mouseleave",focusOff);
+    nodeEls[k].addEventListener("focus",function(){ focusOn("n",k); });
+    nodeEls[k].addEventListener("blur",focusOff);
+  });
+  Object.keys(edgeEls).forEach(function(k){
+    edgeEls[k].addEventListener("mouseenter",function(){ focusOn("e",k); });
+    edgeEls[k].addEventListener("mouseleave",focusOff);
+    edgeEls[k].addEventListener("focus",function(){ focusOn("e",k); });
+    edgeEls[k].addEventListener("blur",focusOff);
   });
 }
 
@@ -1925,12 +2290,12 @@ function netNodes(o,mode){
   const ns=[];
   [0,1].forEach(function(j){
     ns.push({id:"x"+j,x:LX[0],y:LY1[j],label:mode==="weights"?("x"+(j+1)):f2(o.x[j]),
-      sub:f.x3[j].slice(0,13),fill:"rgba(15,122,131,.10)"});
+      sub:f.x[j].slice(0,13),fill:"rgba(15,122,131,.10)"});
   });
   [0,1].forEach(function(j){
     ns.push({id:"h"+j,x:LX[1],y:LY1[j],
       label:mode==="backward"?f3(bwdCache().d1[j]):(mode==="weights"?("h"+(j+1)):f3(o.a1[j])),
-      sub:mode==="backward"?("\u03b4"+(j+1)):("h"+(j+1)+", a="+f3(o.a1[j])),fill:"rgba(255,255,255,1)"});
+      sub:mode==="backward"?("\u03b4"+(j+1)):("h"+(j+1)+", a="+f3(o.a1[j])),fill:"var(--panel)"});
   });
   [0,1,2].forEach(function(i){
     ns.push({id:"y"+i,x:LX[2],y:LY2[i],
@@ -1966,11 +2331,11 @@ function netEdges(o,mode){
 }
 function netExplain(sel,o,mode){
   const f=F(), g=bwdCache();
-  if(!sel) return "<b>Click a circle or a line.</b><span class='t'>Circles are neurons and carry values. Lines are weights and carry the signal from one neuron to the next.</span>";
+  if(!sel) return "<b>Hover a circle or a line to preview it, click to pin the reading here.</b><span class='t'>Circles are neurons and carry values. Lines are weights and carry the signal from one neuron to the next; hovering any one of them lights up its own path and fades the rest, which is the fastest way to untangle a crossing.</span>";
   if(sel.kind==="n"){
     const id=sel.id;
     if(id[0]==="x"){ const j=+id[1];
-      return "<b>Input "+(j+1)+"</b>: "+f.x3[j]+" = "+f2(o.x[j])+
+      return "<b>Input "+(j+1)+"</b>: "+f.x[j]+" = "+f2(o.x[j])+
         "<span class='t'>Data, not a parameter. Learning never changes this number, it only changes how much attention the weights pay to it.</span>"; }
     if(id[0]==="h"){ const j=+id[1];
       return "<b>Hidden neuron "+(j+1)+"</b><br>z = "+f2(NET.W1[j][0])+"\u00d7"+f2(o.x[0])+" + ("+f2(NET.W1[j][1])+")\u00d7"+f2(o.x[1])+
@@ -1986,7 +2351,7 @@ function netExplain(sel,o,mode){
   }
   const parts=sel.id.split("-"), lay=parts[0], i=+parts[1], j=+parts[2];
   if(lay==="W1")
-    return "<b>W\u207d\u00b9\u207e["+(i+1)+","+(j+1)+"] = "+f2(NET.W1[i][j])+"</b><br>from input "+(j+1)+" ("+f.x3[j]+
+    return "<b>W\u207d\u00b9\u207e["+(i+1)+","+(j+1)+"] = "+f2(NET.W1[i][j])+"</b><br>from input "+(j+1)+" ("+f.x[j]+
       ") into hidden neuron "+(i+1)+"<br>\u2202L/\u2202W = \u03b4"+(i+1)+" \u00d7 x"+(j+1)+" = "+f3(g.d1[i])+" \u00d7 "+f2(o.x[j])+" = "+f3(g.dW1[i][j])+
       "<br>after one step: "+f3(NET.W1[i][j]-ETA*g.dW1[i][j])+
       "<span class='t'>First index is the destination, second is the source. The gradient is the error arriving at the destination times the signal leaving the source.</span>";
@@ -2018,7 +2383,7 @@ function fullNet(host,defMode,caps){
 const GRAPHS={
  /* ---- block 1: one neuron, drawn ---- */
  b1:function(host){
-   const V=gview(host,{w:520,h:230});
+   const V=gview(host,{w:520,h:250});
    let sel=null;
    function draw(){
      const f=F(), v=neuronVals();
@@ -2046,7 +2411,7 @@ const GRAPHS={
        w1:"<b>Weight w\u2081 = "+f2(N1.w[0])+"</b><br>contribution = "+f2(N1.w[0])+" \u00d7 "+f2(N1.x[0])+" = "+f3(N1.w[0]*N1.x[0])+
           "<span class='t'>A parameter. Its sign says which way this input votes, its size says how loudly.</span>",
        w2:"<b>Weight w\u2082 = "+f2(N1.w[1])+"</b><br>contribution = "+f2(N1.w[1])+" \u00d7 "+f2(N1.x[1])+" = "+f3(N1.w[1]*N1.x[1])+
-          "<span class='t'>Negative here, so this input votes against.</span>",
+          "<span class='t'>"+(N1.w[1]<0?"Negative, so this input votes against.":(N1.w[1]>0?"Positive, so this input votes in favour.":"Zero, so this input is ignored by the neuron."))+"</span>",
        bias:"<b>Bias b = "+f2(N1.b)+"</b><span class='t'>Added no matter what the inputs are. It moves the threshold at which the neuron switches on.</span>",
        sum:"<b>z = "+f3(v.z)+"</b><br>"+f2(N1.w[0])+"\u00d7"+f2(N1.x[0])+" + ("+f2(N1.w[1])+")\u00d7"+f2(N1.x[1])+" + "+f2(N1.b)+
           "<span class='t'>Everything the neuron knows, compressed into one number.</span>",
@@ -2055,7 +2420,7 @@ const GRAPHS={
        e3:"<b>the total enters the activation</b>",e4:"<b>the bent total leaves as the output</b>",
        eb:"<b>the bias joins the sum</b><span class='t'>It has no input of its own, which is why its line is dashed.</span>"
      };
-     V.exp.innerHTML=sel?E[sel.id]:"<b>Click any circle or line.</b><span class='t'>Teal lines carry a positive weight, red lines a negative one, and thickness is size. Move the sliders below and watch the diagram change.</span>";
+     V.exp.innerHTML=sel?E[sel.id]:"<b>Hover any circle or line to preview it, click to pin it here.</b><span class='t'>Teal lines carry a positive weight, red lines a negative one, and thickness is size. Move the sliders below and watch the diagram change.</span>";
    }
    sub(draw); draw();
  },
@@ -2091,14 +2456,14 @@ const GRAPHS={
        a:"<b>a = "+f3(v.a)+"</b><span class='t'>The neuron's output, and the second link of the chain.</span>",
        L:"<b>The loss</b><span class='t'>One number saying how wrong the prediction was.</span>"
      };
-     V.exp.innerHTML=sel?E[sel.id]:"<b>Click each of the three lines in turn.</b><span class='t'>Each line carries one local rate. The derivative you want is the product of all three along the path from the knob to the loss.</span>";
+     V.exp.innerHTML=sel?E[sel.id]:"<b>Hover, then click, each of the three lines in turn.</b><span class='t'>Each line carries one local rate. The derivative you want is the product of all three along the path from the knob to the loss.</span>";
    }
    sub(draw); draw();
  },
 
  /* ---- block 3: which knob, and the slope on its edge ---- */
  b3:function(host){ fullNet(host,"backward",
-   "Every line is a knob. Its number here is the slope of the loss with respect to that knob, which is exactly what gradient descent divides the step by. Switch to weights to see the values that will be updated."); },
+   "Every line is a knob. Its number here is the slope of the loss with respect to that knob, and the step it takes is that slope multiplied by the learning rate. Switch to weights to see the values that will be updated."); },
 
  /* ---- block 4: the forward pass, step by step on the diagram ---- */
  b4:function(host){
@@ -2136,7 +2501,7 @@ const GRAPHS={
 
  /* ---- block 5: all fifteen knobs on one diagram ---- */
  b5:function(host){ fullNet(host,"backward",
-   "Every line and every circle carries its own partial derivative, and all of them were produced by one backward pass. Click any line to see its gradient and the value it will take after the step."); },
+   "Every line and every circle carries its own partial derivative, and all of them were produced by one backward pass. Hover any line to preview its gradient, click to pin the value it will take after the step."); },
 
  /* ---- block 6: the activation as a gate on the path ---- */
  b6:function(host){
@@ -2175,7 +2540,7 @@ const GRAPHS={
        f:"<b>The activation</b><span class='t'>Forward it bends the value. Backward it multiplies the error by its slope. Same box, two jobs.</span>",
        out:"<b>a = "+f3(a)+"</b><span class='t'>Between 0 and 1, whatever z was.</span>"
      };
-     V.exp.innerHTML=sel?E[sel.id]:"<b>Slide z and watch the lower violet line.</b><span class='t'>It is the return path, and its thickness is the slope of the activation. Near z = 0 the gate is wide open. Out in the tails it closes and the neurons behind it stop learning.</span>";
+     V.exp.innerHTML=sel?E[sel.id]:"<b>Slide z and watch the lower violet line; hover it for the number.</b><span class='t'>It is the return path, and its thickness is the slope of the activation. Near z = 0 the gate is wide open. Out in the tails it closes and the neurons behind it stop learning.</span>";
    }
    sub(draw); draw();
  },
@@ -2197,7 +2562,7 @@ const GRAPHS={
        {x:390,y:236,t:"W\u207d\u00b2\u207e is 3\u00d72: six lines",color:"var(--teal)"}]},
        sel,function(s){ sel=(sel&&sel.kind===s.kind&&sel.id===s.id)?null:s; draw(); });
      V.exp.innerHTML=sel?netExplain(sel,o,"values"):
-       "<b>Every entry of the weight matrix is one line in this picture.</b><span class='t'>Count them: four lines between the inputs and the hidden layer, which is why W\u207d\u00b9\u207e has shape 2 by 2. Six lines into three outputs, so W\u207d\u00b2\u207e is 3 by 2. Click a line to read its two indices, destination first.</span>";
+       "<b>Every entry of the weight matrix is one line in this picture.</b><span class='t'>Count them: four lines between the inputs and the hidden layer, which is why W\u207d\u00b9\u207e has shape 2 by 2. Six lines into three outputs, so W\u207d\u00b2\u207e is 3 by 2. Hover a line to preview it, click to read its two indices, destination first.</span>";
    }
    sub(draw); draw();
  },
@@ -2226,7 +2591,7 @@ const GRAPHS={
        {x:70,y:22,t:"raw scores",up:true},{x:330,y:22,t:"probabilities",up:true},{x:460,y:22,t:"decision",up:true},
        {x:260,y:236,t:"the three probabilities always sum to 1",color:"var(--teal)"}]},
        sel,function(s){ sel=(sel&&sel.id===s.id)?null:s; draw(); });
-     let h="<b>Click the softmax box, then a probability circle, then argmax.</b><span class='t'>Three unbounded scores go in on the left and one decision comes out on the right. Everything in between is arithmetic you can check.</span>";
+     let h="<b>Hover or click the softmax box, then a probability circle, then argmax.</b><span class='t'>Three unbounded scores go in on the left and one decision comes out on the right. Everything in between is arithmetic you can check.</span>";
      if(sel){
        const id=sel.id;
        if(id==="soft") h="<b>softmax</b><br>S = sum of e^z = "+f3(o.z2.reduce(function(a,v){ return a+Math.exp(v); },0))+
@@ -2247,7 +2612,7 @@ const GRAPHS={
 
  /* ---- block 9: the nine derivatives as nine edges ---- */
  b9:function(host){
-   const V=gview(host,{w:520,h:250});
+   const V=gview(host,{w:520,h:270});
    let sel=null;
    function draw(){
      const f=F(), o=fwd(NET,XIN), p=o.p, ys=[60,130,200];
@@ -2263,10 +2628,10 @@ const GRAPHS={
      }); });
      gdraw(V,{nodes:ns,edges:es,captions:[
        {x:90,y:22,t:"scores",up:true},{x:410,y:22,t:"probabilities",up:true},
-       {x:250,y:236,t:"nine edges, one per derivative: teal positive, red negative",color:"var(--muted)"}]},
+       {x:250,y:258,t:"nine edges, one per derivative: teal positive, red negative",color:"var(--muted)"}]},
        sel,function(s){ sel=(sel&&sel.id===s.id)?null:s; draw(); });
      let h="<b>Every score is joined to every probability, so there are nine derivatives.</b>"+
-       "<span class='t'>The three teal edges are the diagonal, where raising a score raises its own probability. The six red edges are the cost paid by the others. Click any edge.</span>";
+       "<span class='t'>The three teal edges are the diagonal, where raising a score raises its own probability. The six red edges are the cost paid by the others. Hover any edge to preview it, click to pin it here.</span>";
      if(sel&&sel.id[0]==="d"){
        const q=sel.id.split("-"), i=+q[1], j=+q[2];
        const v=(i===j)?p[i]*(1-p[i]):-p[i]*p[j];
@@ -2400,6 +2765,31 @@ const GRAPHS={
         : "<b>Backward, the same picture with the arrows reversed.</b><span class='t'>Circles now hold \u03b4, the error at that neuron, and lines hold \u2202L/\u2202W. Press one learning step and watch every number move at once.</span>");
    }
    sub(draw); draw();
+ },
+
+ /* ---- capstone block 13: full training loop on the network ---- */
+ b13:function(host){
+   const V=gview(host,{w:520,h:250});
+   let dir="f", sel=null;
+   gtool(V,"\u25b6 Forward pass",function(){ dir="f"; draw(); },true);
+   gtool(V,"\u25c4 Backward pass",function(){ dir="b"; draw(); });
+   gtool(V,"Take one step",function(){ stepNet(NET,ETA); refresh(); });
+   gtool(V,"Reset",function(){ NET=freshNet(); refresh(); });
+   function draw(){
+     const o=fwd(NET,XIN);
+     const mode=dir==="f"?"values":"backward";
+     gdraw(V,{nodes:netNodes(o,mode),edges:netEdges(o,mode),captions:[
+       {x:LX[0],y:22,t:"inputs",up:true},{x:LX[1],y:22,t:"hidden",up:true},{x:LX[2],y:22,t:"outputs",up:true},
+       {x:260,y:236,t:dir==="f"
+         ?"FORWARD PASS: values, \\u0177, loss":"BACKWARD PASS: error signals, gradients",
+        color:dir==="f"?"var(--teal)":"var(--amber)"}]},
+       sel,function(s){ sel=(sel&&sel.kind===s.kind&&sel.id===s.id)?null:s; draw(); });
+     V.exp.innerHTML=sel?netExplain(sel,o,mode):
+       (dir==="f"
+        ? "<b>Forward pass.</b><span class='t'>Numbers flow left to right: x in, \\u0177 out, loss = "+f3(loss(o.p,TRUE))+". This pass computes values.</span>"
+        : "<b>Backward pass.</b><span class='t'>Error flows right to left: \\u03b4 at each node, \\u2202L/\\u2202W on each edge. This pass computes sensitivities. Hover any line to preview its gradient, click to pin its effect on learning.</span>");
+   }
+   sub(draw); draw();
  }
 };
 
@@ -2407,20 +2797,20 @@ const GRAPHS={
 /* prerequisite graph: which block needs which */
 function pathGraph(host){
   if(!host) return;
-  const V=gview(host,{w:960,h:300});
+  const V=gview(host,{w:1060,h:320});
   const P=[
-    {id:"b1",n:1,t:"the neuron",x:70,y:70,grp:0},
-    {id:"b6",n:2,t:"activations",x:230,y:70,grp:0},
-    {id:"b7",n:3,t:"layers, matrices",x:400,y:70,grp:0},
-    {id:"b4",n:4,t:"forward pass",x:570,y:70,grp:0},
-    {id:"b8",n:5,t:"softmax, argmax",x:740,y:70,grp:0},
-    {id:"b10",n:6,t:"cross entropy",x:890,y:150,grp:1},
-    {id:"b3",n:7,t:"gradient descent",x:740,y:230,grp:2},
-    {id:"b2",n:8,t:"chain rule",x:570,y:230,grp:2},
-    {id:"b9",n:9,t:"softmax derivative",x:400,y:230,grp:2},
-    {id:"b11",n:10,t:"the cancellation",x:230,y:230,grp:2},
-    {id:"b12",n:11,t:"backpropagation",x:70,y:230,grp:3},
-    {id:"b5",n:12,t:"all knobs at once",x:70,y:150,grp:3}
+    {id:"b1",n:1,t:"the neuron",x:88,y:74,grp:0},
+    {id:"b6",n:2,t:"activations",x:268,y:74,grp:0},
+    {id:"b7",n:3,t:"layers, matrices",x:448,y:74,grp:0},
+    {id:"b4",n:4,t:"forward pass",x:628,y:74,grp:0},
+    {id:"b8",n:5,t:"softmax, argmax",x:808,y:74,grp:0},
+    {id:"b10",n:6,t:"cross entropy",x:972,y:160,grp:1},
+    {id:"b3",n:7,t:"gradient descent",x:808,y:246,grp:2},
+    {id:"b2",n:8,t:"chain rule",x:628,y:246,grp:2},
+    {id:"b9",n:9,t:"softmax derivative",x:448,y:246,grp:2},
+    {id:"b11",n:10,t:"the cancellation",x:268,y:246,grp:2},
+    {id:"b12",n:11,t:"backpropagation",x:88,y:246,grp:3},
+    {id:"b5",n:12,t:"all knobs at once",x:88,y:160,grp:3}
   ];
   const NEED=[["b1","b6"],["b6","b7"],["b7","b4"],["b4","b8"],["b8","b10"],["b10","b3"],
               ["b3","b2"],["b2","b9"],["b9","b11"],["b10","b11"],["b11","b12"],["b12","b5"]];
@@ -2429,19 +2819,23 @@ function pathGraph(host){
   let sel=null;
   function draw(){
     const nodes=P.map(function(q){
-      return {id:q.id,x:q.x,y:q.y,shape:"box",bw:150,bh:48,fs:10.5,
+      return {id:q.id,x:q.x,y:q.y,shape:"box",bw:146,bh:44,fs:10,
         label:String(q.n).padStart(2,"0")+"  "+q.t,sub:"",
         fill:COL[q.grp],stroke:STR[q.grp]};
     });
     const edges=NEED.map(function(e,k){
-      return {id:"n"+k,from:e[0],to:e[1],color:"var(--line-strong)",w:1.8};
+      /* this one jump (measure needs both the softmax derivative and the cancellation)
+         skips over three boxes in the row below; bow it up and over them instead of
+         drawing a straight line through the middle of "chain rule" */
+      const jump=(e[0]==="b10"&&e[1]==="b11");
+      return {id:"n"+k,from:e[0],to:e[1],color:"var(--line-strong)",w:1.8,bow:jump?92:0};
     });
     gdraw(V,{nodes:nodes,edges:edges,captions:[
-      {x:400,y:22,t:"build the machine",up:true,color:"var(--teal)"},
-      {x:890,y:105,t:"measure",up:true,color:"var(--rose)"},
-      {x:520,y:284,t:"work out how to improve it",up:true,color:"var(--amber)"},
-      {x:70,y:284,t:"assemble and scale",up:true,color:"var(--violet)"}]},
-      sel,function(s){ location.hash="#"+s.id; });
+      {x:448,y:26,t:"build the machine",up:true,color:"var(--teal)"},
+      {x:972,y:118,t:"measure",up:true,color:"var(--rose)"},
+      {x:538,y:298,t:"work out how to improve it",up:true,color:"var(--amber)"},
+      {x:88,y:298,t:"assemble and scale",up:true,color:"var(--violet)"}]},
+      sel,function(s){ if(s.kind==="n") location.hash="#"+s.id; });
     V.exp.innerHTML="<b>Read the arrows as the word needs.</b><span class='t'>"+
       "Gradient descent at 07 needs a loss, which is why cross entropy is at 06 and not at the end. "+
       "The chain rule at 08 needs something to differentiate, so it arrives once there is a network and a loss. "+
@@ -2454,6 +2848,7 @@ function pathGraph(host){
 /* ===================== RENDER THE LECTURE ===================== */
 function renderBlocks(){
   SUBS.length=0;
+  SCORE.answered=0; SCORE.right=0; SCORE.total=BLOCKS.filter(function(B){return B.check;}).length;
   const main=byId("blocks");
   clear(main);
   const rail=byId("rail-list");
@@ -2471,7 +2866,17 @@ function renderBlocks(){
   pli.innerHTML='<a href="#path" data-sec="path"><span class="num">\u2192</span>The path</a>';
   rail.appendChild(pli);
 
-  BLOCKS.forEach(function(B){
+  let prevPart=0;
+  BLOCKS.forEach(function(B,k){
+    if(B.part&&B.part!==prevPart){
+      const ptN={1:"Part I \u2014 Build the Machine",2:"Part II \u2014 Measure the Prediction",3:"Part III \u2014 Learn",4:"Part IV \u2014 Put Everything Together"};
+      const ptC={1:"p1",2:"p2",3:"p3",4:"p4"};
+      const ptDiv=document.createElement("div");
+      ptDiv.style.cssText="padding:2px 0";
+      ptDiv.innerHTML='<span class="part-banner '+ptC[B.part]+'">'+ptN[B.part]+"</span>";
+      main.appendChild(ptDiv);
+      prevPart=B.part;
+    }
     const li=document.createElement("li");
     li.innerHTML='<a href="#'+B.id+'" data-sec="'+B.id+'"><span class="num">'+
       (B.n<10?"0":"")+B.n+"</span>"+B.short+"</a>";
@@ -2482,6 +2887,7 @@ function renderBlocks(){
       '<div class="card">'+
         '<div class="blockhead"><div><div class="no">Block '+B.n+'</div><h2>'+B.title+'</h2></div>'+
         '<button class="btn opener tog">Show board</button></div>'+
+        (B.bridge?'<div class="bridge'+(B.n===10?' milestone':'')+'">'+B.bridge+'</div>':'')+
         '<div class="bgrid"><div class="explain">'+
           '<div class="beat a"><i>A</i>Intuition</div><div class="intuition"></div>'+
           '<div class="beat b"><i>B</i>Visual representation</div>'+
@@ -2492,6 +2898,17 @@ function renderBlocks(){
           '<div class="beat d"><i>D</i>Numerical example</div><div class="numeric"></div>'+
           '<div class="beat e"><i>E</i>Application</div><div class="applied"></div>'+
           '<div class="beat f"><i>F</i>Quick check</div><div class="check"></div>'+
+          (B.predict?'<div class="beat b" style="color:var(--violet)"><i style="background:var(--violet)">?</i>Predict first</div>'+
+            '<div class="predict-wrap"><div class="pq">'+B.predict.q+'</div>'+
+            '<button class="btn sm btn-reveal">Reveal answer</button>'+
+            '<div class="panswer">'+B.predict.a+'</div></div>':'')+
+          (B.numcheck?'<div class="beat c" style="color:var(--rose)"><i style="background:var(--rose)">=</i>Calculate</div>'+
+            '<div class="numcheck-wrap"><div class="nq">'+B.numcheck.q+'</div>'+
+            '<div class="ngiven">'+B.numcheck.given+'</div>'+
+            '<div class="ninput-row"><input type="text" placeholder="your answer\u2026" class="nc-inp" aria-label="your numerical answer">'+
+            '<button class="btn sm nc-btn">Check</button>'+
+            '<button class="btn sm show-ans">Show answer</button></div>'+
+            '<div class="nfb nc-fb"></div></div>':'')+
         '</div><div class="boardcol"></div></div>'+
       "</div>";
     main.appendChild(sec);
@@ -2505,7 +2922,52 @@ function renderBlocks(){
     sec.querySelector(".applied").innerHTML="<strong>"+f.name+".</strong> "+f.app[B.appKey];
     NUMERIC[B.num](sec.querySelector(".numeric"));
     GRAPHS[B.id](sec.querySelector(".viz"));
-    buildCheck(sec.querySelector(".check"),B.check);
+    if(B.check) buildCheck(sec.querySelector(".check"),B.check,function(right){
+      SCORE.answered++; if(right) SCORE.right++; updateScore();
+      if(right){
+        const link=rail.querySelector('a[data-sec="'+B.id+'"]');
+        if(link&&!link.querySelector(".done")) link.insertAdjacentHTML("beforeend"," <span class=\"done\" aria-hidden=\"true\">✓</span>");
+      }
+    });
+
+    /* wire predict reveal */
+    if(B.predict){
+      const rb=sec.querySelector(".btn-reveal"),pa=sec.querySelector(".panswer");
+      rb.addEventListener("click",function(){ pa.classList.add("on"); rb.style.display="none"; });
+    }
+    /* wire numcheck */
+    if(B.numcheck){
+      const nc=B.numcheck,inp=sec.querySelector(".nc-inp"),fb=sec.querySelector(".nc-fb"),sa=sec.querySelector(".show-ans");
+      function doCheck(){
+        const v=parseFloat(inp.value.replace(",","."));
+        if(isNaN(v)){fb.className="nfb bad";fb.innerHTML="Please enter a number.";return;}
+        if(Math.abs(v-nc.ans)<=nc.tol){
+          fb.className="nfb good";fb.innerHTML="<strong>Correct.</strong> "+nc.correct;
+          sa.style.display="none";
+        }else{
+          fb.className="nfb bad";fb.innerHTML="<strong>Not quite.</strong> "+nc.wrong;
+          sa.style.display="inline-block";
+        }
+        window.MATH(fb);
+      }
+      sec.querySelector(".nc-btn").addEventListener("click",doCheck);
+      inp.addEventListener("keydown",function(ev){if(ev.key==="Enter")doCheck();});
+      sa.addEventListener("click",function(){
+        var shown=Number.isInteger(nc.ans)?nc.ans:(Math.round(nc.ans*100)/100).toFixed(2);
+        fb.className="nfb good";fb.innerHTML="<strong>Answer: "+shown+".</strong> "+nc.correct;
+        window.MATH(fb);this.style.display="none";
+      });
+    }
+
+    const prevB=BLOCKS[k-1], nextB=BLOCKS[k+1];
+    const nav=document.createElement("div");
+    nav.className="blocknav";
+    nav.innerHTML=
+      (prevB?'<a class="btn sm" href="#'+prevB.id+'">&larr; '+(prevB.n<10?"0":"")+prevB.n+"  "+prevB.short+"</a>"
+            :'<a class="btn sm" href="#path">&larr; The path</a>')+
+      (nextB?'<a class="btn sm" href="#'+nextB.id+'">'+(nextB.n<10?"0":"")+nextB.n+"  "+nextB.short+" &rarr;</a>"
+            :'<a class="btn sm" href="#summary">Summary &rarr;</a>');
+    sec.querySelector(".card").appendChild(nav);
 
     /* board toggle */
     const grid=sec.querySelector(".bgrid"), col=sec.querySelector(".boardcol"), tog=sec.querySelector(".tog");
@@ -2516,7 +2978,6 @@ function renderBlocks(){
       if(open&&!board) board=makeBoard(col,"Board \u00b7 block "+B.n,function(){ return boardSteps(B.id); });
       else if(open&&board) board.render();
     });
-    sec.__board=function(){ if(board) board.render(); };
   });
   /* summary */
   const sum=document.createElement("section");
@@ -2524,32 +2985,64 @@ function renderBlocks(){
   sum.innerHTML='<div class="card"><div class="blockhead"><div><div class="no">Summary</div>'+
     '<h2>How it all connects</h2></div></div>'+
     '<p class="hint">Click any box to jump back to the block that explains it.</p>'+
-    '<div class="mapwrap"><svg viewBox="0 0 980 200" id="mapsvg"></svg></div></div>';
+    '<div class="mapwrap"><svg viewBox="0 0 980 148" id="mapsvg"></svg></div></div>';
   main.appendChild(sum);
   const li=document.createElement("li");
   li.innerHTML='<a href="#summary" data-sec="summary"><span class="num">\u2605</span>Summary</a>';
   rail.appendChild(li);
   pathGraph(byId("pathviz"));
   drawMap();
+  updateScore();
   window.MATH(main);
   spy();
+  revealSections(main);
 }
-function buildCheck(host,C){
-  host.innerHTML='<div class="q">'+C.q+"</div><div class='opts'></div><div class='fb'></div>";
-  const box=host.querySelector(".opts");
-  C.opts.forEach(function(t,i){
+const SCORE={answered:0,right:0,total:0};
+function updateScore(){
+  const el=byId("score");
+  if(!el) return;
+  el.innerHTML="<strong>quick checks</strong>"+
+    (SCORE.answered
+      ? '<span style="font-size:12.6px;color:var(--muted)">'+SCORE.right+" right of "+SCORE.answered+
+        " answered, "+SCORE.total+" in the lecture</span>"
+      : '<span style="font-size:12.6px;color:var(--muted)">none answered yet, '+SCORE.total+" in the lecture</span>");
+}
+function buildCheck(host,C,onFirstAnswer){
+  host.innerHTML='<div class="q">'+C.q+"</div><div class='opts'></div><div class='fb'></div>"+
+    '<div class="row retryrow" style="display:none;margin-top:9px">'+
+    '<button class="btn sm retry">Try it again</button>'+
+    '<span class="hint">Answering again does not change the count in the sidebar.</span></div>';
+  const box=host.querySelector(".opts"), retryRow=host.querySelector(".retryrow");
+  let answered=false;
+  /* the options are shuffled so that the answer is not always in the same place */
+  const order=C.opts.map(function(_,i){ return i; });
+  for(let i=order.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1)), t=order[i]; order[i]=order[j]; order[j]=t;
+  }
+  const aPos=order.indexOf(C.a);
+  function reset(){
+    [].forEach.call(box.querySelectorAll(".opt"),function(x){ x.disabled=false; x.classList.remove("right","wrong"); });
+    const fb=host.querySelector(".fb"); fb.className="fb"; fb.innerHTML="";
+    retryRow.style.display="none";
+    const first=box.querySelector(".opt"); if(first) first.focus();
+  }
+  host.querySelector(".retry").addEventListener("click",reset);
+  order.forEach(function(src,pos){
     const b=document.createElement("button");
     b.className="opt";
-    b.innerHTML='<span class="k">'+"ABCD".charAt(i)+"</span>"+t;
+    b.innerHTML='<span class="k">'+"ABCD".charAt(pos)+"</span>"+C.opts[src];
     b.addEventListener("click",function(){
+      const right=(src===C.a);
       [].forEach.call(box.querySelectorAll(".opt"),function(x){ x.disabled=true; });
-      b.classList.add(i===C.a?"right":"wrong");
-      if(i!==C.a) box.children[C.a].classList.add("right");
+      b.classList.add(right?"right":"wrong");
+      if(!right) box.children[aPos].classList.add("right");
       const fb=host.querySelector(".fb");
-      fb.className="fb msg "+(i===C.a?"good":"bad");
-      fb.innerHTML=(i===C.a?"<strong>Correct. </strong>":"<strong>Not this one. </strong>")+C.why[i]+
-        (i===C.a?"":" <br><br><strong>The right answer is "+"ABCD".charAt(C.a)+".</strong> "+C.why[C.a]);
+      fb.className="fb msg "+(right?"good":"bad");
+      fb.innerHTML=(right?"<strong>Correct. </strong>":"<strong>Not this one. </strong>")+C.why[src]+
+        (right?"":" <br><br><strong>The right answer is "+"ABCD".charAt(aPos)+".</strong> "+C.why[C.a]);
       window.MATH(fb);
+      retryRow.style.display="flex";
+      if(!answered){ answered=true; if(onFirstAnswer) onFirstAnswer(right); }
     });
     box.appendChild(b);
   });
@@ -2559,32 +3052,43 @@ function drawMap(){
   const svg=byId("mapsvg");
   if(!svg) return;
   clear(svg);
-  const items=[
-    ["Neuron","b1"],["Activation","b6"],["Forward pass","b4"],["Prediction","b4"],
-    ["Softmax","b8"],["Cross entropy","b10"],["Loss","b10"],["Chain rule","b2"],
-    ["Backprop","b12"],["Gradient","b5"],["Descent","b3"],["New parameters","b5"]
+  const fwd_items=[
+    ["Neuron","b1"],["Activation","b6"],["Forward pass","b4"],["Logits","b8"],
+    ["Softmax","b8"],["Cross entropy","b10"],["Loss","b10"]
   ];
-  items.forEach(function(it,k){
-    const x=14+(k%6)*160, y=k<6?34:120;
-    const g=sv("g",{class:"mnode"});
-    g.appendChild(sv("rect",{x:x,y:y,width:140,height:46,rx:10,fill:"rgba(255,255,255,.07)",
-      stroke:"#7FA3C4","stroke-width":1.4}));
-    const t=sv("text",{x:x+70,y:y+23});
-    t.setAttribute("style","font-family:var(--mono);font-size:11px;fill:#F2F5F8;text-anchor:middle;dominant-baseline:central");
-    t.textContent=it[0]; g.appendChild(t);
-    g.addEventListener("click",function(){ location.hash="#"+it[1]; });
-    svg.appendChild(g);
-    if(k%6<5){
-      const ax=x+140, ay=y+23;
-      svg.appendChild(sv("path",{d:"M"+ax+","+ay+" L"+(ax+14)+","+ay,stroke:"#DE9126","stroke-width":1.6}));
-      svg.appendChild(sv("path",{d:"M"+(ax+20)+","+ay+" l-7,-4 l0,8 z",fill:"#DE9126"}));
-    }
-  });
-  svg.appendChild(sv("path",{d:"M954,57 q18,30 -10,42 L40,99 q-20,4 -20,18",fill:"none",stroke:"#DE9126","stroke-width":1.6,"stroke-dasharray":"5 4"}));
-  const t=sv("text",{x:490,y:186});
-  t.setAttribute("style","font-family:var(--mono);font-size:10.5px;fill:#9FB3C8;text-anchor:middle");
-  t.textContent="better prediction, and round again";
-  svg.appendChild(t);
+  const bwd_items=[
+    ["Gradient descent","b3"],["Chain rule","b2"],["Backpropagation","b12"],
+    ["All gradients","b5"],["Update \\u03b8","b5"],["Repeat","b13"]
+  ];
+  function renderRow(items,y,col,stroke){
+    items.forEach(function(it,k){
+      const x=14+(k)*138;
+      const g=sv("g",{class:"mnode"});
+      g.appendChild(sv("rect",{x:x,y:y,width:126,height:40,rx:9,fill:col,stroke:stroke,"stroke-width":1.4}));
+      const t=sv("text",{x:x+63,y:y+20});
+      t.setAttribute("style","font-family:var(--mono);font-size:10.5px;fill:#F2F5F8;text-anchor:middle;dominant-baseline:central;font-weight:600");
+      t.textContent=it[0]; g.appendChild(t);
+      g.addEventListener("click",function(){ location.hash="#"+it[1]; });
+      svg.appendChild(g);
+      if(k<items.length-1){
+        const ax=x+126, ay=y+20;
+        svg.appendChild(sv("path",{d:"M"+ax+","+ay+" L"+(ax+8)+","+ay,stroke:stroke,"stroke-width":1.6}));
+        svg.appendChild(sv("path",{d:"M"+(ax+14)+","+ay+" l-7,-4 l0,8 z",fill:stroke}));
+      }
+    });
+  }
+  renderRow(fwd_items,14,"rgba(15,122,131,.22)","#0F7A83");
+  renderRow(bwd_items,78,"rgba(222,145,38,.22)","#DE9126");
+  const tx=sv("text",{x:6,y:20});
+  tx.setAttribute("style","font-family:var(--mono);font-size:8.5px;fill:#7FE3C9;letter-spacing:.1em;text-transform:uppercase");
+  tx.textContent="FORWARD"; svg.appendChild(tx);
+  const tx2=sv("text",{x:6,y:84});
+  tx2.setAttribute("style","font-family:var(--mono);font-size:8.5px;fill:#DE9126;letter-spacing:.1em;text-transform:uppercase");
+  tx2.textContent="BACKWARD"; svg.appendChild(tx2);
+  svg.appendChild(sv("path",{d:"M956,34 q22,28 0,54 L140,88",fill:"none",stroke:"#DE9126","stroke-width":1.6,"stroke-dasharray":"5 4"}));
+  const t3=sv("text",{x:490,y:132});
+  t3.setAttribute("style","font-family:var(--mono);font-size:10px;fill:#9FB3C8;text-anchor:middle");
+  t3.textContent="repeat this loop on all training data"; svg.appendChild(t3);
 }
 function spy(){
   const links=[].slice.call(document.querySelectorAll(".rail a"));
@@ -2599,13 +3103,56 @@ function spy(){
   window.addEventListener("scroll",upd,{passive:true});
   upd();
 }
+/* reading-progress bar and back-to-top button, wired once */
+(function surf(){
+  const bar=byId("progress"), top=byId("totop");
+  if(!bar||!top) return;
+  function upd(){
+    const d=document.documentElement;
+    const max=(d.scrollHeight-d.clientHeight)||1;
+    bar.style.width=Math.min(100,Math.max(0,(window.scrollY/max)*100))+"%";
+    top.classList.toggle("show",window.scrollY>560);
+  }
+  window.addEventListener("scroll",upd,{passive:true});
+  window.addEventListener("resize",upd);
+  top.addEventListener("click",function(){ window.scrollTo({top:0,behavior:"smooth"}); });
+  upd();
+})();
+/* fade sections in as they scroll into view, if the browser can watch for it */
+function revealSections(main){
+  try{
+    if(!("IntersectionObserver" in window)) return;
+    const io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); }
+      });
+    },{threshold:0.08,rootMargin:"0px 0px -40px 0px"});
+    [].forEach.call(main.querySelectorAll("section"),function(s){
+      s.classList.add("reveal"); io.observe(s);
+    });
+  }catch(e){}
+}
+
+/* ===================== IF KATEX CANNOT LOAD ===================== */
+window.addEventListener("load",function(){
+  window.setTimeout(function(){
+    if(window.renderMathInElement) return;
+    const main=byId("blocks");
+    if(!main||byId("nokatex")) return;
+    const d=document.createElement("div");
+    d.id="nokatex"; d.className="msg warn";
+    d.innerHTML="The typesetting library did not load, so the formulas are showing in their raw form between backslash brackets. "+
+      "Everything else on the page works offline. Reconnect and reload to see the formulas set properly.";
+    main.insertBefore(d,main.firstChild);
+  },3500);
+});
 
 /* ===================== FIELD CHOOSER ===================== */
 (function chooser(){
   const host=byId("fieldcards");
   const icons={
     fin:function(){ const s=sv("svg",{viewBox:"0 0 120 44",style:"width:120px"});
-      const p=[[0,36],[20,28],[40,32],[60,16],[80,20],[100,6],[118,10]];
+      const p=[[4,36],[22,28],[41,32],[60,16],[79,20],[98,6],[116,10]];
       let d=""; p.forEach(function(q,i){ d+=(i?" L":"M")+q[0]+","+q[1]; });
       s.appendChild(sv("path",{d:d,fill:"none",stroke:"#0F7A83","stroke-width":2.4}));
       p.forEach(function(q){ s.appendChild(sv("circle",{cx:q[0],cy:q[1],r:2.6,fill:"#A62B54"})); });
