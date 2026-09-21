@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Graph Theory: a lecture you can touch</title>
+<title>Graph Theory: Introduction, a lecture you can touch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..900,0..100,0..1&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -59,6 +59,8 @@ a{color:var(--teal)}
 .hero-cap p{font-size:13.5px;color:var(--muted);margin:0}
 .tinybtn{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:none;border:1px solid var(--line);color:var(--muted);padding:5px 9px;border-radius:999px;cursor:pointer;white-space:nowrap}
 .tinybtn:hover{border-color:var(--teal);color:var(--teal)}
+.next-link{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--rose);border:1px solid var(--rose);border-radius:999px;padding:6px 12px}
+.next-link:hover{background:rgba(166,43,84,.08)}
 
 /* ---------- shell ---------- */
 .shell{display:grid;grid-template-columns:186px minmax(0,1fr);gap:34px;padding:26px 0 80px}
@@ -278,9 +280,10 @@ html:-webkit-full-screen{background:var(--paper);overflow:auto}
   </div>
   <div class="wrap mast-grid">
     <div>
-      <div class="eyebrow">Lecture companion &middot; four parts</div>
-      <h1>Graph<br>Theory</h1>
+      <div class="eyebrow">Lecture companion &middot; Graph Theory 1 of 2</div>
+      <h1>Graph Theory:<br>Introduction</h1>
       <p class="mast-lede">A graph is the smallest honest picture of a relationship: <strong>things</strong>, and <strong>which of them are linked</strong>. Everything below is built on that one idea. Click, drag and step through each panel rather than reading it.</p>
+      <a class="next-link" href="graph-algorithms-lecture.html">Continue with Part 2 of 2: Algorithms &rarr;</a>
     </div>
     <div class="hero-card">
       <div class="stage" id="hero-stage"></div>
@@ -538,6 +541,10 @@ html:-webkit-full-screen{background:var(--paper);overflow:auto}
         <div class="beat">Disconnected graphs</div>
         Both procedures only reach the component containing the start vertex. To cover the whole graph, wrap them in a loop over all vertices and restart at any vertex still unvisited. The number of restarts is the number of connected components. Try the two components preset above.
       </div>
+      <div class="formal" style="margin-top:14px">
+        <div class="beat">What comes next</div>
+        Every algorithm in <a href="graph-algorithms-lecture.html">Part 2</a> is one of these two traversals with a twist: Dijkstra is BFS with a priority queue, topological sort is DFS reading its finishing order, max flow is BFS run again and again on a changing graph.
+      </div>
     </div>
   </section>
 
@@ -645,7 +652,7 @@ html:-webkit-full-screen{background:var(--paper);overflow:auto}
 </div>
 
 <footer>
-  <div class="wrap">Built as a companion to the graph theory lecture plan: introduction, families, notions, representation, traversal. Every drawing on this page is generated from an explicit vertex and edge list, so what you see is exactly what the algorithms read. <a href="index.html">Back to the lecture library</a>.</div>
+  <div class="wrap">First of two companions to the graph theory lecture: introduction, families, notions, representation, traversal. Every drawing on this page is generated from an explicit vertex and edge list, so what you see is exactly what the algorithms read. <a href="graph-algorithms-lecture.html">Part 2: Algorithms</a> &middot; <a href="index.html">Back to the lecture library</a>.</div>
 </footer>
 
 <script>

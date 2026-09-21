@@ -1,0 +1,2347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regression: which model, and why</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..900,0..100,0..1&family=Karla:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<style>
+:root{
+  --ink:#101B33;
+  --paper:#EDF0F6;
+  --panel:#FFFFFF;
+  --line:#C9D2E2;
+  --line-strong:#7C89A3;
+  --muted:#66738F;
+  --teal:#0F7A83;
+  --amber:#DE9126;
+  --rose:#A62B54;
+  --violet:#4B3F97;
+  --display:"Fraunces",Georgia,"Times New Roman",serif;
+  --body:"Karla","Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:14px;
+  --shadow:0 1px 0 rgba(16,27,51,.04), 0 8px 24px -18px rgba(16,27,51,.5);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--paper);
+  background-image:radial-gradient(circle at 1px 1px, rgba(16,27,51,.09) 1px, transparent 0);
+  background-size:22px 22px;
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:var(--display);font-variation-settings:"SOFT" 12,"WONK" 1;margin:0;line-height:1.05}
+h1{font-size:clamp(38px,6.4vw,68px);font-weight:800;letter-spacing:-.022em}
+h2{font-size:clamp(26px,3.4vw,38px);font-weight:700;letter-spacing:-.018em}
+h3{font-size:19px;font-weight:600;letter-spacing:-.01em}
+h4{font-family:var(--display);font-size:16.5px;font-weight:600;margin:0 0 6px}
+p{margin:0 0 12px}
+a{color:var(--teal)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+/* ---------- masthead ---------- */
+.masthead{padding:34px 0 22px}
+.backlink{display:inline-block;margin-bottom:18px;font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;color:var(--muted)}
+.backlink:hover{color:var(--teal)}
+.mast-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,540px);gap:38px;align-items:center}
+.mast-lede{font-size:17.5px;color:var(--muted);max-width:44ch;margin-top:16px}
+.mast-lede strong{color:var(--ink);font-weight:500}
+.hero-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 16px 12px}
+.hero-cap{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:6px}
+.hero-cap p{font-size:13.5px;color:var(--muted);margin:0}
+.tinybtn{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:none;border:1px solid var(--line);color:var(--muted);padding:5px 9px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.tinybtn:hover{border-color:var(--teal);color:var(--teal)}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:196px minmax(0,1fr);gap:34px;padding:26px 0 40px}
+.rail{position:sticky;top:22px;align-self:start}
+.rail ol{list-style:none;margin:0;padding:0}
+.rail li{margin-bottom:2px}
+.rail a{display:block;padding:9px 10px;border-radius:9px;text-decoration:none;color:var(--muted);font-size:14.5px;border-left:2px solid transparent}
+.rail a .num{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;display:block;opacity:.75}
+.rail a:hover{background:rgba(15,122,131,.07);color:var(--ink)}
+.rail a.on{color:var(--ink);border-left-color:var(--rose);background:rgba(166,43,84,.06);font-weight:700}
+
+section.page{display:none}
+section.page.live{display:block}
+.sec-head{margin-bottom:20px;border-top:2px solid var(--ink);padding-top:12px}
+.sec-head p{color:var(--muted);max-width:64ch;margin-top:8px}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px}
+.card + .card{margin-top:18px}
+.card h3 + p{margin-top:8px}
+
+/* teaching beats */
+.beat{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose);font-weight:600;margin-bottom:6px}
+.beat.t{color:var(--teal)}
+.beat.v{color:var(--violet)}
+.formal{background:rgba(16,27,51,.045);border-left:2px solid var(--line-strong);border-radius:0 8px 8px 0;padding:11px 14px;font-size:14.5px;margin-top:12px}
+.formal .beat{color:var(--muted)}
+code{font-family:var(--mono);font-size:13px;background:rgba(15,122,131,.1);padding:1px 5px;border-radius:5px}
+.tex{margin:10px 0;overflow-x:auto;overflow-y:hidden;font-size:15px}
+.tex.center{text-align:center}
+.katex{font-size:1.04em}
+.where{font-size:13.5px;color:var(--muted);margin-top:6px}
+
+/* ---------- controls ---------- */
+.seg{display:inline-flex;background:rgba(16,27,51,.06);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font-family:var(--body);font-size:13.5px;font-weight:500;border:0;background:none;color:var(--muted);padding:6px 13px;border-radius:999px;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(16,27,51,.16)}
+.seg button:focus-visible,.btn:focus-visible,.tinybtn:focus-visible,.rail a:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.btn{font-family:var(--body);font-size:14px;font-weight:600;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:7px 14px;border-radius:9px;cursor:pointer}
+.btn:hover{border-color:var(--line-strong)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.primary:hover{background:#1c2d51}
+.btn[disabled]{opacity:.42;cursor:not-allowed}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.hint{font-size:13px;color:var(--muted)}
+.sliders{display:grid;gap:10px;margin-top:12px}
+.sl{display:grid;grid-template-columns:auto minmax(0,1fr) 74px;gap:10px;align-items:center;font-size:13.5px}
+.sl label{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.sl input[type=range]{width:100%;accent-color:var(--teal)}
+.sl .val{font-family:var(--mono);font-size:12.5px;text-align:right;color:var(--ink);font-weight:600}
+
+/* ---------- plots ---------- */
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.stage svg{width:100%;height:auto;display:block;touch-action:none}
+.ax{stroke:var(--line-strong);stroke-width:1.3}
+.grid{stroke:var(--line);stroke-width:.9;stroke-dasharray:3 4}
+.axlab{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.axttl{font-family:var(--mono);font-size:11px;fill:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.pt{fill:var(--panel);stroke:var(--ink);stroke-width:1.5}
+.pt.a{fill:var(--teal);stroke:var(--teal);fill-opacity:.75}
+.pt.b{fill:var(--amber);stroke:var(--ink)}
+.pt.r{fill:var(--rose);stroke:var(--rose);fill-opacity:.8}
+.pt.drag{cursor:grab}
+.fitline{stroke:var(--rose);stroke-width:2.8;fill:none;stroke-linecap:round}
+.fitline.alt{stroke:var(--violet);stroke-dasharray:7 5}
+.fitline.ghost{stroke:var(--line-strong);stroke-width:1.8;stroke-dasharray:4 5}
+.resid{stroke:var(--amber);stroke-width:1.6}
+.bandfill{fill:rgba(15,122,131,.13)}
+.curve{fill:none;stroke:var(--teal);stroke-width:2.6}
+.plab{font-family:var(--mono);font-size:11px;fill:var(--ink)}
+
+/* ---------- readouts ---------- */
+.readout{font-family:var(--mono);font-size:13px;line-height:1.8}
+.readout .k{color:var(--muted)}
+.msg{border-radius:9px;padding:9px 12px;font-size:14px;margin-top:12px;background:rgba(15,122,131,.09);border-left:3px solid var(--teal)}
+.msg.warn{background:rgba(222,145,38,.14);border-left-color:var(--amber)}
+.msg.bad{background:rgba(166,43,84,.1);border-left-color:var(--rose)}
+.msg.ok{background:rgba(75,63,151,.1);border-left-color:var(--violet)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.tile{border:1px solid var(--line);border-radius:11px;padding:9px 11px;background:var(--panel)}
+.tile .n{font-family:var(--mono);font-size:21px;font-weight:600;line-height:1.1}
+.tile small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:3px}
+.bar{height:9px;border-radius:5px;background:rgba(16,27,51,.08);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;border-radius:5px;background:var(--rose);transition:width .25s ease}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.key{width:16px;height:3px;border-radius:2px;display:inline-block;background:var(--rose)}
+.key.v{background:var(--violet)}
+.key.t{background:var(--teal)}
+.key.a{background:var(--amber)}
+.key.d{width:11px;height:11px;border-radius:50%;background:var(--panel);border:1.6px solid var(--ink)}
+
+/* ---------- layouts ---------- */
+.split{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start}
+.split-even{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:16px}
+.mini{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel)}
+.mini .kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:7px}
+.mini p{font-size:14px;color:var(--muted);margin:8px 0 0}
+.cmp{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.cmp th,.cmp td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.cmp td:first-child{font-weight:600}
+.cmp tr.hot td{background:rgba(222,145,38,.16)}
+.slab{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:14px 0 6px}
+.slab:first-child{margin-top:0}
+.pager{display:flex;justify-content:space-between;gap:12px;padding:6px 0 70px}
+footer{border-top:1px solid var(--line);padding:22px 0 60px;color:var(--muted);font-size:13.5px}
+
+@media (max-width:940px){
+  .shell{grid-template-columns:1fr;gap:14px}
+  .rail{position:static;overflow-x:auto}
+  .rail ol{display:flex;gap:6px}
+  .rail li{margin:0}
+  .rail a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent;padding:7px 11px}
+  .rail a.on{border-left:0;border-bottom-color:var(--rose)}
+  .mast-grid,.split,.split-even{grid-template-columns:1fr}
+  .masthead{padding-top:30px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <a class="backlink" href="index.html">&larr; Lecture library</a>
+  </div>
+  <div class="wrap mast-grid">
+    <div>
+      <div class="eyebrow">Lecture companion &middot; one idea, three questions</div>
+      <h1>Regression</h1>
+      <p class="mast-lede">Every regression in the world answers the same question: <strong>given what I know, what is the typical value of what I care about?</strong> The dozens of names, logistic, Poisson, ridge, quantile, exist because three things change: the <strong>nature</strong> of the outcome, the <strong>shape</strong> of the relationship, and the <strong>trouble</strong> in the data. Move the sliders instead of reading the page.</p>
+    </div>
+    <div class="hero-card">
+      <div class="stage" id="hero-stage"></div>
+      <div class="hero-cap">
+        <p id="hero-cap-txt">A cloud of apartments, size against price. The line is the answer to "what is the typical price for this size". Watch it search for the position where the orange mistakes are smallest.</p>
+        <button class="tinybtn" id="hero-replay">Replay</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap shell">
+  <nav class="rail" aria-label="Lecture notes">
+    <ol>
+      <li><a href="#p0" class="on" data-page="p0"><span class="num">Note 00</span>What regression is</a></li>
+      <li><a href="#p1" data-page="p1"><span class="num">Note 01</span>The nature of Y</a></li>
+      <li><a href="#p2" data-page="p2"><span class="num">Note 02</span>The shape of the link</a></li>
+      <li><a href="#p3" data-page="p3"><span class="num">Note 03</span>Trouble in the data</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+  <!-- ================= NOTE 0 ================= -->
+  <section class="page live" id="p0">
+    <div class="sec-head">
+      <div class="eyebrow">Note 00</div>
+      <h2>One line, one promise, one measure of failure</h2>
+      <p>Before any family of models, one machine. We will build it on a single example and never leave it: everything on the next three notes is this same machine with one of its three parts swapped out.</p>
+    </div>
+
+    <div class="card">
+      <div class="beat">Beat 1 &middot; Intuition</div>
+      <h3>The promise a regression makes, and the one it does not</h3>
+      <p>You have 60 apartments. For each one you know its size in square metres and the price it sold for. Someone walks in and says: <em>my apartment is 95 square metres, what is it worth?</em></p>
+      <p>You cannot answer exactly. Two apartments of 95 square metres sell for different prices, because of the floor, the view, the year, the negotiation. But you can answer <strong>on average</strong>. That is the whole promise:</p>
+      <div class="formal">
+        <div class="beat">The promise</div>
+        A regression does not predict the value of one case. It estimates the <strong>average value of the cases that look like it</strong>. In symbols, it models the conditional mean.
+        <div class="tex center" data-tex="\mathbb{E}[\,Y \mid X = x\,] = f(x)"></div>
+        <div class="where">Read it aloud: "the expected value of Y, given that X equals x, is some function f of x." <code>Y</code> is what you want to know (price), <code>X</code> is what you already know (size), and <code>f</code> is the recipe you are about to choose.</div>
+      </div>
+      <p>Choosing a regression model is exactly two decisions: <strong>which family of shapes do I allow for <code>f</code></strong>, and <strong>how do I measure the mistake</strong> so that I can pick the best member of that family.</p>
+    </div>
+
+    <div class="card">
+      <div class="beat t">Beat 2 &middot; Touch it</div>
+      <h3>Move the line by hand, then let the mathematics do it</h3>
+      <p>The two sliders are the only two numbers a straight line has: where it starts, and how steep it is. Every orange stick is one apartment's mistake, the gap between the real price and what the line claims. Try to make the sticks small. Then press the button and see how close you got.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="ols-stage"></div>
+          <div class="sliders">
+            <div class="sl"><label>&beta;&#8320; intercept</label><input type="range" id="ols-b0" min="-200" max="600" step="1" value="120"><span class="val" id="ols-b0v"></span></div>
+            <div class="sl"><label>&beta;&#8321; slope</label><input type="range" id="ols-b1" min="-2" max="14" step="0.05" value="2"><span class="val" id="ols-b1v"></span></div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn primary" id="ols-fit">Fit the best line</button>
+            <button class="btn" id="ols-reset">Reset</button>
+            <label class="hint"><input type="checkbox" id="ols-sq"> show squared errors as areas</label>
+          </div>
+        </div>
+        <div>
+          <div class="beat">Read the fit</div>
+          <div class="readout" id="ols-read"></div>
+          <div class="bar"><i id="ols-bar"></i></div>
+          <div class="hint" style="margin-top:5px">Bar: your error compared with the worst you can reach on these sliders.</div>
+          <div class="msg" id="ols-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">Beat 3 &middot; The formula behind the button</div>
+        The mistake on apartment <code>i</code> is the residual <code>e&#7522; = y&#7522; &minus; (&beta;&#8320; + &beta;&#8321;x&#7522;)</code>. We square each one, so that a miss of +10 and a miss of &minus;10 both count as failures, and add them up. That total is what the button minimises.
+        <div class="tex center" data-tex="\mathrm{SSE}(\beta_0,\beta_1)=\sum_{i=1}^{n}\bigl(y_i-\beta_0-\beta_1 x_i\bigr)^2"></div>
+        Setting the two derivatives to zero gives a closed form, no searching needed. This is <strong>OLS</strong>, Ordinary Least Squares.
+        <div class="tex center" data-tex="\hat\beta_1=\frac{\sum_i (x_i-\bar x)(y_i-\bar y)}{\sum_i (x_i-\bar x)^2},\qquad \hat\beta_0=\bar y-\hat\beta_1\bar x"></div>
+        <div class="where">The slope is the co-movement of x and y divided by the movement of x alone, and the line is forced through the centre of gravity of the cloud, the point <code>(x&#772;, y&#772;)</code>. With several predictors the same algebra in matrix form gives <code>&beta;&#770; = (X&#7488;X)&#8315;&#185;X&#7488;y</code>.</div>
+      </div>
+      <div class="formal">
+        <div class="beat">Why squares, and not absolute values</div>
+        Squaring is a choice, not a law. It has one beautiful property, it makes the answer a conditional <strong>mean</strong>, and one ugly one, a single far away point can drag the whole line, because its error is squared. Minimising absolute values instead gives the conditional <strong>median</strong> and ignores extremes. Note 02 turns that choice into a model of its own, and note 03 uses it to survive outliers.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat v">Beat 4 &middot; The map</div>
+      <h3>Why there are fifty names for one machine</h3>
+      <p>The machine has three replaceable parts. Every named regression you have ever heard of is this machine with one part changed. Click a part to see what it controls.</p>
+      <div class="seg" id="map-modes" role="tablist">
+        <button class="on" data-part="y">Part A: the nature of Y</button>
+        <button data-part="f">Part B: the shape of f</button>
+        <button data-part="d">Part C: the data trouble</button>
+      </div>
+      <div class="split" style="margin-top:14px">
+        <div><div class="stage" id="map-stage"></div></div>
+        <div id="map-panel"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Beat 5 &middot; Use it</div>
+      <h3>A decision helper you can answer in ten seconds</h3>
+      <p>Answer the three questions the way you would about your own dataset. The panel names the model, gives its formula, and tells you which note explains it.</p>
+      <div class="split">
+        <div>
+          <div class="slab">1. What is Y, the thing you want to explain?</div>
+          <div class="seg" id="dec-y">
+            <button class="on" data-v="cont">a number</button>
+            <button data-v="bin">yes / no</button>
+            <button data-v="cat">a category</button>
+            <button data-v="ord">an ordered rating</button>
+            <button data-v="count">a count</button>
+            <button data-v="prop">a proportion</button>
+            <button data-v="time">a time until an event</button>
+          </div>
+          <div class="slab">2. What does the relationship look like?</div>
+          <div class="seg" id="dec-f">
+            <button class="on" data-v="lin">roughly a straight line</button>
+            <button data-v="curve">a smooth curve</button>
+            <button data-v="wild">thresholds and interactions</button>
+          </div>
+          <div class="slab">3. What is wrong with the data?</div>
+          <div class="seg" id="dec-d">
+            <button class="on" data-v="none">nothing serious</button>
+            <button data-v="many">more columns than rows</button>
+            <button data-v="out">outliers</button>
+            <button data-v="group">observations in groups</button>
+            <button data-v="time">ordered in time</button>
+          </div>
+        </div>
+        <div id="dec-panel"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= NOTE 1 ================= -->
+  <section class="page" id="p1">
+    <div class="sec-head">
+      <div class="eyebrow">Note 01 &middot; Part A of the machine</div>
+      <h2>The nature of Y decides the model</h2>
+      <p>This is the first question to ask, and it eliminates nine tenths of the catalogue immediately. A straight line is free to output any number it likes: 3.7, minus 400, two million. If your outcome is a probability, a category or a count of accidents, that freedom is a bug. The fix is one small idea, repeated seven times.</p>
+    </div>
+
+    <div class="card">
+      <div class="beat">Beat 1 &middot; Intuition</div>
+      <h3>Watch a straight line fail on a yes / no outcome</h3>
+      <p>Sixty loan applicants. The horizontal axis is monthly income, the vertical axis is the outcome: 1 if the loan defaulted, 0 if it did not. There are only two heights in the whole picture. What we really want is not the 0 or the 1, it is <strong>the probability of a 1 at that income</strong>, and probabilities live between 0 and 1.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="logi-stage"></div>
+          <div class="row" style="margin-top:12px">
+            <div class="seg" id="logi-modes">
+              <button class="on" data-m="lin">Straight line</button>
+              <button data-m="log">Logistic curve</button>
+              <button data-m="both">Both</button>
+            </div>
+          </div>
+          <div class="sliders">
+            <div class="sl"><label>&beta;&#8320; intercept</label><input type="range" id="logi-b0" min="-8" max="8" step="0.05" value="1.4"><span class="val" id="logi-b0v"></span></div>
+            <div class="sl"><label>&beta;&#8321; slope</label><input type="range" id="logi-b1" min="-3" max="3" step="0.02" value="-0.4"><span class="val" id="logi-b1v"></span></div>
+            <div class="sl"><label>read at income</label><input type="range" id="logi-x" min="1" max="12" step="0.1" value="6"><span class="val" id="logi-xv"></span></div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn primary" id="logi-fit">Fit by maximum likelihood</button>
+            <button class="btn" id="logi-reset">Reset</button>
+          </div>
+        </div>
+        <div>
+          <div class="beat">At the income you selected</div>
+          <div class="readout" id="logi-read"></div>
+          <div class="msg" id="logi-msg"></div>
+          <div class="legend">
+            <span><i class="key"></i> logistic</span>
+            <span><i class="key v"></i> straight line</span>
+            <span><i class="key d"></i> one applicant</span>
+          </div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">Beat 2 &middot; The trick, in one line</div>
+        Keep the straight part, then squeeze the result into the interval it belongs to. Call the straight part the <strong>linear predictor</strong>.
+        <div class="tex center" data-tex="\eta = \beta_0 + \beta_1 x_1 + \dots + \beta_p x_p \;\in\; \mathbb{R}"></div>
+        For a probability, squeeze <code>&eta;</code> through the logistic function, which maps the whole real line into (0, 1) and never leaves it.
+        <div class="tex center" data-tex="p(x)=\frac{1}{1+e^{-\eta}}=\frac{e^{\eta}}{1+e^{\eta}} \qquad\Longleftrightarrow\qquad \underbrace{\log\!\frac{p}{1-p}}_{\text{log-odds}}=\eta"></div>
+        <div class="where">The right hand version is the useful one for teaching: the model is a straight line, it is simply a straight line <strong>in the log-odds</strong> rather than in the probability. That transformation is called the <strong>link function</strong>, here the logit link.</div>
+      </div>
+      <div class="formal">
+        <div class="beat">How to read the coefficient</div>
+        One extra unit of x multiplies the odds by <code>e^&beta;&#8321;</code>. If <code>&beta;&#8321; = &minus;0.4</code>, then <code>e^&minus;0.4 &asymp; 0.67</code>: each extra thousand of income cuts the odds of default by about a third. Note the word <em>odds</em>, not probability. The effect on the probability itself depends on where you stand on the curve, which is why the curve is steep in the middle and flat at the ends.
+      </div>
+      <div class="formal">
+        <div class="beat">Beat 3 &middot; What the fit button minimises</div>
+        Squared error is meaningless for a 0/1 outcome, so we change the measure of failure. We ask: which <code>&beta;</code> makes the data we actually observed most probable? That is <strong>maximum likelihood</strong>, and its negative logarithm is the <strong>log loss</strong>, the same quantity machine learning calls cross entropy.
+        <div class="tex center" data-tex="\ell(\beta)=\sum_{i=1}^{n}\Bigl[\,y_i\log p_i+(1-y_i)\log(1-p_i)\,\Bigr],\qquad p_i=\frac{1}{1+e^{-\beta_0-\beta_1x_i}}"></div>
+        <div class="where">Each observation contributes the log of the probability the model gave to what actually happened. A confident wrong answer is punished brutally, because <code>log</code> of a small number is a large negative. There is no closed form here, so the computer iterates, but the idea has not changed: choose the parameters that make the total failure smallest.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat t">Beat 4 &middot; The same trick, three destinations</div>
+      <h3>The link function, seen as a funnel</h3>
+      <p>Drag the linear predictor <code>&eta;</code>. The three funnels show what each link does with the same number. This one picture is the entire GLM family, <strong>Generalized Linear Model</strong>: a straight line inside, a squeeze on the way out.</p>
+      <div class="split">
+        <div><div class="stage" id="link-stage"></div></div>
+        <div>
+          <div class="sl"><label>&eta; linear predictor</label><input type="range" id="link-eta" min="-4" max="4" step="0.05" value="0.8"><span class="val" id="link-etav"></span></div>
+          <div class="readout" id="link-read" style="margin-top:12px"></div>
+          <div class="msg" id="link-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">The general form</div>
+        A GLM has three ingredients, and naming them is how you name the model.
+        <div class="tex center" data-tex="g\bigl(\mathbb{E}[Y\mid X]\bigr)=\eta=X\beta \qquad\Longleftrightarrow\qquad \mathbb{E}[Y\mid X]=g^{-1}(X\beta)"></div>
+        <div class="where">1. a <strong>distribution</strong> for Y (normal, Bernoulli, Poisson, ...), 2. a <strong>linear predictor</strong> <code>X&beta;</code>, 3. a <strong>link</strong> <code>g</code> connecting the two. Ordinary linear regression is the case where the distribution is normal and the link is the identity, <code>g(&mu;) = &mu;</code>, which is why it looks like it has no link at all.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Beat 5 &middot; Counts</div>
+      <h3>When Y is a number of events, the spread is not constant</h3>
+      <p>Number of workplace accidents per firm per month, against firm size. Counts cannot be negative and they cannot be 2.7. Something else happens too, which the slider will show you: <strong>big counts are naturally more variable than small counts</strong>. A model with one constant error size cannot be right.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="pois-stage"></div>
+          <div class="row" style="margin-top:12px">
+            <div class="seg" id="pois-modes">
+              <button class="on" data-m="pois">Poisson, log link</button>
+              <button data-m="lin">Straight line</button>
+            </div>
+            <label class="hint"><input type="checkbox" id="pois-band" checked> show the natural spread</label>
+          </div>
+          <div class="sliders">
+            <div class="sl"><label>extra dispersion</label><input type="range" id="pois-od" min="1" max="6" step="0.1" value="1"><span class="val" id="pois-odv"></span></div>
+          </div>
+        </div>
+        <div>
+          <div class="beat">Read the fit</div>
+          <div class="readout" id="pois-read"></div>
+          <div class="msg" id="pois-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">Poisson regression</div>
+        Force the mean to be positive by putting the straight line in the exponent. The link is the logarithm.
+        <div class="tex center" data-tex="\log \lambda(x) = \beta_0+\beta_1 x \qquad\Longleftrightarrow\qquad \lambda(x)=e^{\beta_0+\beta_1x},\qquad \Pr(Y=k)=\frac{\lambda^k e^{-\lambda}}{k!}"></div>
+        <div class="where">Because the line sits in the exponent, coefficients are read as multipliers: one more unit of x multiplies the expected count by <code>e^&beta;&#8321;</code>. A coefficient of 0.10 means about 10 percent more accidents per unit.</div>
+      </div>
+      <div class="formal">
+        <div class="beat">The assumption that usually breaks, and its repair</div>
+        The Poisson distribution has one parameter doing two jobs: <code>Var(Y) = E[Y] = &lambda;</code>. Real count data are almost always more spread out than that, because firms differ in ways you did not measure. Push the dispersion slider and watch the points escape the band. The repair keeps the same mean model and gives the variance its own knob.
+        <div class="tex center" data-tex="\text{Poisson: } \operatorname{Var}(Y)=\lambda \qquad\text{Negative binomial: } \operatorname{Var}(Y)=\lambda+\frac{\lambda^{2}}{\theta}"></div>
+        <div class="where">As <code>&theta; &rarr; &infin;</code> the negative binomial becomes the Poisson again, so nothing is lost by allowing it. If instead the problem is a pile of exact zeros, for example cigarettes smoked in a population where most people do not smoke at all, use a <strong>zero inflated</strong> model: one sub-model for "is this person a smoker at all", one for "how many".</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat v">Beat 6 &middot; The whole family in one table</div>
+      <h3>Look at Y, read the row</h3>
+      <p>Click a row to load that outcome into the panel below with its formula and a one line reading.</p>
+      <table class="cmp" id="fam-tab">
+        <thead><tr><th>Outcome Y</th><th>Model</th><th>Link</th><th>Mean lives in</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div id="fam-panel" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <!-- ================= NOTE 2 ================= -->
+  <section class="page" id="p2">
+    <div class="sec-head">
+      <div class="eyebrow">Note 02 &middot; Part B of the machine</div>
+      <h2>The shape of the link between X and Y</h2>
+      <p>Note 01 fixed the exit of the machine. Now we open the middle. "Linear" never meant that the picture is a straight line, it meant that the model is linear <strong>in the coefficients</strong>. That distinction is what lets one family of algebra fit curves, steps, bumps and thresholds.</p>
+    </div>
+
+    <div class="card">
+      <div class="beat">Beat 1 &middot; Intuition</div>
+      <h3>A straight line is a guess about the world, not a neutral default</h3>
+      <p>Below, a real looking relationship that bends: the yield of a process against temperature. It rises, peaks, then falls. A straight line through it is not slightly wrong, it is wrong in a specific and dangerous way: it will tell you that more temperature is always better.</p>
+      <p>Slide the <strong>degree</strong>. Degree 1 is a straight line. Degree 2 adds a squared term and can bend once. Degree 12 can pass through almost every point, which sounds like victory and is a disaster. The two bars keep score on data the model has seen (<strong>train</strong>) and on data it has never seen (<strong>test</strong>, the hollow points).</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="poly-stage"></div>
+          <div class="sliders">
+            <div class="sl"><label>degree d</label><input type="range" id="poly-d" min="1" max="12" step="1" value="1"><span class="val" id="poly-dv"></span></div>
+            <div class="sl"><label>noise</label><input type="range" id="poly-n" min="0" max="3" step="0.1" value="1.2"><span class="val" id="poly-nv"></span></div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="poly-new">New sample</button>
+            <label class="hint"><input type="checkbox" id="poly-truth" checked> show the true curve</label>
+          </div>
+        </div>
+        <div>
+          <div class="beat">Error on the seen points</div>
+          <div class="readout" id="poly-r1"></div>
+          <div class="bar"><i id="poly-bar1"></i></div>
+          <div class="beat" style="margin-top:14px">Error on the unseen points</div>
+          <div class="readout" id="poly-r2"></div>
+          <div class="bar"><i id="poly-bar2"></i></div>
+          <div class="msg" id="poly-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">Beat 2 &middot; Polynomial regression</div>
+        Nothing new is needed. Build extra columns from the column you have, then run the same least squares as note 00.
+        <div class="tex center" data-tex="y=\beta_0+\beta_1x+\beta_2x^{2}+\dots+\beta_dx^{d}+\varepsilon"></div>
+        <div class="where">This is still a <strong>linear model</strong>, because it is linear in <code>&beta;</code>. The curve is in the picture, not in the algebra. The same idea covers <code>log(x)</code>, <code>1/x</code>, interactions <code>x&#8321;x&#8322;</code>, and dummies for categories.</div>
+      </div>
+      <div class="formal">
+        <div class="beat">The trade-off you just watched</div>
+        Prediction error splits into three pieces, and the degree slider moves the first two in opposite directions.
+        <div class="tex center" data-tex="\mathbb{E}\bigl[(y-\hat f(x))^{2}\bigr]=\underbrace{\bigl(\mathbb{E}\hat f(x)-f(x)\bigr)^{2}}_{\text{bias}^2}+\underbrace{\operatorname{Var}\bigl(\hat f(x)\bigr)}_{\text{variance}}+\underbrace{\sigma^{2}}_{\text{irreducible}}"></div>
+        <div class="where"><strong>Bias</strong> is being systematically wrong because the shape is too rigid, the straight line on a curve. <strong>Variance</strong> is answering differently every time the sample changes, the degree 12 wiggle. The last term is the noise nobody can remove. Press "New sample" a few times at degree 12 and watch the curve change wildly while the data barely changes: that is variance, made visible.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat t">Beat 3 &middot; A better way to bend</div>
+      <h3>Splines: local pieces instead of one global formula</h3>
+      <p>A high degree polynomial is bent everywhere by everything: one point on the left changes the curve on the right. A spline fixes this by cutting the axis at a few <strong>knots</strong> and letting each piece have its own slope, while forcing the pieces to join without a break. Move the knots slider and watch the basis functions appear underneath.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="spl-stage"></div>
+          <div class="sliders">
+            <div class="sl"><label>knots K</label><input type="range" id="spl-k" min="0" max="8" step="1" value="2"><span class="val" id="spl-kv"></span></div>
+          </div>
+          <div class="hint" style="margin-top:8px">The small panel shows the columns actually handed to least squares: one hockey stick per knot.</div>
+        </div>
+        <div>
+          <div class="beat">Read the fit</div>
+          <div class="readout" id="spl-read"></div>
+          <div class="msg" id="spl-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">The truncated power basis</div>
+        With knots <code>&kappa;&#8321; &lt; ... &lt; &kappa;&#7480;</code>, add one column per knot that is zero until the knot and then rises.
+        <div class="tex center" data-tex="y=\beta_0+\beta_1x+\sum_{k=1}^{K}\gamma_k\,(x-\kappa_k)_+ +\varepsilon,\qquad (u)_+=\max(u,0)"></div>
+        <div class="where">Again ordinary least squares, only the columns changed. Each <code>&gamma;&#8342;</code> is the <em>change</em> in slope at knot k. Replacing the hockey sticks with cubic pieces gives the usual smooth cubic spline; adding one such smooth term per variable and summing them gives a <strong>GAM</strong>, Generalized Additive Model, written <code>g(E[Y]) = &beta;&#8320; + f&#8321;(x&#8321;) + ... + f&#8346;(x&#8346;)</code>. You keep the readability of one curve per variable and lose the straight line straitjacket.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Beat 4 &middot; Change the question, not the shape</div>
+      <h3>Quantile regression: the average is not always what you want</h3>
+      <p>Rents against apartment size again, but now with a twist that is everywhere in real data: the cheap end and the expensive end do not behave the same way. The mean line answers "what is typical". It cannot answer "what does the bottom 10 percent of the market do", which is often the actual policy question.</p>
+      <p>Move <code>&tau;</code> from 0.1 to 0.9. The line does not change shape, it changes <strong>which part of the distribution it tracks</strong>. At the end, tick "show all" to see the fan.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="qr-stage"></div>
+          <div class="sliders">
+            <div class="sl"><label>&tau; quantile</label><input type="range" id="qr-t" min="0.05" max="0.95" step="0.05" value="0.5"><span class="val" id="qr-tv"></span></div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <label class="hint"><input type="checkbox" id="qr-all"> show all quantiles at once</label>
+            <label class="hint"><input type="checkbox" id="qr-mean" checked> show the OLS mean line</label>
+          </div>
+        </div>
+        <div>
+          <div class="beat">Read the fit</div>
+          <div class="readout" id="qr-read"></div>
+          <div class="msg" id="qr-msg"></div>
+          <div class="legend"><span><i class="key"></i> quantile &tau;</span><span><i class="key v"></i> OLS mean</span></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">The pinball loss</div>
+        Only the penalty changes. Under-predicting costs <code>&tau;</code> per unit, over-predicting costs <code>1&minus;&tau;</code> per unit. The asymmetry is what pulls the line up or down.
+        <div class="tex center" data-tex="\hat\beta(\tau)=\arg\min_{\beta}\ \sum_{i=1}^{n}\rho_\tau\bigl(y_i-x_i^{\top}\beta\bigr),\qquad \rho_\tau(u)=u\bigl(\tau-\mathbb{1}\{u<0\}\bigr)"></div>
+        <div class="where">At <code>&tau; = 0.5</code> the two costs are equal, the loss becomes the absolute value, and the fit is the conditional <strong>median</strong>, the robust cousin of the mean from note 00. The lines are not required to be parallel, and when they are not, that itself is the finding: the effect of size on rent is different for cheap and expensive apartments.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat v">Beat 5 &middot; Give up on formulas altogether</div>
+      <h3>Regression trees: cut the space into boxes and use the average in each box</h3>
+      <p>Sometimes the relationship has no smooth shape at all: below a threshold nothing happens, above it everything does, and the effect of one variable depends on another. A tree makes no assumption about shape. It repeatedly asks a yes/no question that splits the data into two groups as different as possible, then predicts the plain average inside each final box.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="tree-stage"></div>
+          <div class="sliders">
+            <div class="sl"><label>depth</label><input type="range" id="tree-d" min="1" max="5" step="1" value="2"><span class="val" id="tree-dv"></span></div>
+          </div>
+          <div class="hint" style="margin-top:8px">Dashed verticals are the cuts the algorithm chose. The prediction is the flat step inside each region.</div>
+        </div>
+        <div>
+          <div class="beat">The splits it chose</div>
+          <div class="readout" id="tree-read"></div>
+          <div class="msg" id="tree-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">What a split optimises</div>
+        At each step the algorithm scans every variable and every possible cut point <code>s</code>, and keeps the one that reduces the squared error most.
+        <div class="tex center" data-tex="\min_{j,\,s}\ \Bigl[\sum_{x_i\in R_L(j,s)}(y_i-\bar y_L)^2+\sum_{x_i\in R_R(j,s)}(y_i-\bar y_R)^2\Bigr]"></div>
+        <div class="where">Then it repeats inside each half. A single tree is easy to read and unstable: change a few points and the cuts move. Averaging hundreds of trees grown on resampled data fixes the instability, that is a <strong>random forest</strong>; growing them in sequence so each one repairs the previous one's residuals is <strong>gradient boosting</strong>. You gain accuracy and you lose the coefficient with a meaning, which is exactly the trade you must decide on before choosing.</div>
+      </div>
+      <div class="formal">
+        <div class="beat">Choosing between all of these</div>
+        <table class="cmp" style="margin-top:2px">
+          <thead><tr><th>If you need</th><th>Reach for</th></tr></thead>
+          <tbody>
+            <tr><td>a coefficient you can defend in a report</td><td>linear, GLM, splines with few knots</td></tr>
+            <tr><td>a smooth effect of unknown form, still readable</td><td>splines, GAM</td></tr>
+            <tr><td>the tails, not the average</td><td>quantile regression</td></tr>
+            <tr><td>raw predictive accuracy on tabular data</td><td>random forest, gradient boosting</td></tr>
+            <tr><td>a shape dictated by theory</td><td>nonlinear least squares on that exact formula</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= NOTE 3 ================= -->
+  <section class="page" id="p3">
+    <div class="sec-head">
+      <div class="eyebrow">Note 03 &middot; Part C of the machine</div>
+      <h2>Trouble in the data, and the model that survives it</h2>
+      <p>The last family of names has nothing to do with Y and nothing to do with the shape. These models exist because real data misbehave: too many columns, one absurd point, observations that come in clusters, observations that come in order, and inputs that are themselves caused by the outcome. Each problem breaks a specific assumption, and each has a specific repair.</p>
+    </div>
+
+    <div class="card">
+      <div class="beat">Beat 1 &middot; Too many predictors</div>
+      <h3>Ridge and LASSO: pay a price for every coefficient you use</h3>
+      <p>Eight candidate predictors, only three of which truly matter, and two of the others are near copies of each other. Ordinary least squares at <code>&lambda; = 0</code> hands you eight large coefficients with confident opposite signs, most of them noise. Slide the penalty <code>&lambda;</code> up and watch the bars collapse toward zero.</p>
+      <p>The difference between the two is worth seeing directly: <strong>ridge shrinks everything and keeps everything</strong>, <strong>LASSO sets coefficients exactly to zero</strong> and therefore chooses variables for you.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="reg-stage"></div>
+          <div class="hint" style="margin-top:8px">Above: the coefficient path, each line is one predictor as the penalty grows. Below: the coefficients at the current &lambda;. Teal bars are the three genuinely useful predictors.</div>
+          <div class="stage" id="reg-bars" style="margin-top:10px"></div>
+        </div>
+        <div>
+          <div class="seg" id="reg-modes">
+            <button class="on" data-m="ridge">Ridge</button>
+            <button data-m="lasso">LASSO</button>
+          </div>
+          <div class="sliders" style="margin-top:12px">
+            <div class="sl"><label>penalty &lambda;</label><input type="range" id="reg-lam" min="0" max="100" step="1" value="0"><span class="val" id="reg-lamv"></span></div>
+          </div>
+          <div class="readout" id="reg-read" style="margin-top:12px"></div>
+          <div class="msg" id="reg-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">The two penalties</div>
+        Same fit term, different price list. The penalty is added to the sum of squared errors, so the model must justify every unit of coefficient it spends.
+        <div class="tex center" data-tex="\text{Ridge:}\ \ \min_{\beta}\ \|y-X\beta\|^{2}+\lambda\sum_{j=1}^{p}\beta_j^{2} \qquad\qquad \text{LASSO:}\ \ \min_{\beta}\ \|y-X\beta\|^{2}+\lambda\sum_{j=1}^{p}|\beta_j|"></div>
+        Ridge has a closed form, and the <code>&lambda;I</code> term is literally what makes the matrix invertible again when predictors are collinear or when <code>p &gt; n</code>.
+        <div class="tex center" data-tex="\hat\beta_{\text{ridge}}=(X^{\top}X+\lambda I)^{-1}X^{\top}y"></div>
+        <div class="where">The squared penalty has a round contour, so the solution slides toward zero without touching it. The absolute value penalty has corners on the axes, and corners are where solutions land, which is why LASSO produces exact zeros. <strong>Elastic Net</strong> uses <code>&lambda;[&alpha;&Sigma;|&beta;&#8323;| + (1&minus;&alpha;)&Sigma;&beta;&#8323;&sup2;]</code> and is the sensible default when predictors come in correlated groups. Always standardise the columns first, otherwise the penalty punishes whichever variable happens to be measured in small units.</div>
+      </div>
+      <div class="formal">
+        <div class="beat">The bargain you are accepting</div>
+        Penalised coefficients are <strong>biased on purpose</strong>. You accept a small systematic error in exchange for a large reduction in variance, and the total prediction error goes down. This also means penalised coefficients are not the right tool for a careful causal statement about one variable, they are a tool for prediction and for variable screening. Choose <code>&lambda;</code> by cross validation, never by eye.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat t">Beat 2 &middot; One bad point</div>
+      <h3>Robust regression: drag the red point and watch OLS lose its mind</h3>
+      <p>Grab the red apartment and drag it anywhere, especially far up and to the right. The dashed violet line is ordinary least squares. The solid line is a robust fit. Squaring the error is what makes OLS so sensitive: a point ten times further away counts a hundred times more.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="rob-stage"></div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="rob-reset">Put the point back</button>
+            <label class="hint"><input type="checkbox" id="rob-show" checked> show the robust line</label>
+          </div>
+        </div>
+        <div>
+          <div class="beat">Slopes right now</div>
+          <div class="readout" id="rob-read"></div>
+          <div class="msg" id="rob-msg"></div>
+          <div class="legend"><span><i class="key v"></i> OLS</span><span><i class="key"></i> Huber, robust</span><span><i class="key a"></i> line without the red point</span></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">Huber loss</div>
+        Behave like least squares near zero, where the errors are ordinary, and like absolute value far away, where the errors are suspicious.
+        <div class="tex center" data-tex="\rho_\delta(e)=\begin{cases}\tfrac12 e^{2} & |e|\le\delta\\[2pt] \delta\bigl(|e|-\tfrac12\delta\bigr) & |e|>\delta\end{cases}"></div>
+        <div class="where">Beyond the threshold <code>&delta;</code> the penalty grows only linearly, so an extreme point can no longer buy the line. In practice this is fitted by re-weighted least squares: fit, look at who is far away, give them a smaller weight, refit, repeat. Do not delete outliers silently. Fit both, report both, and if they disagree go and look at that observation.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Beat 3 &middot; Observations that come in clusters</div>
+      <h3>Mixed models: neither one line for everyone nor a line per group</h3>
+      <p>Pupils inside schools, firms inside emirates, repeated measurements on the same patient. Observations inside a cluster resemble each other, which breaks the assumption that every row brings fresh information. Two naive answers exist and both are bad. The third is the model.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="mix-stage"></div>
+          <div class="seg" id="mix-modes" style="margin-top:12px">
+            <button class="on" data-m="pool">One line for everyone</button>
+            <button data-m="sep">One line per group</button>
+            <button data-m="mix">Partial pooling</button>
+          </div>
+          <div class="sliders">
+            <div class="sl"><label>group 4 sample size</label><input type="range" id="mix-n" min="2" max="25" step="1" value="3"><span class="val" id="mix-nv"></span></div>
+          </div>
+        </div>
+        <div>
+          <div class="beat">What each answer does</div>
+          <div class="readout" id="mix-read"></div>
+          <div class="msg" id="mix-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">Random intercepts</div>
+        Give each group its own intercept, but declare that these intercepts are themselves draws from a distribution instead of free parameters.
+        <div class="tex center" data-tex="y_{ij}=\beta_0+u_j+\beta_1x_{ij}+\varepsilon_{ij},\qquad u_j\sim\mathcal{N}(0,\tau^{2}),\quad \varepsilon_{ij}\sim\mathcal{N}(0,\sigma^{2})"></div>
+        The consequence is <strong>shrinkage</strong>: each group's estimate is pulled toward the overall mean by an amount that depends on how little data that group has.
+        <div class="tex center" data-tex="\hat u_j=\underbrace{\frac{n_j\tau^{2}}{n_j\tau^{2}+\sigma^{2}}}_{\text{weight }w_j\in(0,1)}\bigl(\bar y_j-\hat\beta_0-\hat\beta_1\bar x_j\bigr)"></div>
+        <div class="where">A group with three observations is barely trusted and gets pulled almost all the way back to the common line. A group with two hundred keeps its own position. Drag the sample size slider on group 4 and watch its line travel between the two extremes. The share of variance sitting between groups, <code>ICC = &tau;&sup2;/(&tau;&sup2;+&sigma;&sup2;)</code>, tells you whether you needed this model at all.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat t">Beat 4 &middot; Observations that come in order</div>
+      <h3>Time: yesterday's error tells you about today's</h3>
+      <p>The same regression run on a time series usually leaves residuals that drift in waves rather than scattering. The coefficients may still be usable, but the standard errors are wrong, often by a factor of two or three, and every test built on them is optimistic. Slide the autocorrelation and watch the residual plot change from confetti to a wave.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="ts-stage"></div>
+          <div class="sliders">
+            <div class="sl"><label>&rho; autocorrelation</label><input type="range" id="ts-rho" min="0" max="0.95" step="0.05" value="0"><span class="val" id="ts-rhov"></span></div>
+          </div>
+        </div>
+        <div>
+          <div class="beat">Diagnostics</div>
+          <div class="readout" id="ts-read"></div>
+          <div class="msg" id="ts-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">AR(1) errors</div>
+        <div class="tex center" data-tex="y_t=\beta_0+\beta_1x_t+\varepsilon_t,\qquad \varepsilon_t=\rho\,\varepsilon_{t-1}+\nu_t,\quad \nu_t\ \text{white noise}"></div>
+        <div class="where">The Durbin-Watson statistic <code>DW &asymp; 2(1&minus;&rho;)</code> is the quick check: near 2 is clean, near 0 means strong positive autocorrelation. Repairs, in increasing order of ambition: keep OLS but use HAC standard errors (Newey-West); add lagged terms and model the dynamics (ARIMA with regressors, distributed lags); or, if both series trend, test for unit roots first with the ADF test, Augmented Dickey-Fuller, and if they are cointegrated use an error correction model. Regressing one trending series on another without that check is the classic <strong>spurious regression</strong>, which produces a beautiful R&sup2; and means nothing.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat v">Beat 5 &middot; The deepest trouble</div>
+      <h3>When X is not innocent: endogeneity and instrumental variables</h3>
+      <p>Every model above estimates an association. It becomes a causal effect only if the predictor is unrelated to everything you left out. Here, an unmeasured factor (call it ability) pushes both the years of education and the wage. Slide its strength and watch the OLS slope drift away from the true effect, which is fixed at 1.0 and drawn in grey.</p>
+      <div class="split">
+        <div>
+          <div class="stage" id="iv-stage"></div>
+          <div class="sliders">
+            <div class="sl"><label>strength of the hidden factor</label><input type="range" id="iv-c" min="0" max="2" step="0.05" value="0"><span class="val" id="iv-cv"></span></div>
+            <div class="sl"><label>strength of the instrument</label><input type="range" id="iv-s" min="0.15" max="2" step="0.05" value="1.2"><span class="val" id="iv-sv"></span></div>
+          </div>
+        </div>
+        <div>
+          <div class="beat">Estimated effect of education on wage</div>
+          <div class="readout" id="iv-read"></div>
+          <div class="msg" id="iv-msg"></div>
+        </div>
+      </div>
+      <div class="formal">
+        <div class="beat">Two stage least squares</div>
+        An instrument <code>Z</code> is a variable that moves <code>X</code> but has no other route to <code>Y</code>. Use only the part of <code>X</code> that <code>Z</code> explains, because that part cannot contain the hidden factor.
+        <div class="tex center" data-tex="\text{Stage 1: } \hat x_i=\hat\pi_0+\hat\pi_1 z_i \qquad\qquad \text{Stage 2: } y_i=\beta_0+\beta_1\hat x_i+u_i"></div>
+        <div class="where">Two conditions, one testable and one not. <strong>Relevance</strong>: Z really moves X, which you check with the first stage F statistic, above 10 by the usual rule of thumb. Push the instrument strength slider down and watch the estimate become unstable, that is the weak instrument problem. <strong>Exclusion</strong>: Z affects Y only through X, which no test can prove and which you must defend with an argument about the world. Difference in differences, regression discontinuity and fixed effects are the other members of this family, all answering the same worry.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="beat">Closing</div>
+      <h3>The order of operations</h3>
+      <table class="cmp" style="margin-top:2px">
+        <thead><tr><th>Step</th><th>What you do</th></tr></thead>
+        <tbody>
+          <tr><td>1. Look at Y</td><td>Its nature removes most of the catalogue at once. Number, yes/no, category, count, proportion, duration.</td></tr>
+          <tr><td>2. State the goal</td><td>Explanation wants interpretable coefficients and standard errors. Prediction wants out of sample error. They lead to different models.</td></tr>
+          <tr><td>3. Fit the simplest thing</td><td>The straight line inside the right family. It is your reference point, and often the final answer.</td></tr>
+          <tr><td>4. Look at the residuals</td><td>They should be structureless. A curve means the shape is wrong (note 02). A fan means the spread is wrong (note 01). A wave means time (note 03).</td></tr>
+          <tr><td>5. Add complexity only against evidence</td><td>Every repair on note 03 costs something. Pay only when the diagnostic asked you to.</td></tr>
+          <tr><td>6. Validate honestly</td><td>Out of sample or cross validated error. The error on the points the model has already seen is not evidence, as the degree 12 curve showed.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="pager">
+    <button class="btn" id="prev">&larr; Previous note</button>
+    <button class="btn primary" id="next">Next note &rarr;</button>
+  </div>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    Everything in these notes is computed in your browser as you move the controls: the least squares fits, the maximum likelihood iterations, the coefficient paths and the tree splits. Nothing is precomputed, nothing is sent anywhere. <a href="index.html">Back to the lecture library</a>.
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* =========================================================
+   0. small toolbox
+   ========================================================= */
+const NS = "http://www.w3.org/2000/svg";
+function byId(id){ return document.getElementById(id); }
+function sv(n, a){ const e = document.createElementNS(NS, n); for (const k in a) if (a[k] !== undefined) e.setAttribute(k, a[k]); return e; }
+function fmt(v, d){ if (!isFinite(v)) return "n/a"; d = (d === undefined) ? 2 : d; return (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d); }
+function clamp(v, a, b){ return v < a ? a : (v > b ? b : v); }
+function mean(a){ let s = 0; for (let i = 0; i < a.length; i++) s += a[i]; return s / a.length; }
+function sdev(a){ const m = mean(a); let s = 0; for (let i = 0; i < a.length; i++) s += (a[i]-m)*(a[i]-m); return Math.sqrt(s/Math.max(1, a.length-1)); }
+
+/* seeded random so every student sees the same picture */
+function rng(seed){
+  let t = seed >>> 0;
+  return function(){
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function gauss(R){
+  let u = 0, v = 0;
+  while (u === 0) u = R();
+  while (v === 0) v = R();
+  return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+}
+function poissonDraw(R, lam){
+  if (lam > 30){ return Math.max(0, Math.round(lam + Math.sqrt(lam)*gauss(R))); }
+  const L = Math.exp(-lam); let k = 0, p = 1;
+  do { k++; p *= R(); } while (p > L);
+  return k - 1;
+}
+
+/* linear algebra: solve A x = b, A is n x n */
+function solve(A, b){
+  const n = b.length;
+  const M = A.map(function(r, i){ return r.slice().concat([b[i]]); });
+  for (let c = 0; c < n; c++){
+    let piv = c;
+    for (let r = c+1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    if (Math.abs(M[piv][c]) < 1e-12) return null;
+    const tmp = M[c]; M[c] = M[piv]; M[piv] = tmp;
+    for (let r = 0; r < n; r++){
+      if (r === c) continue;
+      const f = M[r][c] / M[c][c];
+      if (f === 0) continue;
+      for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k];
+    }
+  }
+  const x = new Array(n);
+  for (let i = 0; i < n; i++) x[i] = M[i][n] / M[i][i];
+  return x;
+}
+/* least squares on a design matrix X (array of rows), optional ridge penalty */
+function lstsq(X, y, lam){
+  const n = X.length, p = X[0].length;
+  const A = [], b = [];
+  for (let j = 0; j < p; j++){
+    A.push(new Array(p).fill(0));
+    b.push(0);
+  }
+  for (let i = 0; i < n; i++){
+    for (let j = 0; j < p; j++){
+      b[j] += X[i][j] * y[i];
+      for (let k = 0; k < p; k++) A[j][k] += X[i][j] * X[i][k];
+    }
+  }
+  if (lam) for (let j = 1; j < p; j++) A[j][j] += lam;
+  const s = solve(A, b);
+  return s || new Array(p).fill(0);
+}
+function simpleOLS(xs, ys){
+  const mx = mean(xs), my = mean(ys);
+  let sxy = 0, sxx = 0;
+  for (let i = 0; i < xs.length; i++){ sxy += (xs[i]-mx)*(ys[i]-my); sxx += (xs[i]-mx)*(xs[i]-mx); }
+  const b1 = sxx === 0 ? 0 : sxy/sxx;
+  return {b0: my - b1*mx, b1: b1};
+}
+function sse(xs, ys, b0, b1){
+  let s = 0;
+  for (let i = 0; i < xs.length; i++){ const e = ys[i] - (b0 + b1*xs[i]); s += e*e; }
+  return s;
+}
+
+/* =========================================================
+   1. a tiny plotting kit, so every figure looks the same
+   ========================================================= */
+function niceTicks(a, b, want){
+  const span = b - a;
+  if (span <= 0) return [a];
+  const raw = span / (want || 5);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag;
+  const out = [];
+  for (let t = Math.ceil(a/step)*step; t <= b + 1e-9; t += step) out.push(Math.abs(t) < 1e-9 ? 0 : t);
+  return out;
+}
+
+function Plot(hostId, o){
+  o = o || {};
+  const W = o.w || 560, H = o.h || 330;
+  const m = o.m || {l:54, r:16, t:16, b:40};
+  const host = byId(hostId);
+  const svg = sv("svg", {viewBox:"0 0 " + W + " " + H});
+  host.innerHTML = "";
+  host.appendChild(svg);
+
+  const P = {svg:svg, W:W, H:H, m:m, xd:[0,1], yd:[0,1], host:host};
+  P.dom = function(xd, yd){ P.xd = xd; P.yd = yd; return P; };
+  P.X = function(v){ return m.l + (v - P.xd[0]) / (P.xd[1] - P.xd[0]) * (W - m.l - m.r); };
+  P.Y = function(v){ return H - m.b - (v - P.yd[0]) / (P.yd[1] - P.yd[0]) * (H - m.t - m.b); };
+  P.iX = function(px){ return P.xd[0] + (px - m.l) / (W - m.l - m.r) * (P.xd[1] - P.xd[0]); };
+  P.iY = function(py){ return P.yd[0] + (H - m.b - py) / (H - m.t - m.b) * (P.yd[1] - P.yd[0]); };
+  P.clear = function(){ while (svg.firstChild) svg.removeChild(svg.firstChild); return P; };
+  P.add = function(name, attrs){ const e = sv(name, attrs); svg.appendChild(e); return e; };
+  P.txt = function(x, y, s, cls, anchor){
+    const t = sv("text", {x:x, y:y, class:cls || "plab", "text-anchor":anchor || "start"});
+    t.textContent = s;
+    svg.appendChild(t);
+    return t;
+  };
+  P.frame = function(xlab, ylab, opt){
+    opt = opt || {};
+    const xt = opt.xticks || niceTicks(P.xd[0], P.xd[1], 5);
+    const yt = opt.yticks || niceTicks(P.yd[0], P.yd[1], 5);
+    xt.forEach(function(v){
+      const x = P.X(v);
+      P.add("line", {x1:x, y1:m.t, x2:x, y2:H-m.b, class:"grid"});
+      const t = P.txt(x, H-m.b+15, opt.xfmt ? opt.xfmt(v) : String(Math.round(v*100)/100), "axlab", "middle");
+      t.setAttribute("dominant-baseline", "hanging");
+    });
+    yt.forEach(function(v){
+      const y = P.Y(v);
+      P.add("line", {x1:m.l, y1:y, x2:W-m.r, y2:y, class:"grid"});
+      const t = P.txt(m.l-8, y, opt.yfmt ? opt.yfmt(v) : String(Math.round(v*100)/100), "axlab", "end");
+      t.setAttribute("dominant-baseline", "central");
+    });
+    P.add("line", {x1:m.l, y1:H-m.b, x2:W-m.r, y2:H-m.b, class:"ax"});
+    P.add("line", {x1:m.l, y1:m.t, x2:m.l, y2:H-m.b, class:"ax"});
+    if (xlab) P.txt(W-m.r, H-6, xlab, "axttl", "end");
+    if (ylab){
+      const t = P.txt(0, 0, ylab, "axttl", "start");
+      t.setAttribute("transform", "translate(11," + (H-m.b) + ") rotate(-90)");
+    }
+    return P;
+  };
+  P.dots = function(pts, cls, r){
+    pts.forEach(function(p){
+      P.add("circle", {cx:P.X(p[0]), cy:P.Y(p[1]), r:r || 4, class:"pt " + (cls || "")});
+    });
+    return P;
+  };
+  P.seg = function(x1, y1, x2, y2, cls){
+    return P.add("line", {x1:P.X(x1), y1:P.Y(y1), x2:P.X(x2), y2:P.Y(y2), class:cls || "fitline"});
+  };
+  P.fn = function(f, cls, n, from, to){
+    n = n || 140;
+    const a = (from === undefined) ? P.xd[0] : from;
+    const b = (to === undefined) ? P.xd[1] : to;
+    let d = "", started = false;
+    for (let i = 0; i <= n; i++){
+      const x = a + (b-a)*i/n;
+      const y = f(x);
+      if (!isFinite(y)) { started = false; continue; }
+      const yy = clamp(y, P.yd[0] - (P.yd[1]-P.yd[0]), P.yd[1] + (P.yd[1]-P.yd[0]));
+      d += (started ? "L" : "M") + fmt(P.X(x),1) + " " + fmt(P.Y(yy),1) + " ";
+      started = true;
+    }
+    return P.add("path", {d:d, class:cls || "curve"});
+  };
+  P.band = function(f1, f2, cls, n){
+    n = n || 80;
+    let up = "", dn = "";
+    for (let i = 0; i <= n; i++){
+      const x = P.xd[0] + (P.xd[1]-P.xd[0])*i/n;
+      up += (i ? "L" : "M") + fmt(P.X(x),1) + " " + fmt(P.Y(clamp(f1(x), P.yd[0], P.yd[1])),1) + " ";
+    }
+    for (let i = n; i >= 0; i--){
+      const x = P.xd[0] + (P.xd[1]-P.xd[0])*i/n;
+      dn += "L" + fmt(P.X(x),1) + " " + fmt(P.Y(clamp(f2(x), P.yd[0], P.yd[1])),1) + " ";
+    }
+    return P.add("path", {d:up + dn + "Z", class:cls || "bandfill"});
+  };
+  P.evt = function(e){
+    const r = svg.getBoundingClientRect();
+    const px = (e.clientX - r.left) * W / r.width;
+    const py = (e.clientY - r.top) * H / r.height;
+    return {x:P.iX(px), y:P.iY(py), px:px, py:py};
+  };
+  P.clip = function(){ return P; };
+  return P;
+}
+
+/* =========================================================
+   2. mathematics rendering + note switching
+   ========================================================= */
+function renderTeX(root){
+  if (typeof katex === "undefined") return false;
+  const nodes = (root || document).querySelectorAll("[data-tex]");
+  for (let i = 0; i < nodes.length; i++){
+    const el = nodes[i];
+    if (el.dataset.done === "1") continue;
+    try {
+      katex.render(el.dataset.tex, el, {throwOnError:false, displayMode:true});
+      el.dataset.done = "1";
+    } catch (err) { el.textContent = el.dataset.tex; el.dataset.done = "1"; }
+  }
+  return true;
+}
+function texWhenReady(){
+  if (!renderTeX(document)) setTimeout(texWhenReady, 120);
+}
+
+(function pages(){
+  const links = [].slice.call(document.querySelectorAll(".rail a"));
+  const ids = links.map(function(a){ return a.dataset.page; });
+  let cur = 0;
+  function show(i, scroll){
+    cur = clamp(i, 0, ids.length-1);
+    ids.forEach(function(id, k){ byId(id).classList.toggle("live", k === cur); });
+    links.forEach(function(a, k){ a.classList.toggle("on", k === cur); });
+    byId("prev").disabled = (cur === 0);
+    byId("next").disabled = (cur === ids.length-1);
+    byId("next").textContent = (cur === ids.length-1) ? "End of the lecture" : "Next note \u2192";
+    if (scroll) window.scrollTo({top:0, behavior:"smooth"});
+    setTimeout(function(){ renderTeX(byId(ids[cur])); }, 30);
+  }
+  links.forEach(function(a, k){
+    a.addEventListener("click", function(e){ e.preventDefault(); show(k, true); });
+  });
+  byId("prev").addEventListener("click", function(){ show(cur-1, true); });
+  byId("next").addEventListener("click", function(){ show(cur+1, true); });
+  window.__goPage = show;
+  show(0, false);
+})();
+
+/* =========================================================
+   NOTE 00
+   ========================================================= */
+
+/* ---- shared apartment data: size (m2) against price (thousands) ---- */
+const APT = (function(){
+  const R = rng(20260831), xs = [], ys = [];
+  for (let i = 0; i < 60; i++){
+    const x = 42 + R()*118;
+    const y = 90 + 5.3*x + gauss(R)*78;
+    xs.push(x); ys.push(Math.max(40, y));
+  }
+  return {x:xs, y:ys, fit:simpleOLS(xs, ys)};
+})();
+
+/* ---- hero: the line hunting for its position ---- */
+(function hero(){
+  const P = Plot("hero-stage", {w:560, h:300, m:{l:52, r:14, t:14, b:36}});
+  P.dom([30, 170], [0, 1150]);
+  const best = APT.fit;
+  let raf = null;
+
+  function draw(b0, b1, showRes){
+    P.clear();
+    P.frame("size m\u00b2", "price", {});
+    if (showRes){
+      for (let i = 0; i < APT.x.length; i++){
+        P.add("line", {x1:P.X(APT.x[i]), y1:P.Y(APT.y[i]), x2:P.X(APT.x[i]), y2:P.Y(b0 + b1*APT.x[i]), class:"resid"});
+      }
+    }
+    P.dots(APT.x.map(function(v, i){ return [v, APT.y[i]]; }), "a", 4);
+    P.seg(P.xd[0], b0 + b1*P.xd[0], P.xd[1], b0 + b1*P.xd[1], "fitline");
+    P.txt(P.W-20, 30, "SSE = " + Math.round(sse(APT.x, APT.y, b0, b1)/1000) + "k", "plab", "end");
+  }
+  function run(){
+    if (raf) cancelAnimationFrame(raf);
+    const t0 = performance.now(), dur = 2400;
+    const s0 = {b0: 760, b1: -1.2};
+    (function step(t){
+      const u = clamp((t - t0)/dur, 0, 1);
+      const e = 1 - Math.pow(1-u, 3);
+      const w = e + 0.10*Math.sin(u*Math.PI*3)*(1-e);
+      draw(s0.b0 + (best.b0 - s0.b0)*w, s0.b1 + (best.b1 - s0.b1)*w, true);
+      if (u < 1) raf = requestAnimationFrame(step);
+    })(t0);
+  }
+  byId("hero-replay").addEventListener("click", run);
+  run();
+})();
+
+/* ---- the hands-on OLS panel ---- */
+(function olsDemo(){
+  const P = Plot("ols-stage", {w:560, h:340, m:{l:54, r:16, t:16, b:38}});
+  P.dom([30, 170], [0, 1150]);
+  const b0i = byId("ols-b0"), b1i = byId("ols-b1");
+  const TSS = (function(){ const m = mean(APT.y); let s = 0; APT.y.forEach(function(v){ s += (v-m)*(v-m); }); return s; })();
+  const bestSSE = sse(APT.x, APT.y, APT.fit.b0, APT.fit.b1);
+  let anim = null;
+
+  function draw(){
+    const b0 = +b0i.value, b1 = +b1i.value;
+    byId("ols-b0v").textContent = fmt(b0, 0);
+    byId("ols-b1v").textContent = fmt(b1, 2);
+    P.clear();
+    P.frame("size m\u00b2", "price, thousands", {});
+    const sq = byId("ols-sq").checked;
+    for (let i = 0; i < APT.x.length; i++){
+      const yh = b0 + b1*APT.x[i];
+      const x = P.X(APT.x[i]), y1 = P.Y(APT.y[i]), y2 = P.Y(yh);
+      if (sq){
+        const s = Math.abs(y1-y2);
+        P.add("rect", {x:x, y:Math.min(y1,y2), width:s, height:s, fill:"rgba(222,145,38,.20)", stroke:"rgba(222,145,38,.55)"});
+      }
+      P.add("line", {x1:x, y1:y1, x2:x, y2:y2, class:"resid"});
+    }
+    P.dots(APT.x.map(function(v, i){ return [v, APT.y[i]]; }), "a", 4);
+    P.seg(P.xd[0], b0 + b1*P.xd[0], P.xd[1], b0 + b1*P.xd[1], "fitline");
+
+    const S = sse(APT.x, APT.y, b0, b1);
+    const R2 = 1 - S/TSS;
+    byId("ols-read").innerHTML =
+      '<span class="k">line</span> price &asymp; ' + fmt(b0,0) + ' + ' + fmt(b1,2) + ' &times; size<br>' +
+      '<span class="k">SSE</span> ' + Math.round(S).toLocaleString() + '<br>' +
+      '<span class="k">best possible</span> ' + Math.round(bestSSE).toLocaleString() + '<br>' +
+      '<span class="k">R&sup2;</span> ' + fmt(R2, 3) + '<br>' +
+      '<span class="k">typical miss</span> &plusmn; ' + fmt(Math.sqrt(S/(APT.x.length-2)), 1) + ' thousand';
+    byId("ols-bar").style.width = clamp(100*(S - bestSSE)/(TSS - bestSSE), 0, 100) + "%";
+
+    let msg = "", cls = "msg";
+    const gap = (S - bestSSE)/bestSSE;
+    if (gap < 0.02){ msg = "That is the least squares line, or as close as the sliders allow. Every other position on these two sliders gives a bigger total."; cls = "msg ok"; }
+    else if (R2 < 0){ msg = "This line is worse than ignoring size altogether and quoting the average price for everyone. R\u00b2 below zero means exactly that."; cls = "msg bad"; }
+    else if (gap < 0.4){ msg = "Close. Notice that improving now means trading: pulling one end down pushes the other end up."; cls = "msg warn"; }
+    else { msg = "The sticks on one side are much longer than on the other. Whenever that happens the line can still be improved."; cls = "msg warn"; }
+    const m = byId("ols-msg"); m.className = cls; m.textContent = msg;
+  }
+  function animateTo(b0, b1){
+    if (anim) cancelAnimationFrame(anim);
+    const s0 = +b0i.value, s1 = +b1i.value, t0 = performance.now();
+    (function step(t){
+      const u = clamp((t-t0)/700, 0, 1), e = 1-Math.pow(1-u, 3);
+      b0i.value = s0 + (b0-s0)*e;
+      b1i.value = s1 + (b1-s1)*e;
+      draw();
+      if (u < 1) anim = requestAnimationFrame(step);
+    })(t0);
+  }
+  [b0i, b1i].forEach(function(el){ el.addEventListener("input", draw); });
+  byId("ols-sq").addEventListener("change", draw);
+  byId("ols-fit").addEventListener("click", function(){ animateTo(APT.fit.b0, APT.fit.b1); });
+  byId("ols-reset").addEventListener("click", function(){ animateTo(120, 2); });
+  draw();
+})();
+
+/* ---- the map of the three replaceable parts ---- */
+(function mapDemo(){
+  const P = Plot("map-stage", {w:560, h:250, m:{l:0, r:0, t:0, b:0}});
+  const PANEL = {
+    y:{
+      title:"Part A &middot; the exit",
+      lead:"What kind of thing is Y? The answer decides the distribution and the link, and therefore the name of the model.",
+      rows:[["a number","linear regression"],["yes / no","logistic regression"],["a category","multinomial logistic"],["an ordered rating","ordinal logistic"],["a count","Poisson, negative binomial"],["a proportion","beta regression"],["a duration","Cox, survival models"]],
+      go:1
+    },
+    f:{
+      title:"Part B &middot; the middle",
+      lead:"What shape is allowed between X and Y? Straight, curved, wiggly, or made of steps.",
+      rows:[["straight","linear predictor X\u03b2"],["one bend","polynomial"],["smooth, unknown form","splines, GAM"],["thresholds, interactions","trees, forests, boosting"],["the tails, not the mean","quantile regression"],["a formula from theory","nonlinear least squares"]],
+      go:2
+    },
+    d:{
+      title:"Part C &middot; the penalty and the errors",
+      lead:"What is wrong with the data? Each defect breaks one assumption and has one standard repair.",
+      rows:[["more columns than rows","ridge, LASSO, elastic net"],["outliers","Huber, robust regression"],["clustered observations","mixed effects models"],["ordered in time","HAC errors, ARIMA with regressors"],["X caused by Y","instrumental variables, 2SLS"]],
+      go:3
+    }
+  };
+  function draw(part){
+    P.clear();
+    const boxes = [
+      {x:14,  w:96,  lab:"X", sub:"what you know", key:null},
+      {x:132, w:126, lab:"linear predictor", sub:"\u03b7 = X\u03b2", key:"f"},
+      {x:280, w:126, lab:"link g\u207b\u00b9", sub:"squeeze", key:"y"},
+      {x:428, w:118, lab:"Y", sub:"what you want", key:null}
+    ];
+    boxes.forEach(function(b, i){
+      const hot = b.key === part;
+      P.add("rect", {x:b.x, y:78, width:b.w, height:64, rx:12,
+        fill:hot ? "rgba(166,43,84,.10)" : "var(--panel)",
+        stroke:hot ? "var(--rose)" : "var(--line-strong)", "stroke-width":hot ? 2.4 : 1.5});
+      const t1 = P.txt(b.x + b.w/2, 104, b.lab, "plab", "middle");
+      t1.setAttribute("style", "font-family:var(--display);font-size:15px;font-weight:600");
+      const t2 = P.txt(b.x + b.w/2, 124, b.sub, "axlab", "middle");
+      t2.setAttribute("style", "font-family:var(--mono);font-size:11px;fill:var(--muted)");
+      if (i < boxes.length-1){
+        P.add("path", {d:"M" + (b.x+b.w+4) + ",110 L" + (boxes[i+1].x-6) + ",110", stroke:"var(--line-strong)", "stroke-width":1.6, fill:"none"});
+        P.add("path", {d:"M" + (boxes[i+1].x-6) + ",110 l-7,-4 l0,8 z", fill:"var(--line-strong)"});
+      }
+    });
+    const hotD = part === "d";
+    P.add("rect", {x:132, y:170, width:274, height:52, rx:12,
+      fill:hotD ? "rgba(166,43,84,.10)" : "var(--panel)",
+      stroke:hotD ? "var(--rose)" : "var(--line)", "stroke-width":hotD ? 2.4 : 1.5, "stroke-dasharray":hotD ? "none" : "5 5"});
+    const t = P.txt(269, 190, "loss + penalty", "plab", "middle");
+    t.setAttribute("style", "font-family:var(--display);font-size:15px;font-weight:600");
+    const t2 = P.txt(269, 208, "how a mistake is priced", "axlab", "middle");
+    t2.setAttribute("style", "font-family:var(--mono);font-size:11px;fill:var(--muted)");
+    P.add("path", {d:"M269,166 L269,146", stroke:"var(--line-strong)", "stroke-width":1.4, "stroke-dasharray":"4 4"});
+    const head = P.txt(14, 40, "one machine, three replaceable parts", "axttl", "start");
+    head.setAttribute("style", "font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;fill:var(--muted)");
+
+    const d = PANEL[part];
+    byId("map-panel").innerHTML =
+      '<div class="beat">' + d.title + '</div>' +
+      '<p style="font-size:14.5px;color:var(--muted)">' + d.lead + '</p>' +
+      '<table class="cmp">' + d.rows.map(function(r){
+        return "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td></tr>";
+      }).join("") + "</table>" +
+      '<button class="btn" style="margin-top:12px" onclick="window.__goPage(' + d.go + ',true)">Open note 0' + d.go + ' &rarr;</button>';
+  }
+  const seg = byId("map-modes");
+  [].forEach.call(seg.querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){
+      [].forEach.call(seg.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on");
+      draw(b.dataset.part);
+    });
+  });
+  draw("y");
+})();
+
+/* ---- the decision helper ---- */
+(function decide(){
+  const BASE = {
+    cont:{name:"Linear regression (OLS)", tex:"\\mathbb{E}[Y\\mid X]=X\\beta", note:"Y is free to be any number, so no squeeze is needed. Check the residuals before trusting it."},
+    bin:{name:"Logistic regression", tex:"\\log\\frac{p}{1-p}=X\\beta", note:"Coefficients multiply the odds by e raised to the coefficient. This is also the standard credit scoring model."},
+    cat:{name:"Multinomial logistic regression", tex:"\\log\\frac{\\Pr(Y=k)}{\\Pr(Y=K)}=X\\beta_k", note:"One set of coefficients per category, read against a reference category."},
+    ord:{name:"Ordinal logistic (proportional odds)", tex:"\\log\\frac{\\Pr(Y\\le k)}{\\Pr(Y>k)}=\\alpha_k-X\\beta", note:"Uses the ordering of the ratings, which a multinomial model would throw away."},
+    count:{name:"Poisson, then negative binomial", tex:"\\log\\lambda = X\\beta", note:"Start with Poisson, test for over-dispersion, move to negative binomial if the variance exceeds the mean."},
+    prop:{name:"Beta regression", tex:"\\log\\frac{\\mu}{1-\\mu}=X\\beta,\\quad \\mu\\in(0,1)", note:"For shares and rates that are genuinely continuous inside (0,1), not counts of successes."},
+    time:{name:"Cox proportional hazards", tex:"h(t\\mid X)=h_0(t)\\,e^{X\\beta}", note:"Handles censored observations, the cases that had not yet had the event when the study stopped."}
+  };
+  const SHAPE = {
+    lin:"",
+    curve:"Add smooth terms: splines, or a GAM with one curve per variable. The family above stays exactly the same, only the columns of X change.",
+    wild:"Consider gradient boosting or a random forest for accuracy, and keep the model above as the interpretable benchmark you report beside it."
+  };
+  const TROUBLE = {
+    none:"",
+    many:"Add a penalty: LASSO or elastic net, tuned by cross validation. Standardise the columns first.",
+    out:"Fit a robust version (Huber) alongside, or use quantile regression at \u03c4 = 0.5. Report both and investigate the disagreement.",
+    group:"Add random intercepts for the grouping variable, or at minimum use standard errors clustered by group.",
+    time:"Check the residuals for autocorrelation, use HAC (Newey-West) standard errors, and test for unit roots before trusting any regression between two trending series."
+  };
+  const state = {y:"cont", f:"lin", d:"none"};
+  function wire(id, key){
+    const box = byId(id);
+    [].forEach.call(box.querySelectorAll("button"), function(b){
+      b.addEventListener("click", function(){
+        [].forEach.call(box.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+        b.classList.add("on");
+        state[key] = b.dataset.v;
+        draw();
+      });
+    });
+  }
+  function draw(){
+    const base = BASE[state.y];
+    let extra = "";
+    if (SHAPE[state.f]) extra += '<div class="msg warn">' + SHAPE[state.f] + "</div>";
+    if (TROUBLE[state.d]) extra += '<div class="msg bad">' + TROUBLE[state.d] + "</div>";
+    byId("dec-panel").innerHTML =
+      '<div class="beat">Start here</div>' +
+      "<h3>" + base.name + "</h3>" +
+      '<div class="tex center" data-tex="' + base.tex.replace(/"/g, "&quot;") + '"></div>' +
+      '<p style="font-size:14.5px;color:var(--muted)">' + base.note + "</p>" +
+      extra +
+      (extra ? "" : '<div class="msg ok">Nothing to repair. Fit it, look at the residuals, and stop there.</div>');
+    renderTeX(byId("dec-panel"));
+  }
+  wire("dec-y", "y"); wire("dec-f", "f"); wire("dec-d", "d");
+  draw();
+})();
+
+/* =========================================================
+   NOTE 01
+   ========================================================= */
+
+/* ---- logistic: a straight line cannot be a probability ---- */
+(function logistic(){
+  const P = Plot("logi-stage", {w:560, h:340, m:{l:54, r:16, t:16, b:38}});
+  P.dom([0, 13], [-0.18, 1.18]);
+  const D = (function(){
+    const R = rng(77001), xs = [], ys = [];
+    for (let i = 0; i < 70; i++){
+      const x = 1 + R()*11;
+      const p = 1/(1+Math.exp(-(2.6 - 0.52*x)));
+      xs.push(x); ys.push(R() < p ? 1 : 0);
+    }
+    return {x:xs, y:ys};
+  })();
+  const lin = simpleOLS(D.x, D.y);
+  const bins = (function(){
+    const out = [];
+    for (let b = 0; b < 5; b++){
+      const lo = 1 + b*11/5, hi = lo + 11/5;
+      let n = 0, s = 0;
+      for (let i = 0; i < D.x.length; i++) if (D.x[i] >= lo && D.x[i] < hi){ n++; s += D.y[i]; }
+      if (n > 2) out.push([(lo+hi)/2, s/n, n]);
+    }
+    return out;
+  })();
+  const b0i = byId("logi-b0"), b1i = byId("logi-b1"), xi = byId("logi-x");
+  let mode = "lin";
+
+  function pOf(x, b0, b1){ return 1/(1+Math.exp(-(b0 + b1*x))); }
+  function loglik(b0, b1){
+    let s = 0;
+    for (let i = 0; i < D.x.length; i++){
+      const p = clamp(pOf(D.x[i], b0, b1), 1e-9, 1-1e-9);
+      s += D.y[i]*Math.log(p) + (1-D.y[i])*Math.log(1-p);
+    }
+    return s;
+  }
+  function irls(){
+    let b0 = 0, b1 = 0;
+    for (let it = 0; it < 60; it++){
+      let g0 = 0, g1 = 0, h00 = 0, h01 = 0, h11 = 0;
+      for (let i = 0; i < D.x.length; i++){
+        const p = pOf(D.x[i], b0, b1), w = Math.max(p*(1-p), 1e-6), r = D.y[i] - p;
+        g0 += r; g1 += r*D.x[i];
+        h00 += w; h01 += w*D.x[i]; h11 += w*D.x[i]*D.x[i];
+      }
+      const s = solve([[h00, h01], [h01, h11]], [g0, g1]);
+      if (!s) break;
+      b0 += s[0]; b1 += s[1];
+      if (Math.abs(s[0]) + Math.abs(s[1]) < 1e-9) break;
+    }
+    return {b0:b0, b1:b1};
+  }
+  const MLE = irls();
+
+  function draw(){
+    const b0 = +b0i.value, b1 = +b1i.value, xq = +xi.value;
+    byId("logi-b0v").textContent = fmt(b0, 2);
+    byId("logi-b1v").textContent = fmt(b1, 2);
+    byId("logi-xv").textContent = fmt(xq, 1);
+    P.clear();
+    P.frame("income, thousands", "outcome / probability", {yticks:[0, 0.25, 0.5, 0.75, 1]});
+    P.add("line", {x1:P.X(0), y1:P.Y(1), x2:P.X(13), y2:P.Y(1), stroke:"var(--line-strong)", "stroke-width":1, "stroke-dasharray":"4 4"});
+    P.add("line", {x1:P.X(0), y1:P.Y(0), x2:P.X(13), y2:P.Y(0), stroke:"var(--line-strong)", "stroke-width":1, "stroke-dasharray":"4 4"});
+    P.dots(D.x.map(function(v, i){ return [v, D.y[i]]; }), "a", 4.5);
+    bins.forEach(function(b){ P.add("circle", {cx:P.X(b[0]), cy:P.Y(b[1]), r:6, class:"pt b"}); });
+
+    if (mode === "lin" || mode === "both")
+      P.seg(0, lin.b0, 13, lin.b0 + lin.b1*13, "fitline alt");
+    if (mode === "log" || mode === "both")
+      P.fn(function(x){ return pOf(x, b0, b1); }, "fitline", 180);
+
+    const yq = mode === "lin" ? (lin.b0 + lin.b1*xq) : pOf(xq, b0, b1);
+    P.add("line", {x1:P.X(xq), y1:P.Y(-0.18), x2:P.X(xq), y2:P.Y(clamp(yq, -0.18, 1.18)), stroke:"var(--amber)", "stroke-width":1.6, "stroke-dasharray":"3 3"});
+    P.add("circle", {cx:P.X(xq), cy:P.Y(clamp(yq, -0.18, 1.18)), r:5.5, fill:"var(--amber)", stroke:"var(--ink)", "stroke-width":1.6});
+
+    const pl = lin.b0 + lin.b1*xq, pg = pOf(xq, b0, b1);
+    const eta = b0 + b1*xq;
+    byId("logi-read").innerHTML =
+      '<span class="k">straight line says</span> p = ' + fmt(pl, 3) + (pl < 0 || pl > 1 ? '  <b style="color:var(--rose)">impossible</b>' : '') + '<br>' +
+      '<span class="k">logistic says</span> p = ' + fmt(pg, 3) + '<br>' +
+      '<span class="k">&eta; = &beta;&#8320;+&beta;&#8321;x</span> ' + fmt(eta, 2) + '<br>' +
+      '<span class="k">odds p/(1-p)</span> ' + fmt(pg/(1-pg), 3) + '<br>' +
+      '<span class="k">odds multiplier e^&beta;&#8321;</span> ' + fmt(Math.exp(b1), 3) + ' per unit<br>' +
+      '<span class="k">log-likelihood</span> ' + fmt(loglik(b0, b1), 2) + '<br>' +
+      '<span class="k">best reachable</span> ' + fmt(loglik(MLE.b0, MLE.b1), 2);
+
+    const m = byId("logi-msg");
+    if (mode === "lin" && (lin.b0 + lin.b1*13 < 0 || lin.b0 > 1)){
+      m.className = "msg bad";
+      m.innerHTML = "Follow the violet line to the right edge: it goes below zero. A negative probability of default is not a small imprecision, it is a statement that cannot mean anything. The amber circles are the observed proportion inside each income band, and they clearly bend.";
+    } else if (Math.abs(loglik(b0, b1) - loglik(MLE.b0, MLE.b1)) < 0.5){
+      m.className = "msg ok";
+      m.innerHTML = "You are at the maximum likelihood fit: \u03b2\u2080 = " + fmt(MLE.b0,2) + ", \u03b2\u2081 = " + fmt(MLE.b1,2) + ". No other pair makes the observed defaults more probable.";
+    } else {
+      m.className = "msg";
+      m.innerHTML = "The curve never leaves (0, 1), whatever you do to the sliders. \u03b2\u2081 controls how sharply it turns, \u03b2\u2080 slides it left and right. The half-way point sits at x = \u2212\u03b2\u2080/\u03b2\u2081 = " + (b1 !== 0 ? fmt(-b0/b1, 2) : "\u221e") + ".";
+    }
+  }
+  function animateTo(b0, b1){
+    const s0 = +b0i.value, s1 = +b1i.value, t0 = performance.now();
+    (function step(t){
+      const u = clamp((t-t0)/700, 0, 1), e = 1-Math.pow(1-u, 3);
+      b0i.value = s0 + (b0-s0)*e; b1i.value = s1 + (b1-s1)*e;
+      draw();
+      if (u < 1) requestAnimationFrame(step);
+    })(t0);
+  }
+  [b0i, b1i, xi].forEach(function(el){ el.addEventListener("input", draw); });
+  const seg = byId("logi-modes");
+  [].forEach.call(seg.querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){
+      [].forEach.call(seg.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on"); mode = b.dataset.m; draw();
+    });
+  });
+  byId("logi-fit").addEventListener("click", function(){
+    mode = "log";
+    [].forEach.call(seg.querySelectorAll("button"), function(x){ x.classList.toggle("on", x.dataset.m === "log"); });
+    animateTo(MLE.b0, MLE.b1);
+  });
+  byId("logi-reset").addEventListener("click", function(){ animateTo(1.4, -0.4); });
+  draw();
+})();
+
+/* ---- the link function, as three funnels ---- */
+(function links(){
+  const P = Plot("link-stage", {w:560, h:300, m:{l:0, r:0, t:0, b:0}});
+  const eta = byId("link-eta");
+  const PAN = [
+    {name:"identity", g:function(e){ return e; }, tex:"g\u207b\u00b9(\u03b7) = \u03b7", range:"\u211d, any number", lo:-4, hi:4, use:"linear regression", col:"var(--violet)"},
+    {name:"logit", g:function(e){ return 1/(1+Math.exp(-e)); }, tex:"g\u207b\u00b9(\u03b7) = 1/(1+e\u207b\u03b7)", range:"(0, 1), a probability", lo:0, hi:1, use:"logistic regression", col:"var(--teal)"},
+    {name:"log", g:function(e){ return Math.exp(e); }, tex:"g\u207b\u00b9(\u03b7) = e\u03b7", range:"(0, \u221e), a rate", lo:0, hi:8, use:"Poisson regression", col:"var(--rose)"}
+  ];
+  function draw(){
+    const e = +eta.value;
+    byId("link-etav").textContent = fmt(e, 2);
+    P.clear();
+    const t0 = P.txt(14, 22, "the same \u03b7, three exits", "axttl", "start");
+    t0.setAttribute("style", "font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;fill:var(--muted)");
+    P.add("line", {x1:40, y1:44, x2:520, y2:44, stroke:"var(--line-strong)", "stroke-width":1.4});
+    for (let v = -4; v <= 4; v += 2){
+      const x = 40 + (v+4)/8*480;
+      P.add("line", {x1:x, y1:40, x2:x, y2:48, stroke:"var(--line-strong)", "stroke-width":1.2});
+      P.txt(x, 62, String(v), "axlab", "middle");
+    }
+    const ex = 40 + (e+4)/8*480;
+    P.add("circle", {cx:ex, cy:44, r:6, fill:"var(--amber)", stroke:"var(--ink)", "stroke-width":1.8});
+    P.txt(ex, 30, "\u03b7 = " + fmt(e, 2), "plab", "middle");
+
+    PAN.forEach(function(pan, i){
+      const x0 = 22 + i*180, w = 160, y0 = 96, h = 150;
+      P.add("rect", {x:x0, y:y0, width:w, height:h, rx:12, fill:"var(--panel)", stroke:"var(--line)", "stroke-width":1.4});
+      P.add("path", {d:"M" + ex + ",52 C" + ex + ",76 " + (x0+w/2) + ",70 " + (x0+w/2) + "," + (y0-4),
+        fill:"none", stroke:pan.col, "stroke-width":1.6, "stroke-dasharray":"4 4", opacity:.8});
+      const tn = P.txt(x0+w/2, y0+20, pan.name, "plab", "middle");
+      tn.setAttribute("style", "font-family:var(--display);font-size:15px;font-weight:600");
+      const tt = P.txt(x0+w/2, y0+38, pan.tex, "axlab", "middle");
+      tt.setAttribute("style", "font-family:var(--mono);font-size:11px;fill:var(--muted)");
+      const bx = x0+18, bw = w-36, by = y0+66;
+      P.add("line", {x1:bx, y1:by, x2:bx+bw, y2:by, stroke:"var(--line-strong)", "stroke-width":1.3});
+      P.txt(bx, by+16, String(pan.lo), "axlab", "start");
+      P.txt(bx+bw, by+16, pan.hi === 8 ? "\u221e" : String(pan.hi), "axlab", "end");
+      const val = pan.g(e);
+      const frac = clamp((val - pan.lo)/(pan.hi - pan.lo), 0, 1);
+      P.add("circle", {cx:bx + frac*bw, cy:by, r:6, fill:pan.col, stroke:"var(--ink)", "stroke-width":1.6});
+      const tv = P.txt(x0+w/2, by+40, fmt(val, 3), "plab", "middle");
+      tv.setAttribute("style", "font-family:var(--mono);font-size:15px;font-weight:600;fill:" + pan.col);
+      const tu = P.txt(x0+w/2, by+58, pan.use, "axlab", "middle");
+      tu.setAttribute("style", "font-family:var(--mono);font-size:10.5px;fill:var(--muted)");
+    });
+    byId("link-read").innerHTML = PAN.map(function(p){
+      return '<span class="k">' + p.name + '</span> ' + fmt(p.g(e), 4) + '  <span class="k">&rarr; ' + p.range + '</span>';
+    }).join("<br>");
+    const m = byId("link-msg");
+    m.className = "msg";
+    m.innerHTML = "Whatever you do to \u03b7, the middle exit stays inside (0, 1) and the right exit stays positive. That is the entire reason these models exist: the constraint is enforced by the shape of the funnel, not by hoping the data behaves.";
+  }
+  eta.addEventListener("input", draw);
+  draw();
+})();
+
+/* ---- counts and dispersion ---- */
+(function poisson(){
+  const P = Plot("pois-stage", {w:560, h:340, m:{l:54, r:16, t:16, b:38}});
+  let mode = "pois", D = null;
+  const odIn = byId("pois-od");
+
+  function makeData(od){
+    const R = rng(4242), xs = [], ys = [];
+    for (let i = 0; i < 70; i++){
+      const x = 1 + R()*9;
+      const lam = Math.exp(0.30 + 0.235*x);
+      let mult = 1;
+      if (od > 1){
+        const s2 = Math.log(1 + (od-1)/lam);
+        mult = Math.exp(Math.sqrt(s2)*gauss(R) - s2/2);
+      }
+      xs.push(x); ys.push(poissonDraw(R, lam*mult));
+    }
+    return {x:xs, y:ys};
+  }
+  function fitPoisson(D){
+    let b0 = Math.log(Math.max(0.5, mean(D.y))), b1 = 0;
+    for (let it = 0; it < 50; it++){
+      let g0 = 0, g1 = 0, h00 = 0, h01 = 0, h11 = 0;
+      for (let i = 0; i < D.x.length; i++){
+        const mu = Math.exp(b0 + b1*D.x[i]), r = D.y[i] - mu;
+        g0 += r; g1 += r*D.x[i];
+        h00 += mu; h01 += mu*D.x[i]; h11 += mu*D.x[i]*D.x[i];
+      }
+      const s = solve([[h00, h01], [h01, h11]], [g0, g1]);
+      if (!s) break;
+      b0 += clamp(s[0], -1, 1); b1 += clamp(s[1], -1, 1);
+      if (Math.abs(s[0]) + Math.abs(s[1]) < 1e-10) break;
+    }
+    return {b0:b0, b1:b1};
+  }
+  function draw(){
+    const od = +odIn.value;
+    byId("pois-odv").textContent = "\u00d7" + fmt(od, 1);
+    D = makeData(od);
+    const fp = fitPoisson(D), fl = simpleOLS(D.x, D.y);
+    const ymax = Math.max(24, Math.ceil(Math.max.apply(null, D.y)/5)*5);
+    P.dom([0, 11], [-4, ymax]);
+    P.clear();
+    P.frame("firm size", "accidents per month", {});
+    P.add("line", {x1:P.X(0), y1:P.Y(0), x2:P.X(11), y2:P.Y(0), stroke:"var(--line-strong)", "stroke-width":1.2, "stroke-dasharray":"4 4"});
+    if (byId("pois-band").checked && mode === "pois"){
+      P.band(function(x){ const l = Math.exp(fp.b0 + fp.b1*x); return l + 2*Math.sqrt(l); },
+             function(x){ const l = Math.exp(fp.b0 + fp.b1*x); return Math.max(0, l - 2*Math.sqrt(l)); }, "bandfill");
+    }
+    P.dots(D.x.map(function(v, i){ return [v, D.y[i]]; }), "a", 4.2);
+    if (mode === "pois") P.fn(function(x){ return Math.exp(fp.b0 + fp.b1*x); }, "fitline", 150);
+    else P.seg(0, fl.b0, 11, fl.b0 + fl.b1*11, "fitline alt");
+
+    let chi2 = 0, out = 0;
+    for (let i = 0; i < D.x.length; i++){
+      const mu = Math.exp(fp.b0 + fp.b1*D.x[i]);
+      chi2 += (D.y[i]-mu)*(D.y[i]-mu)/mu;
+      if (Math.abs(D.y[i]-mu) > 2*Math.sqrt(mu)) out++;
+    }
+    const disp = chi2/(D.x.length - 2);
+    const negAt = fl.b1 !== 0 ? -fl.b0/fl.b1 : NaN;
+    byId("pois-read").innerHTML =
+      '<span class="k">log &lambda; =</span> ' + fmt(fp.b0, 3) + ' + ' + fmt(fp.b1, 3) + ' x<br>' +
+      '<span class="k">multiplier e^&beta;&#8321;</span> ' + fmt(Math.exp(fp.b1), 3) + ' per unit of size<br>' +
+      '<span class="k">&lambda; at size 2</span> ' + fmt(Math.exp(fp.b0 + fp.b1*2), 2) + '<br>' +
+      '<span class="k">&lambda; at size 10</span> ' + fmt(Math.exp(fp.b0 + fp.b1*10), 2) + '<br>' +
+      '<span class="k">dispersion &#967;&sup2;/df</span> ' + fmt(disp, 2) + '<br>' +
+      '<span class="k">outside the band</span> ' + out + ' of ' + D.x.length + '<br>' +
+      '<span class="k">straight line hits 0 at</span> size ' + (isFinite(negAt) ? fmt(negAt, 1) : "never");
+    const m = byId("pois-msg");
+    if (mode === "lin"){
+      m.className = "msg bad";
+      m.innerHTML = "The straight line predicts a negative number of accidents for small firms, and it also assumes the scatter is equally wide at every size, which the picture flatly contradicts.";
+    } else if (disp > 1.6){
+      m.className = "msg warn";
+      m.innerHTML = "Dispersion is " + fmt(disp, 2) + ", far above 1. The Poisson variance assumption is broken: the mean curve is still roughly right, but every standard error and p-value it produces is too small. Switch to a negative binomial.";
+    } else {
+      m.className = "msg ok";
+      m.innerHTML = "Dispersion near 1, and about 95 percent of the points sit inside the band. The Poisson assumption Var(Y) = \u03bb is doing an honest job here. Now push the dispersion slider.";
+    }
+  }
+  odIn.addEventListener("input", draw);
+  byId("pois-band").addEventListener("change", draw);
+  const seg = byId("pois-modes");
+  [].forEach.call(seg.querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){
+      [].forEach.call(seg.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on"); mode = b.dataset.m; draw();
+    });
+  });
+  draw();
+})();
+
+/* ---- the family table ---- */
+(function family(){
+  const ROWS = [
+    {y:"a number, unbounded", model:"Linear regression", link:"identity", range:"\u211d",
+     tex:"\\mathbb{E}[Y\\mid X]=X\\beta,\\qquad Y\\mid X\\sim\\mathcal{N}(X\\beta,\\sigma^{2})",
+     note:"Price, GDP, income, temperature. Coefficients read directly as units of Y per unit of x."},
+    {y:"yes / no", model:"Logistic regression", link:"logit", range:"(0, 1)",
+     tex:"\\log\\frac{p}{1-p}=X\\beta,\\qquad Y\\mid X\\sim\\text{Bernoulli}(p)",
+     note:"Default or not, employed or not. e^\u03b2 is the odds ratio. The probit model replaces the logistic curve with the normal one and changes almost nothing in practice."},
+    {y:"several unordered categories", model:"Multinomial logistic", link:"generalised logit", range:"simplex",
+     tex:"\\Pr(Y=k\\mid X)=\\frac{e^{X\\beta_k}}{\\sum_{m=1}^{K}e^{X\\beta_m}}",
+     note:"Mode of transport, sector of activity. This is the softmax. One coefficient vector per category, identified against a reference."},
+    {y:"ordered ratings", model:"Ordinal logistic", link:"cumulative logit", range:"(0, 1) cumulative",
+     tex:"\\log\\frac{\\Pr(Y\\le k)}{\\Pr(Y>k)}=\\alpha_k-X\\beta",
+     note:"Satisfaction from 1 to 5. One slope for all thresholds, several intercepts \u03b1\u2096. Using linear regression on a 1 to 5 scale silently claims the gaps are equal."},
+    {y:"counts 0, 1, 2, ...", model:"Poisson regression", link:"log", range:"(0, \u221e)",
+     tex:"\\log\\lambda=X\\beta,\\qquad \\Pr(Y=k)=\\frac{\\lambda^{k}e^{-\\lambda}}{k!}",
+     note:"Accidents, visits, permits issued. Add an offset log(exposure) when the periods or populations differ in size."},
+    {y:"counts that are too spread out", model:"Negative binomial", link:"log", range:"(0, \u221e)",
+     tex:"\\log\\lambda=X\\beta,\\qquad \\operatorname{Var}(Y)=\\lambda+\\frac{\\lambda^{2}}{\\theta}",
+     note:"The default choice for real count data. \u03b8 is estimated, and a large \u03b8 tells you the Poisson would have been enough."},
+    {y:"a proportion in (0, 1)", model:"Beta regression", link:"logit", range:"(0, 1)",
+     tex:"\\log\\frac{\\mu}{1-\\mu}=X\\beta,\\qquad Y\\sim\\text{Beta}(\\mu\\phi,(1-\\mu)\\phi)",
+     note:"Share of budget spent on food, capacity utilisation. If the proportion comes from counting successes out of a known n, use binomial regression instead."},
+    {y:"time until an event", model:"Cox proportional hazards", link:"log hazard", range:"(0, \u221e)",
+     tex:"h(t\\mid X)=h_0(t)\\,e^{X\\beta}",
+     note:"Time to exit unemployment, time to default. Its speciality is censoring: subjects who had not had the event yet still carry information and are not thrown away."}
+  ];
+  const tb = byId("fam-tab").querySelector("tbody");
+  ROWS.forEach(function(r, i){
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + r.y + "</td><td>" + r.model + "</td><td><code>" + r.link + "</code></td><td>" + r.range + "</td>";
+    tr.style.cursor = "pointer";
+    tr.addEventListener("click", function(){ show(i); });
+    tb.appendChild(tr);
+  });
+  function show(i){
+    const r = ROWS[i];
+    [].forEach.call(tb.querySelectorAll("tr"), function(x, k){ x.classList.toggle("hot", k === i); });
+    byId("fam-panel").innerHTML =
+      '<div class="formal"><div class="beat">' + r.model + "</div>" +
+      '<div class="tex center" data-tex="' + r.tex.replace(/"/g, "&quot;") + '"></div>' +
+      '<div class="where">' + r.note + "</div></div>";
+    renderTeX(byId("fam-panel"));
+  }
+  show(1);
+})();
+
+/* =========================================================
+   NOTE 02
+   ========================================================= */
+
+/* ---- polynomial degree, train and test ---- */
+(function poly(){
+  const P = Plot("poly-stage", {w:560, h:340, m:{l:54, r:16, t:16, b:38}});
+  P.dom([0, 10], [0, 20]);
+  const truth = function(x){ return 6 + 2.55*x - 0.235*x*x; };
+  let seed = 1234, D = null;
+
+  function build(){
+    const R = rng(seed), s = +byId("poly-n").value;
+    const tr = [], te = [];
+    for (let i = 0; i < 26; i++){ const x = 0.3 + R()*9.4; tr.push([x, truth(x) + gauss(R)*s]); }
+    for (let i = 0; i < 18; i++){ const x = 0.3 + R()*9.4; te.push([x, truth(x) + gauss(R)*s]); }
+    D = {tr:tr, te:te};
+  }
+  function basis(x, d){
+    const u = (x - 5)/5, row = [1];
+    for (let k = 1; k <= d; k++) row.push(Math.pow(u, k));
+    return row;
+  }
+  function rmse(set, beta, d){
+    let s = 0;
+    set.forEach(function(p){
+      const b = basis(p[0], d);
+      let yh = 0;
+      for (let k = 0; k < b.length; k++) yh += b[k]*beta[k];
+      s += (p[1]-yh)*(p[1]-yh);
+    });
+    return Math.sqrt(s/set.length);
+  }
+  function draw(){
+    const d = +byId("poly-d").value;
+    byId("poly-dv").textContent = d;
+    byId("poly-nv").textContent = fmt(+byId("poly-n").value, 1);
+    const X = D.tr.map(function(p){ return basis(p[0], d); });
+    const y = D.tr.map(function(p){ return p[1]; });
+    const beta = lstsq(X, y, 1e-8);
+    P.clear();
+    P.frame("temperature", "yield", {});
+    if (byId("poly-truth").checked) P.fn(truth, "fitline ghost", 120);
+    P.dots(D.te.map(function(p){ return [p[0], p[1]]; }), "", 4.6);
+    P.dots(D.tr.map(function(p){ return [p[0], p[1]]; }), "a", 4.2);
+    P.fn(function(x){
+      const b = basis(x, d);
+      let s = 0;
+      for (let k = 0; k < b.length; k++) s += b[k]*beta[k];
+      return s;
+    }, "fitline", 260);
+
+    const r1 = rmse(D.tr, beta, d), r2 = rmse(D.te, beta, d);
+    byId("poly-r1").innerHTML = '<span class="k">RMSE train</span> ' + fmt(r1, 3);
+    byId("poly-r2").innerHTML = '<span class="k">RMSE test</span> ' + fmt(r2, 3) +
+      '<br><span class="k">parameters used</span> ' + (d+1) + ' for ' + D.tr.length + ' points';
+    byId("poly-bar1").style.width = clamp(r1/6*100, 2, 100) + "%";
+    byId("poly-bar2").style.width = clamp(r2/6*100, 2, 100) + "%";
+    const m = byId("poly-msg");
+    if (d === 1){
+      m.className = "msg warn";
+      m.innerHTML = "Underfitting. The line misses the same way in the same places, low at both ends and high in the middle. That systematic pattern in the residuals is the signature of bias, and no amount of extra data will fix it.";
+    } else if (r2 > 2.2*r1 && d >= 6){
+      m.className = "msg bad";
+      m.innerHTML = "Overfitting. The curve now passes near every teal point and misses the hollow ones badly: train error " + fmt(r1,2) + " against test error " + fmt(r2,2) + ". It has learned the noise, which does not repeat.";
+    } else {
+      m.className = "msg ok";
+      m.innerHTML = "Both errors are close and both are low. Degree 2 was enough here, because the true relationship really is a parabola. More flexibility buys nothing and costs stability.";
+    }
+  }
+  ["poly-d", "poly-n"].forEach(function(id){
+    byId(id).addEventListener("input", function(){ if (id === "poly-n") build(); draw(); });
+  });
+  byId("poly-truth").addEventListener("change", draw);
+  byId("poly-new").addEventListener("click", function(){ seed = (seed*7919 + 13) % 100000; build(); draw(); });
+  build(); draw();
+})();
+
+/* ---- splines ---- */
+(function spline(){
+  const H = 420, BASE_TOP = 300;
+  const P = Plot("spl-stage", {w:560, h:H, m:{l:54, r:16, t:16, b:H-268}});
+  P.dom([0, 10], [-3, 11]);
+  const truth = function(x){ return 4*Math.sin(x*0.72) + 0.5*x - 1.2; };
+  const D = (function(){
+    const R = rng(9182), a = [];
+    for (let i = 0; i < 46; i++){ const x = 0.2 + R()*9.6; a.push([x, truth(x) + gauss(R)*0.9]); }
+    return a;
+  })();
+  function knots(K){
+    const out = [];
+    for (let k = 1; k <= K; k++) out.push(10*k/(K+1));
+    return out;
+  }
+  function row(x, ks){
+    const r = [1, x];
+    ks.forEach(function(k){ r.push(Math.max(0, x-k)); });
+    return r;
+  }
+  function draw(){
+    const K = +byId("spl-k").value;
+    byId("spl-kv").textContent = K;
+    const ks = knots(K);
+    const X = D.map(function(p){ return row(p[0], ks); });
+    const y = D.map(function(p){ return p[1]; });
+    const b = lstsq(X, y, 1e-9);
+    const f = function(x){
+      const r = row(x, ks);
+      let s = 0;
+      for (let i = 0; i < r.length; i++) s += r[i]*b[i];
+      return s;
+    };
+    P.clear();
+    P.frame("x", "y", {});
+    ks.forEach(function(k){
+      P.add("line", {x1:P.X(k), y1:P.Y(P.yd[0]), x2:P.X(k), y2:P.Y(P.yd[1]), stroke:"var(--violet)", "stroke-width":1.3, "stroke-dasharray":"4 4", opacity:.75});
+    });
+    P.fn(truth, "fitline ghost", 160);
+    P.dots(D, "a", 4);
+    P.fn(f, "fitline", 300);
+
+    /* the basis columns, drawn underneath in raw pixels */
+    const bt = BASE_TOP, bh = 78, x0 = P.X(0), x1 = P.X(10);
+    P.add("line", {x1:x0, y1:bt+bh, x2:x1, y2:bt+bh, class:"ax"});
+    const lab = P.txt(x0, bt-8, "the columns handed to least squares", "axttl", "start");
+    lab.setAttribute("style", "font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;fill:var(--muted)");
+    P.add("line", {x1:x0, y1:bt+bh-20, x2:x1, y2:bt+bh-20, stroke:"var(--line-strong)", "stroke-width":1.6});
+    P.txt(x1-2, bt+bh-26, "1", "axlab", "end");
+    P.add("line", {x1:x0, y1:bt+bh, x2:x1, y2:bt+bh-bh*0.55, stroke:"var(--teal)", "stroke-width":1.6});
+    ks.forEach(function(k, i){
+      const kx = P.X(k);
+      const col = ["var(--rose)", "var(--amber)", "var(--violet)"][i % 3];
+      P.add("path", {d:"M" + x0 + "," + (bt+bh) + " L" + kx + "," + (bt+bh) + " L" + x1 + "," + (bt+bh-bh*0.62*(10-k)/10),
+        fill:"none", stroke:col, "stroke-width":1.6});
+      P.txt(kx, bt+bh+15, "\u03ba" + (i+1), "axlab", "middle");
+    });
+
+    let s = 0;
+    D.forEach(function(p){ s += Math.pow(p[1]-f(p[0]), 2); });
+    byId("spl-read").innerHTML =
+      '<span class="k">knots</span> ' + (K ? ks.map(function(k){ return fmt(k,1); }).join(", ") : "none, a straight line") + '<br>' +
+      '<span class="k">columns in X</span> ' + (K+2) + '<br>' +
+      '<span class="k">RMSE</span> ' + fmt(Math.sqrt(s/D.length), 3) + '<br>' +
+      '<span class="k">slope changes</span> ' + (K ? b.slice(2).map(function(v){ return fmt(v,2); }).join(", ") : "\u2014");
+    const m = byId("spl-msg");
+    if (K === 0){ m.className = "msg warn"; m.innerHTML = "No knots, so this is exactly the straight line of note 00. It cannot follow the wave, and it never will."; }
+    else if (K <= 4){ m.className = "msg ok"; m.innerHTML = "Two to four knots already track the shape closely. Each new column is one hockey stick, and its coefficient is the change of slope at that knot, nothing more mysterious than that."; }
+    else { m.className = "msg warn"; m.innerHTML = "Many knots start to chase individual points again. The usual fix is to keep the knots and add a penalty on the roughness of the curve, which is the smoothing spline, the same bargain as note 03."; }
+  }
+  byId("spl-k").addEventListener("input", draw);
+  draw();
+})();
+
+/* ---- quantile regression ---- */
+(function quantile(){
+  const P = Plot("qr-stage", {w:560, h:340, m:{l:54, r:16, t:16, b:38}});
+  P.dom([20, 160], [0, 130]);
+  const D = (function(){
+    const R = rng(5150), a = [];
+    for (let i = 0; i < 80; i++){
+      const x = 25 + R()*130;
+      const spread = 4 + 0.20*(x-25);
+      a.push([x, 14 + 0.38*x + gauss(R)*spread]);
+    }
+    return a;
+  })();
+  function pinball(b0, b1, t){
+    let s = 0;
+    for (let i = 0; i < D.length; i++){
+      const u = D[i][1] - b0 - b1*D[i][0];
+      s += u * (t - (u < 0 ? 1 : 0));
+    }
+    return s;
+  }
+  function fitQ(t){
+    /* the optimum passes through two data points, so enumerate the pairs */
+    let best = null, bl = Infinity;
+    for (let i = 0; i < D.length; i++){
+      for (let j = i+1; j < D.length; j++){
+        const dx = D[j][0]-D[i][0];
+        if (Math.abs(dx) < 1e-9) continue;
+        const b1 = (D[j][1]-D[i][1])/dx, b0 = D[i][1]-b1*D[i][0];
+        const l = pinball(b0, b1, t);
+        if (l < bl){ bl = l; best = {b0:b0, b1:b1, loss:l}; }
+      }
+    }
+    return best;
+  }
+  const OLS = simpleOLS(D.map(function(p){ return p[0]; }), D.map(function(p){ return p[1]; }));
+  const CACHE = {};
+  function get(t){
+    const k = t.toFixed(2);
+    if (!CACHE[k]) CACHE[k] = fitQ(t);
+    return CACHE[k];
+  }
+  function draw(){
+    const t = +byId("qr-t").value;
+    byId("qr-tv").textContent = fmt(t, 2);
+    P.clear();
+    P.frame("size m\u00b2", "rent", {});
+    P.dots(D, "a", 4);
+    if (byId("qr-all").checked){
+      [0.1, 0.25, 0.5, 0.75, 0.9].forEach(function(q){
+        const f = get(q);
+        const L = P.seg(P.xd[0], f.b0 + f.b1*P.xd[0], P.xd[1], f.b0 + f.b1*P.xd[1], "fitline");
+        L.setAttribute("opacity", 0.45);
+        L.setAttribute("stroke-width", 2);
+        P.txt(P.X(P.xd[1])-4, P.Y(f.b0 + f.b1*P.xd[1])-6, "\u03c4=" + q, "plab", "end");
+      });
+    }
+    if (byId("qr-mean").checked) P.seg(P.xd[0], OLS.b0 + OLS.b1*P.xd[0], P.xd[1], OLS.b0 + OLS.b1*P.xd[1], "fitline alt");
+    const f = get(t);
+    P.seg(P.xd[0], f.b0 + f.b1*P.xd[0], P.xd[1], f.b0 + f.b1*P.xd[1], "fitline");
+
+    let below = 0;
+    D.forEach(function(p){ if (p[1] < f.b0 + f.b1*p[0]) below++; });
+    const lo = get(0.1), hi = get(0.9);
+    byId("qr-read").innerHTML =
+      '<span class="k">\u03c4 = ' + fmt(t,2) + ' line</span> ' + fmt(f.b0, 1) + ' + ' + fmt(f.b1, 3) + ' x<br>' +
+      '<span class="k">OLS mean line</span> ' + fmt(OLS.b0, 1) + ' + ' + fmt(OLS.b1, 3) + ' x<br>' +
+      '<span class="k">points below the line</span> ' + below + ' of ' + D.length + ' = ' + fmt(below/D.length, 2) + '<br>' +
+      '<span class="k">slope at \u03c4 = 0.10</span> ' + fmt(lo.b1, 3) + '<br>' +
+      '<span class="k">slope at \u03c4 = 0.90</span> ' + fmt(hi.b1, 3);
+    const m = byId("qr-msg");
+    m.className = "msg";
+    m.innerHTML = "By construction about " + Math.round(t*100) + " percent of the points lie below the \u03c4 line, and the counter confirms it. Compare the two extreme slopes: " +
+      fmt(lo.b1, 3) + " at the bottom of the market against " + fmt(hi.b1, 3) + " at the top. One extra square metre is worth roughly " +
+      fmt(hi.b1/Math.max(0.001, lo.b1), 1) + " times more at the top than at the bottom, and the single mean line hides that entirely.";
+  }
+  byId("qr-t").addEventListener("input", draw);
+  byId("qr-all").addEventListener("change", draw);
+  byId("qr-mean").addEventListener("change", draw);
+  draw();
+})();
+
+/* ---- regression tree ---- */
+(function tree(){
+  const P = Plot("tree-stage", {w:560, h:340, m:{l:54, r:16, t:16, b:38}});
+  P.dom([0, 10], [0, 16]);
+  const truth = function(x){ return x < 3 ? 4 : (x < 6.2 ? 11 : 6.5); };
+  const D = (function(){
+    const R = rng(31337), a = [];
+    for (let i = 0; i < 70; i++){ const x = R()*10; a.push([x, truth(x) + gauss(R)*1.1]); }
+    return a.sort(function(p, q){ return p[0]-q[0]; });
+  })();
+  function grow(pts, depth, log){
+    if (depth === 0 || pts.length < 6) return [{lo:-Infinity, hi:Infinity, v:mean(pts.map(function(p){ return p[1]; })), n:pts.length}];
+    let bs = null, bl = Infinity;
+    for (let i = 2; i < pts.length-2; i++){
+      const s = (pts[i][0] + pts[i+1][0])/2;
+      const L = pts.slice(0, i+1), Rr = pts.slice(i+1);
+      const ml = mean(L.map(function(p){ return p[1]; })), mr = mean(Rr.map(function(p){ return p[1]; }));
+      let e = 0;
+      L.forEach(function(p){ e += (p[1]-ml)*(p[1]-ml); });
+      Rr.forEach(function(p){ e += (p[1]-mr)*(p[1]-mr); });
+      if (e < bl){ bl = e; bs = {s:s, i:i}; }
+    }
+    if (!bs) return [{lo:-Infinity, hi:Infinity, v:mean(pts.map(function(p){ return p[1]; })), n:pts.length}];
+    log.push(bs.s);
+    const left = grow(pts.slice(0, bs.i+1), depth-1, log);
+    const right = grow(pts.slice(bs.i+1), depth-1, log);
+    left[left.length-1].hi = bs.s;
+    right[0].lo = bs.s;
+    return left.concat(right);
+  }
+  function draw(){
+    const d = +byId("tree-d").value;
+    byId("tree-dv").textContent = d;
+    const log = [];
+    let leaves = grow(D, d, log);
+    /* rebuild clean boundaries from the sorted cut points */
+    const cuts = log.slice().sort(function(a, b){ return a-b; });
+    const edges = [0].concat(cuts, [10]);
+    const boxes = [];
+    for (let i = 0; i < edges.length-1; i++){
+      const inside = D.filter(function(p){ return p[0] >= edges[i] && p[0] < edges[i+1]; });
+      if (inside.length) boxes.push({lo:edges[i], hi:edges[i+1], v:mean(inside.map(function(p){ return p[1]; })), n:inside.length});
+    }
+    P.clear();
+    P.frame("x", "y", {});
+    P.fn(truth, "fitline ghost", 300);
+    P.dots(D, "a", 4);
+    cuts.forEach(function(s){
+      P.add("line", {x1:P.X(s), y1:P.Y(0), x2:P.X(s), y2:P.Y(16), stroke:"var(--violet)", "stroke-width":1.2, "stroke-dasharray":"4 4", opacity:.8});
+    });
+    boxes.forEach(function(b){
+      P.add("line", {x1:P.X(b.lo), y1:P.Y(b.v), x2:P.X(b.hi), y2:P.Y(b.v), class:"fitline"});
+    });
+    let s = 0;
+    D.forEach(function(p){
+      const b = boxes.filter(function(q){ return p[0] >= q.lo && p[0] <= q.hi; })[0];
+      if (b) s += Math.pow(p[1]-b.v, 2);
+    });
+    byId("tree-read").innerHTML =
+      '<span class="k">cuts</span> x &lt; ' + cuts.map(function(c){ return fmt(c, 2); }).join(", x &lt; ") + '<br>' +
+      '<span class="k">regions</span> ' + boxes.length + '<br>' +
+      '<span class="k">prediction per region</span> ' + boxes.map(function(b){ return fmt(b.v, 1); }).join(" | ") + '<br>' +
+      '<span class="k">RMSE</span> ' + fmt(Math.sqrt(s/D.length), 3);
+    const m = byId("tree-msg");
+    if (d === 1){ m.className = "msg warn"; m.innerHTML = "One question only, so two flat answers. The tree found the biggest jump in the data by itself, without being told that a threshold existed."; }
+    else if (d === 2){ m.className = "msg ok"; m.innerHTML = "Two levels, and both real jumps, near x = 3 and near x = 6, have been found without anyone telling the algorithm that thresholds existed. Notice that the fitted function is made of steps: a tree copies a threshold perfectly and a straight slope only clumsily."; }
+    else { m.className = "msg warn"; m.innerHTML = "Deeper now. The extra cuts are chasing noise inside regions that were already correct, which is how a single tree overfits. Pruning, or averaging many trees, is the standard answer."; }
+  }
+  byId("tree-d").addEventListener("input", draw);
+  draw();
+})();
+
+/* =========================================================
+   NOTE 03
+   ========================================================= */
+
+/* ---- ridge and lasso ---- */
+(function penalty(){
+  const PATH = Plot("reg-stage", {w:560, h:250, m:{l:54, r:16, t:16, b:36}});
+  const BARS = Plot("reg-bars", {w:560, h:200, m:{l:54, r:16, t:16, b:36}});
+  const p = 8, n = 44;
+  const TRUE = [3.0, -2.4, 1.7, 0, 0, 0, 0, 0];
+  const NAMES = ["x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8"];
+  const D = (function(){
+    const R = rng(2024), X = [], y = [];
+    for (let i = 0; i < n; i++){
+      const row = [];
+      for (let j = 0; j < p; j++) row.push(gauss(R));
+      row[3] = row[0] + 0.22*gauss(R);   /* a near copy of x1 */
+      row[4] = row[1] + 0.22*gauss(R);   /* a near copy of x2 */
+      let v = 0;
+      for (let j = 0; j < p; j++) v += row[j]*TRUE[j];
+      X.push(row); y.push(v + gauss(R)*2.2);
+    }
+    /* standardise columns, centre y */
+    for (let j = 0; j < p; j++){
+      const col = X.map(function(r){ return r[j]; });
+      const m = mean(col), s = sdev(col);
+      for (let i = 0; i < n; i++) X[i][j] = (X[i][j]-m)/s;
+    }
+    const my = mean(y);
+    for (let i = 0; i < n; i++) y[i] -= my;
+    return {X:X, y:y};
+  })();
+  const XtX = (function(){
+    const A = [];
+    for (let j = 0; j < p; j++){
+      A.push(new Array(p).fill(0));
+      for (let k = 0; k < p; k++){
+        let s = 0;
+        for (let i = 0; i < n; i++) s += D.X[i][j]*D.X[i][k];
+        A[j][k] = s;
+      }
+    }
+    return A;
+  })();
+  const Xty = (function(){
+    const b = [];
+    for (let j = 0; j < p; j++){ let s = 0; for (let i = 0; i < n; i++) s += D.X[i][j]*D.y[i]; b.push(s); }
+    return b;
+  })();
+  function ridge(lam){
+    const A = XtX.map(function(r){ return r.slice(); });
+    for (let j = 0; j < p; j++) A[j][j] += lam;
+    return solve(A, Xty) || new Array(p).fill(0);
+  }
+  function lasso(lam){
+    const b = new Array(p).fill(0);
+    for (let it = 0; it < 260; it++){
+      let move = 0;
+      for (let j = 0; j < p; j++){
+        let rho = Xty[j];
+        for (let k = 0; k < p; k++) if (k !== j) rho -= XtX[j][k]*b[k];
+        const z = XtX[j][j];
+        const nb = Math.sign(rho) * Math.max(Math.abs(rho) - lam, 0) / z;
+        move += Math.abs(nb - b[j]);
+        b[j] = nb;
+      }
+      if (move < 1e-9) break;
+    }
+    return b;
+  }
+  function lamOf(v, mode){ return mode === "ridge" ? Math.pow(v/100, 2)*900 : Math.pow(v/100, 1.6)*95; }
+  let mode = "ridge";
+  const CACHE = {};
+  function pathOf(mode){
+    if (CACHE[mode]) return CACHE[mode];
+    const out = [];
+    for (let v = 0; v <= 100; v += 2) out.push({v:v, b:(mode === "ridge" ? ridge(lamOf(v, mode)) : lasso(lamOf(v, mode)))});
+    CACHE[mode] = out;
+    return out;
+  }
+  function draw(){
+    const v = +byId("reg-lam").value;
+    const lam = lamOf(v, mode);
+    byId("reg-lamv").textContent = fmt(lam, 1);
+    const path = pathOf(mode);
+    const b = mode === "ridge" ? ridge(lam) : lasso(lam);
+
+    PATH.dom([0, 100], [-3.6, 3.9]).clear();
+    PATH.frame("penalty \u2192", "coefficient", {xfmt:function(x){ return x === 0 ? "0" : String(x); }});
+    PATH.add("line", {x1:PATH.X(0), y1:PATH.Y(0), x2:PATH.X(100), y2:PATH.Y(0), stroke:"var(--line-strong)", "stroke-width":1.1});
+    for (let j = 0; j < p; j++){
+      let d = "";
+      path.forEach(function(pt, i){ d += (i ? "L" : "M") + fmt(PATH.X(pt.v),1) + " " + fmt(PATH.Y(clamp(pt.b[j], -3.6, 3.9)),1) + " "; });
+      PATH.add("path", {d:d, fill:"none", stroke:TRUE[j] !== 0 ? "var(--teal)" : "var(--line-strong)",
+        "stroke-width":TRUE[j] !== 0 ? 2.4 : 1.4, opacity:TRUE[j] !== 0 ? 1 : .75});
+    }
+    PATH.add("line", {x1:PATH.X(v), y1:PATH.Y(-3.6), x2:PATH.X(v), y2:PATH.Y(3.9), stroke:"var(--amber)", "stroke-width":1.8});
+
+    BARS.dom([0, p], [-3.6, 3.9]).clear();
+    BARS.frame("", "coefficient at this \u03bb", {xticks:[]});
+    BARS.add("line", {x1:BARS.X(0), y1:BARS.Y(0), x2:BARS.X(p), y2:BARS.Y(0), class:"ax"});
+    for (let j = 0; j < p; j++){
+      const x = BARS.X(j+0.5), w = (BARS.X(1)-BARS.X(0))*0.52;
+      const y0 = BARS.Y(0), y1 = BARS.Y(clamp(b[j], -3.6, 3.9));
+      BARS.add("rect", {x:x-w/2, y:Math.min(y0, y1), width:w, height:Math.abs(y1-y0),
+        fill:TRUE[j] !== 0 ? "var(--teal)" : "var(--line-strong)", opacity:.85, rx:3});
+      BARS.add("line", {x1:x-w/2, y1:BARS.Y(TRUE[j]), x2:x+w/2, y2:BARS.Y(TRUE[j]), stroke:"var(--rose)", "stroke-width":2});
+      BARS.txt(x, BARS.H-24, NAMES[j], "axlab", "middle");
+    }
+    BARS.txt(BARS.W-18, 26, "red mark = the true value", "axlab", "end");
+
+    let zeros = 0, err = 0;
+    for (let j = 0; j < p; j++){ if (Math.abs(b[j]) < 1e-8) zeros++; err += Math.pow(b[j]-TRUE[j], 2); }
+    byId("reg-read").innerHTML =
+      '<span class="k">method</span> ' + (mode === "ridge" ? "ridge, L2" : "LASSO, L1") + '<br>' +
+      '<span class="k">&lambda;</span> ' + fmt(lam, 1) + '<br>' +
+      '<span class="k">coefficients exactly 0</span> ' + zeros + ' of ' + p + '<br>' +
+      '<span class="k">distance to the truth</span> ' + fmt(Math.sqrt(err), 3) + '<br>' +
+      '<span class="k">x1 / x4 (near copies)</span> ' + fmt(b[0], 2) + " / " + fmt(b[3], 2);
+    const m = byId("reg-msg");
+    if (v === 0){
+      m.className = "msg bad";
+      m.innerHTML = "No penalty, so this is plain OLS. Look at x1 and x4: they are almost the same variable, and least squares has split the effect between them arbitrarily, sometimes with opposite signs. The five useless predictors also carry visible coefficients. Every one of those numbers would be reported as a finding.";
+    } else if (mode === "lasso" && zeros >= 4){
+      m.className = "msg ok";
+      m.innerHTML = zeros + " coefficients are now exactly zero, not merely small. LASSO has selected a subset, which is why it doubles as a variable selection method. Push further and it will eventually kill the true predictors too.";
+    } else if (mode === "ridge"){
+      m.className = "msg";
+      m.innerHTML = "Ridge pulls everything toward zero smoothly and keeps all eight variables. Notice what it does to the near copies x1 and x4: instead of choosing, it splits the effect evenly between them, which is the sensible answer when two variables really are interchangeable.";
+    } else {
+      m.className = "msg";
+      m.innerHTML = "Follow one grey line as you slide: it drops to zero, and then stays there. That flat segment at exactly zero is the corner of the absolute value penalty at work.";
+    }
+  }
+  byId("reg-lam").addEventListener("input", draw);
+  const seg = byId("reg-modes");
+  [].forEach.call(seg.querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){
+      [].forEach.call(seg.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on"); mode = b.dataset.m; draw();
+    });
+  });
+  draw();
+})();
+
+/* ---- robust regression, with a point you can drag ---- */
+(function robust(){
+  const P = Plot("rob-stage", {w:560, h:340, m:{l:54, r:16, t:16, b:38}});
+  P.dom([0, 100], [0, 120]);
+  const BASE = (function(){
+    const R = rng(606), a = [];
+    for (let i = 0; i < 26; i++){ const x = 5 + R()*88; a.push([x, 12 + 0.82*x + gauss(R)*7]); }
+    return a;
+  })();
+  const START = [82, 22];
+  let bad = START.slice();
+
+  function huber(pts, d){
+    let b = simpleOLS(pts.map(function(p){ return p[0]; }), pts.map(function(p){ return p[1]; }));
+    for (let it = 0; it < 40; it++){
+      const w = pts.map(function(p){
+        const e = Math.abs(p[1] - b.b0 - b.b1*p[0]);
+        return e <= d ? 1 : d/e;
+      });
+      let sw = 0, swx = 0, swy = 0, swxx = 0, swxy = 0;
+      pts.forEach(function(p, i){
+        sw += w[i]; swx += w[i]*p[0]; swy += w[i]*p[1];
+        swxx += w[i]*p[0]*p[0]; swxy += w[i]*p[0]*p[1];
+      });
+      const den = sw*swxx - swx*swx;
+      if (Math.abs(den) < 1e-9) break;
+      const nb1 = (sw*swxy - swx*swy)/den, nb0 = (swy - nb1*swx)/sw;
+      const move = Math.abs(nb0-b.b0) + Math.abs(nb1-b.b1);
+      b = {b0:nb0, b1:nb1};
+      if (move < 1e-9) break;
+    }
+    return b;
+  }
+  function draw(){
+    const all = BASE.concat([bad]);
+    const o = simpleOLS(all.map(function(p){ return p[0]; }), all.map(function(p){ return p[1]; }));
+    const clean = simpleOLS(BASE.map(function(p){ return p[0]; }), BASE.map(function(p){ return p[1]; }));
+    const h = huber(all, 9);
+    P.clear();
+    P.frame("x", "y", {});
+    P.seg(0, clean.b0, 100, clean.b0 + clean.b1*100, "fitline").setAttribute("style", "stroke:var(--amber);stroke-dasharray:3 6;stroke-width:2");
+    P.seg(0, o.b0, 100, o.b0 + o.b1*100, "fitline alt");
+    if (byId("rob-show").checked) P.seg(0, h.b0, 100, h.b0 + h.b1*100, "fitline");
+    P.dots(BASE, "a", 4.2);
+    const c = P.add("circle", {cx:P.X(bad[0]), cy:P.Y(bad[1]), r:8, class:"pt r drag"});
+    c.addEventListener("pointerdown", function(e){
+      c.setPointerCapture(e.pointerId);
+      const move = function(ev){
+        const q = P.evt(ev);
+        bad = [clamp(q.x, 1, 99), clamp(q.y, 1, 119)];
+        draw();
+      };
+      const up = function(ev){
+        c.removeEventListener("pointermove", move);
+        c.removeEventListener("pointerup", up);
+      };
+      c.addEventListener("pointermove", move);
+      c.addEventListener("pointerup", up);
+      e.preventDefault();
+    });
+    P.txt(P.X(bad[0]) + 12, P.Y(bad[1]) - 10, "drag me", "plab", "start");
+
+    byId("rob-read").innerHTML =
+      '<span class="k">OLS slope</span> ' + fmt(o.b1, 3) + '<br>' +
+      '<span class="k">Huber slope</span> ' + fmt(h.b1, 3) + '<br>' +
+      '<span class="k">slope without the red point</span> ' + fmt(clean.b1, 3) + '<br>' +
+      '<span class="k">OLS distortion</span> ' + fmt(100*Math.abs(o.b1-clean.b1)/Math.abs(clean.b1), 1) + ' %<br>' +
+      '<span class="k">Huber distortion</span> ' + fmt(100*Math.abs(h.b1-clean.b1)/Math.abs(clean.b1), 1) + ' %';
+    const m = byId("rob-msg");
+    const dist = Math.abs(o.b1-clean.b1)/Math.abs(clean.b1);
+    if (dist < 0.05){ m.className = "msg ok"; m.innerHTML = "The red point sits inside the cloud, so all three lines agree. Nothing here needs a robust method. Now drag it far away."; }
+    else if (dist < 0.25){ m.className = "msg warn"; m.innerHTML = "One point out of 27 has already moved the OLS slope by " + fmt(100*dist,0) + " percent. The robust line has barely noticed."; }
+    else { m.className = "msg bad"; m.innerHTML = "A single observation out of 27 has changed the OLS slope by " + fmt(100*dist,0) + " percent. This is what it means to say least squares has a breakdown point of zero: one point, placed far enough, can take the line anywhere."; }
+  }
+  byId("rob-reset").addEventListener("click", function(){ bad = START.slice(); draw(); });
+  byId("rob-show").addEventListener("change", draw);
+  draw();
+})();
+
+/* ---- clustered data ---- */
+(function mixed(){
+  const P = Plot("mix-stage", {w:560, h:340, m:{l:54, r:16, t:16, b:38}});
+  P.dom([0, 10], [0, 60]);
+  const COL = ["var(--teal)", "var(--amber)", "var(--violet)", "var(--rose)"];
+  const OFF = [-8, -3, 3, 8], NS = [22, 20, 21, 3];
+  const SLOPE = 2.6, ALPHA = 20;
+  let mode = "pool";
+
+  function build(n4){
+    const R = rng(818), G = [];
+    for (let g = 0; g < 4; g++){
+      const pts = [], nn = (g === 3 ? n4 : NS[g]);
+      for (let i = 0; i < nn; i++){
+        const x = 0.3 + R()*9.4;
+        pts.push([x, ALPHA + OFF[g] + SLOPE*x + gauss(R)*6.5]);
+      }
+      G.push(pts);
+    }
+    return G;
+  }
+  function draw(){
+    const n4 = +byId("mix-n").value;
+    byId("mix-nv").textContent = n4;
+    const G = build(n4);
+    const all = [].concat.apply([], G);
+    const pooled = simpleOLS(all.map(function(p){ return p[0]; }), all.map(function(p){ return p[1]; }));
+    const sep = G.map(function(g){ return simpleOLS(g.map(function(p){ return p[0]; }), g.map(function(p){ return p[1]; })); });
+    /* common slope, group intercepts, then shrink them */
+    const raw = G.map(function(g){
+      let s = 0;
+      g.forEach(function(p){ s += p[1] - pooled.b0 - pooled.b1*p[0]; });
+      return s/g.length;
+    });
+    let s2 = 0, cnt = 0;
+    G.forEach(function(g, j){
+      g.forEach(function(p){ const e = p[1] - pooled.b0 - raw[j] - pooled.b1*p[0]; s2 += e*e; cnt++; });
+    });
+    const sigma2 = s2/Math.max(1, cnt-5);
+    const tau2 = Math.max(0.5, sdev(raw)*sdev(raw));
+    const shrunk = raw.map(function(u, j){
+      const nj = G[j].length, w = nj*tau2/(nj*tau2 + sigma2);
+      return {u:u*w, w:w, n:nj};
+    });
+
+    P.clear();
+    P.frame("x", "y", {});
+    G.forEach(function(g, j){
+      g.forEach(function(p){ P.add("circle", {cx:P.X(p[0]), cy:P.Y(p[1]), r:4, fill:COL[j], stroke:COL[j], "fill-opacity":.55}); });
+    });
+    if (mode === "pool"){
+      P.seg(0, pooled.b0, 10, pooled.b0 + pooled.b1*10, "fitline");
+    } else if (mode === "sep"){
+      sep.forEach(function(f, j){
+        const L = P.seg(0, f.b0, 10, f.b0 + f.b1*10, "fitline");
+        L.setAttribute("style", "stroke:" + COL[j] + ";stroke-width:2.6");
+      });
+    } else {
+      P.seg(0, pooled.b0, 10, pooled.b0 + pooled.b1*10, "fitline ghost");
+      shrunk.forEach(function(s, j){
+        const L = P.seg(0, pooled.b0 + s.u, 10, pooled.b0 + s.u + pooled.b1*10, "fitline");
+        L.setAttribute("style", "stroke:" + COL[j] + ";stroke-width:2.6");
+      });
+    }
+    const ICC = tau2/(tau2 + sigma2);
+    byId("mix-read").innerHTML =
+      '<span class="k">common slope</span> ' + fmt(pooled.b1, 3) + '<br>' +
+      '<span class="k">group 4, own slope</span> ' + fmt(sep[3].b1, 3) + ' from ' + n4 + ' points<br>' +
+      '<span class="k">group 4 shrinkage weight w</span> ' + fmt(shrunk[3].w, 3) + '<br>' +
+      '<span class="k">group 4 offset, raw</span> ' + fmt(raw[3], 2) + '<br>' +
+      '<span class="k">group 4 offset, shrunk</span> ' + fmt(shrunk[3].u, 2) + '<br>' +
+      '<span class="k">ICC &tau;&sup2;/(&tau;&sup2;+&sigma;&sup2;)</span> ' + fmt(ICC, 2);
+    const m = byId("mix-msg");
+    if (mode === "pool"){
+      m.className = "msg bad";
+      m.innerHTML = "One line for everyone ignores the groups entirely. The line is dragged by whichever group is largest, the residuals inside a group are all on the same side, and the standard errors pretend you have " + all.length + " independent observations when you really have four clusters.";
+    } else if (mode === "sep"){
+      m.className = "msg warn";
+      m.innerHTML = "A separate fit per group is the opposite mistake. Look at the rose line with only " + n4 + " points: its slope is " + fmt(sep[3].b1, 2) + " against " + fmt(pooled.b1, 2) + " elsewhere, which is noise, not a discovery. Nothing is shared between groups, so small groups get wild estimates.";
+    } else {
+      m.className = "msg ok";
+      m.innerHTML = "Partial pooling. Group 4 keeps only " + fmt(100*shrunk[3].w, 0) + " percent of its own deviation and borrows the rest from the other groups. Raise its sample size and watch that weight climb toward 1, at which point it is trusted on its own.";
+    }
+  }
+  byId("mix-n").addEventListener("input", draw);
+  const seg = byId("mix-modes");
+  [].forEach.call(seg.querySelectorAll("button"), function(b){
+    b.addEventListener("click", function(){
+      [].forEach.call(seg.querySelectorAll("button"), function(x){ x.classList.remove("on"); });
+      b.classList.add("on"); mode = b.dataset.m; draw();
+    });
+  });
+  draw();
+})();
+
+/* ---- time ordered residuals ---- */
+(function timeser(){
+  const P = Plot("ts-stage", {w:560, h:320, m:{l:54, r:16, t:16, b:38}});
+  function draw(){
+    const rho = +byId("ts-rho").value;
+    byId("ts-rhov").textContent = fmt(rho, 2);
+    const R = rng(99), n = 70, x = [], y = [], e = [];
+    let prev = 0;
+    for (let t = 0; t < n; t++){
+      const xt = 10 + 0.35*t + gauss(R)*1.4;
+      const nu = gauss(R)*3.2;
+      prev = rho*prev + Math.sqrt(1-rho*rho)*nu;
+      x.push(xt); y.push(5 + 1.4*xt + prev*2.2); e.push(prev);
+    }
+    const f = simpleOLS(x, y);
+    const res = [];
+    for (let t = 0; t < n; t++) res.push(y[t] - f.b0 - f.b1*x[t]);
+    let num = 0, den = 0, c1 = 0, c0 = 0;
+    for (let t = 1; t < n; t++) num += Math.pow(res[t]-res[t-1], 2);
+    for (let t = 0; t < n; t++) den += res[t]*res[t];
+    for (let t = 1; t < n; t++) c1 += res[t]*res[t-1];
+    for (let t = 0; t < n; t++) c0 += res[t]*res[t];
+    const DW = num/den, rhohat = c1/c0;
+    const lim = Math.max(12, Math.ceil(Math.max.apply(null, res.map(Math.abs))));
+    P.dom([0, n], [-lim, lim]).clear();
+    P.frame("time order t", "residual", {});
+    P.add("line", {x1:P.X(0), y1:P.Y(0), x2:P.X(n), y2:P.Y(0), class:"ax"});
+    let d = "";
+    for (let t = 0; t < n; t++) d += (t ? "L" : "M") + fmt(P.X(t),1) + " " + fmt(P.Y(res[t]),1) + " ";
+    P.add("path", {d:d, fill:"none", stroke:"var(--line-strong)", "stroke-width":1.3});
+    for (let t = 0; t < n; t++){
+      P.add("circle", {cx:P.X(t), cy:P.Y(res[t]), r:3.4, fill:res[t] > 0 ? "var(--teal)" : "var(--rose)", "fill-opacity":.85});
+    }
+    let runs = 1;
+    for (let t = 1; t < n; t++) if ((res[t] > 0) !== (res[t-1] > 0)) runs++;
+    byId("ts-read").innerHTML =
+      '<span class="k">slope estimate</span> ' + fmt(f.b1, 3) + '<br>' +
+      '<span class="k">&rho;&#770; from the residuals</span> ' + fmt(rhohat, 3) + '<br>' +
+      '<span class="k">Durbin-Watson</span> ' + fmt(DW, 2) + '<br>' +
+      '<span class="k">sign changes</span> ' + runs + ' out of ' + (n-1) + '<br>' +
+      '<span class="k">SE understated by about</span> &times;' + fmt(Math.sqrt((1+rhohat)/Math.max(0.05, 1-rhohat)), 2);
+    const m = byId("ts-msg");
+    if (rho < 0.25){ m.className = "msg ok"; m.innerHTML = "Confetti. The sign flips about half the time and Durbin-Watson sits near 2. Nothing to repair, ordinary standard errors are honest here."; }
+    else if (rho < 0.7){ m.className = "msg warn"; m.innerHTML = "Waves are appearing and DW has fallen to " + fmt(DW,2) + ". The slope is still roughly unbiased, but its standard error is now too small, so the t statistic is flattering."; }
+    else { m.className = "msg bad"; m.innerHTML = "Long runs on the same side of zero, DW = " + fmt(DW,2) + ". Each new observation is mostly a repeat of the previous one, so the effective sample size is far smaller than " + n + ". Use HAC standard errors or model the dynamics."; }
+  }
+  byId("ts-rho").addEventListener("input", draw);
+  draw();
+})();
+
+/* ---- endogeneity and instrumental variables ---- */
+(function ivdemo(){
+  const P = Plot("iv-stage", {w:560, h:320, m:{l:54, r:16, t:16, b:38}});
+  const TRUE = 1.0;
+  function draw(){
+    const c = +byId("iv-c").value, s = +byId("iv-s").value;
+    byId("iv-cv").textContent = fmt(c, 2);
+    byId("iv-sv").textContent = fmt(s, 2);
+    const R = rng(1717), n = 280, x = [], y = [], z = [], A = [], Z = [], e1 = [], e2 = [];
+    for (let i = 0; i < n; i++){ A.push(gauss(R)); Z.push(gauss(R)); e1.push(gauss(R)); e2.push(gauss(R)); }
+    /* make the instrument exactly uncorrelated with the hidden factor in this sample,
+       so that what you see moving is the confounding, not a sampling accident */
+    const fz = simpleOLS(A, Z);
+    for (let i = 0; i < n; i++) Z[i] = Z[i] - fz.b0 - fz.b1*A[i];
+    for (let i = 0; i < n; i++){
+      const xi = 12 + s*Z[i] + c*A[i] + e1[i]*0.8;
+      const yi = 20 + TRUE*xi + 2.4*c*A[i] + e2[i]*0.9;
+      x.push(xi); y.push(yi); z.push(Z[i]);
+    }
+    const ols = simpleOLS(x, y);
+    const mz = mean(z), mx = mean(x), my = mean(y);
+    let czy = 0, czx = 0, czz = 0;
+    for (let i = 0; i < n; i++){ czy += (z[i]-mz)*(y[i]-my); czx += (z[i]-mz)*(x[i]-mx); czz += (z[i]-mz)*(z[i]-mz); }
+    const iv = czy/czx;
+    const iv0 = my - iv*mx;
+    /* first stage strength */
+    const fs = simpleOLS(z, x);
+    let ss = 0, st = 0;
+    for (let i = 0; i < n; i++){ const yh = fs.b0 + fs.b1*z[i]; ss += Math.pow(yh-mx, 2); st += Math.pow(x[i]-mx, 2); }
+    const R2 = ss/st, F = R2/Math.max(1e-9, 1-R2)*(n-2);
+    let su = 0;
+    for (let i = 0; i < n; i++) su += Math.pow(y[i] - iv0 - iv*x[i], 2);
+    const seIV = Math.sqrt(su/(n-2)/ss);
+
+    const xlo = Math.min.apply(null, x), xhi = Math.max.apply(null, x);
+    P.dom([xlo-0.5, xhi+0.5], [Math.min.apply(null, y)-2, Math.max.apply(null, y)+2]).clear();
+    P.frame("years of education", "wage", {});
+    P.dots(x.map(function(v, i){ return [v, y[i]]; }), "a", 3.4);
+    const midx = mean(x), midy = mean(y);
+    P.seg(P.xd[0], midy + TRUE*(P.xd[0]-midx), P.xd[1], midy + TRUE*(P.xd[1]-midx), "fitline ghost");
+    P.seg(P.xd[0], ols.b0 + ols.b1*P.xd[0], P.xd[1], ols.b0 + ols.b1*P.xd[1], "fitline alt");
+    P.seg(P.xd[0], iv0 + iv*P.xd[0], P.xd[1], iv0 + iv*P.xd[1], "fitline");
+
+    byId("iv-read").innerHTML =
+      '<span class="k">true effect</span> ' + fmt(TRUE, 3) + '<br>' +
+      '<span class="k">OLS estimate</span> ' + fmt(ols.b1, 3) + '<br>' +
+      '<span class="k">2SLS estimate</span> ' + fmt(iv, 3) + '<br>' +
+      '<span class="k">OLS bias</span> ' + fmt(ols.b1-TRUE, 3) + '<br>' +
+      '<span class="k">first stage F</span> ' + fmt(F, 1) + (F < 10 ? '  <b style="color:var(--rose)">weak</b>' : "") + '<br>' +
+      '<span class="k">standard error of 2SLS</span> &plusmn; ' + fmt(seIV, 3);
+    const m = byId("iv-msg");
+    if (c < 0.15){ m.className = "msg ok"; m.innerHTML = "No hidden factor, so OLS is unbiased and the two lines sit on top of each other. When there is nothing to fix, the instrument buys you nothing except a larger standard error."; }
+    else if (F < 10){ m.className = "msg bad"; m.innerHTML = "The instrument is weak, F = " + fmt(F,1) + ", far below the rule of thumb of 10. The estimate is still centred near the truth but its standard error has blown up to \u00b1" + fmt(seIV,3) + ", because 2SLS divides by a covariance that is nearly zero. In a real sample, where the instrument is never perfectly clean, that division also amplifies any small flaw in it, and a weak instrument can end up more biased than the OLS it was meant to repair."; }
+    else { m.className = "msg warn"; m.innerHTML = "OLS now reports " + fmt(ols.b1,2) + " where the truth is 1.00, because ability raises both education and wage and the model credits education for all of it. 2SLS recovers " + fmt(iv,2) + " by using only the variation in education that the instrument explains."; }
+  }
+  byId("iv-c").addEventListener("input", draw);
+  byId("iv-s").addEventListener("input", draw);
+  draw();
+})();
+
+texWhenReady();
+</script>
+</body>
+</html>
