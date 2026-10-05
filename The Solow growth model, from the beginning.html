@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Solow growth model, from the beginning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&family=Karla:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' },
+  startup: { typeset: true }
+};
+</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+:root {
+  --paper: #f3f4f0; --dot: #d3d7cd; --ink: #1b2326; --muted: #5a6568;
+  --line: #c8ccc2; --card: #ffffff; --card2: #f8f9f6;
+  --teal: #0f766e; --amber: #b45309; --rose: #be123c; --violet: #6d28d9;
+  --teal-soft: #d3ebe7; --amber-soft: #f5e4cf; --rose-soft: #f6d9df; --violet-soft: #e5dbf7;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Karla", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+    --line: #333d40; --card: #1b2225; --card2: #182023;
+    --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+    --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+  --line: #333d40; --card: #1b2225; --card2: #182023;
+  --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+  --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+}
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; color: var(--ink); background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  font-family: var(--sans); font-size: 18px; line-height: 1.62;
+}
+a { color: var(--teal); }
+:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+
+.wrap { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 56px; max-width: 1120px; margin: 0 auto; padding: 0 24px 96px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 28px); align-self: start; padding-top: 28px; }
+nav.toc p { font-family: var(--serif); font-size: 1.05rem; margin: 0 0 12px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: b; }
+nav.toc li { counter-increment: b; }
+nav.toc a { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: .92rem; line-height: 1.3; }
+nav.toc a::before { content: counter(b); font-family: var(--mono); font-size: .8rem; color: var(--teal); min-width: 1.2em; padding-top: 1px; }
+nav.toc a:hover, nav.toc a.on { background: var(--teal-soft); color: var(--ink); }
+
+main { min-width: 0; }
+.prose { max-width: 720px; }
+
+header.hero { padding: 64px 0 24px; }
+header.hero h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(3rem, 8vw, 5.4rem); line-height: .95; letter-spacing: -.02em; margin: 0 0 18px; font-variation-settings: "opsz" 144; }
+header.hero .lede { font-family: var(--serif); font-size: 1.35rem; line-height: 1.45; max-width: 640px; margin: 0 0 28px; color: var(--ink); }
+.hero-lab { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.hero-say { font-family: var(--serif); font-size: 1.5rem; line-height: 1.35; margin: 0 0 14px; }
+.hero-say b { color: var(--teal); font-weight: 600; }
+.hero-say b.up { color: var(--rose); }
+.hint { color: var(--muted); font-size: .95rem; margin: 6px 0 0; }
+
+section.block { padding-top: 56px; }
+section.block > h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.1; margin: 0 0 8px; letter-spacing: -.01em; }
+section.block > .sub { color: var(--muted); margin: 0 0 18px; font-size: 1.02rem; }
+h3 { font-family: var(--serif); font-weight: 600; font-size: 1.22rem; margin: 30px 0 8px; }
+p { margin: 0 0 14px; }
+.math { overflow-x: auto; padding: 4px 0; margin: 6px 0 14px; }
+mjx-container[display="true"] { margin: .6em 0 !important; }
+
+.lab { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 14px 0 18px; }
+.lab svg { display: block; width: 100%; height: auto; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin-top: 14px; }
+.ctl label { display: flex; justify-content: space-between; gap: 10px; font-size: .92rem; color: var(--muted); }
+.ctl label output { font-family: var(--mono); color: var(--ink); font-size: .88rem; }
+input[type=range] { width: 100%; accent-color: var(--teal); margin: 6px 0 0; }
+.readout { font-family: var(--mono); font-size: .9rem; background: var(--card2); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; margin-top: 14px; overflow-x: auto; line-height: 1.7; }
+.readout .k { color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+button.act { font: 600 .92rem var(--sans); color: var(--ink); background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+button.act:hover { border-color: var(--teal); }
+button.act.primary { background: var(--teal); border-color: var(--teal); color: var(--card); }
+
+table.t { border-collapse: collapse; width: 100%; font-size: .95rem; margin: 10px 0 18px; }
+table.t th, table.t td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-weight: 700; color: var(--muted); font-size: .88rem; }
+table.t td.n { font-family: var(--mono); font-size: .88rem; white-space: nowrap; }
+.tw { overflow-x: auto; }
+
+.example { border-left: 4px solid var(--amber); background: var(--amber-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; }
+.example p:last-child { margin-bottom: 0; }
+.aside { border-left: 4px solid var(--violet); background: var(--violet-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: .97rem; }
+
+.check { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 16px 18px; margin: 14px 0 0; }
+.check .q { font-weight: 600; margin-bottom: 10px; }
+.check .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.check .opts button { font: 1rem var(--sans); text-align: left; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); cursor: pointer; }
+.check .opts button:hover { border-color: var(--teal); }
+.check .opts button.right { background: var(--teal-soft); border-color: var(--teal); }
+.check .opts button.wrong { background: var(--rose-soft); border-color: var(--rose); }
+.check .fb { margin-top: 10px; font-size: .97rem; }
+.check .fb .verdict { font-weight: 700; margin-right: 4px; }
+
+.people { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 520px; }
+.people button { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--teal); background: var(--teal); cursor: pointer; padding: 0; position: relative; }
+.people button[aria-pressed="false"] { background: transparent; border-color: var(--rose); border-style: dashed; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: .9rem; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+.years { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.years .ctl label { flex-direction: column; gap: 0; }
+.cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cards2 .lab { margin: 0; }
+.big { font-family: var(--serif); font-size: 2rem; line-height: 1.1; margin: 10px 0 2px; }
+.big small { font-family: var(--sans); font-size: .95rem; color: var(--muted); }
+
+/* svg */
+.grid { stroke: var(--line); stroke-width: 1; }
+.zero { stroke: var(--muted); stroke-width: 1.2; }
+.tick { fill: var(--muted); font: 11px var(--mono); }
+.axl { fill: var(--muted); font: 12px var(--sans); }
+.lbl { font: 600 12px var(--sans); }
+.s-teal { stroke: var(--teal); } .f-teal { fill: var(--teal); }
+.s-amber { stroke: var(--amber); } .f-amber { fill: var(--amber); }
+.s-rose { stroke: var(--rose); } .f-rose { fill: var(--rose); }
+.s-violet { stroke: var(--violet); } .f-violet { fill: var(--violet); }
+.s-ink { stroke: var(--ink); } .f-ink { fill: var(--ink); }
+.f-teal-soft { fill: var(--teal-soft); } .f-rose-soft { fill: var(--rose-soft); }
+.f-amber-soft { fill: var(--amber-soft); } .f-violet-soft { fill: var(--violet-soft); }
+.f-card { fill: var(--card); }
+.dash { stroke-dasharray: 5 4; }
+.halo { stroke: var(--card); stroke-width: 4px; paint-order: stroke; stroke-linejoin: round; }
+
+footer { margin-top: 72px; color: var(--muted); font-size: .9rem; }
+
+@media (max-width: 880px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 16px 72px; }
+  nav.toc { position: sticky; top: 0; z-index: 5; padding: calc(env(safe-area-inset-top, 0px) + 8px) 0 8px; margin: 0 -16px; background: var(--paper); border-bottom: 1px solid var(--line); }
+  :root { padding-top: 0; }
+  nav.toc p { display: none; }
+  nav.toc ol { display: flex; overflow-x: auto; gap: 4px; padding: 0 12px; }
+  nav.toc a { white-space: nowrap; }
+  .hero-lab { grid-template-columns: minmax(0, 1fr); }
+  header.hero { padding-top: 36px; }
+  .years { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body { font-size: 17px; }
+}
+</style>
+<style>
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Lecture sections">
+  <p>The Solow model</p>
+  <ol>
+    <li><a href="#b1">Why growth matters</a></li>
+    <li><a href="#b2">Producing output</a></li>
+    <li><a href="#b3">Saving and wear</a></li>
+    <li><a href="#b4">The steady state</a></li>
+    <li><a href="#b5">How much to save</a></li>
+    <li><a href="#b6">Population growth</a></li>
+    <li><a href="#b7">Technology</a></li>
+    <li><a href="#b8">Growth accounting</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>The Solow growth model</h1>
+  <p class="lede">Why are some countries rich and others poor, and why do rich countries keep getting richer? In 1956 Robert Solow built a model so simple it fits on one line, and it is still where every course on economic growth begins.</p>
+  <div class="lab hero-lab">
+    <div>
+      <p class="hero-say" id="heroSay"></p>
+      <div class="ctl">
+        <label for="heroS">Share of income saved and invested <output id="heroSo"></output></label>
+        <input type="range" id="heroS" min="0.05" max="0.6" step="0.01" value="0.25">
+      </div>
+      <p class="hint">Every economy starts with the same small amount of capital per worker. Move the slider and watch where output per worker settles.</p>
+    </div>
+    <svg id="heroSvg" role="img" aria-label="Output per worker over time for a chosen saving rate"></svg>
+  </div>
+</header>
+
+<!-- 1 -->
+<section class="block prose" id="b1">
+  <h2>Why growth matters</h2>
+  <p class="sub">Small differences in growth rates become enormous differences in living standards.</p>
+  <h3>The idea</h3>
+  <p>Growth compounds, like interest in a savings account. An economy that grows 2% a year does not add the same amount each year: it adds 2% of an ever larger total. Over decades, a difference of one or two percentage points separates countries that stay poor from countries that become rich.</p>
+  <p>Business cycles, the topic of the IS-LM and Okun's law lectures, move output a few percent around its trend. Growth theory is about the trend itself: what determines potential output in the long run.</p>
+  <h3>The formulas</h3>
+  <p>With a constant growth rate \(g\) (as a decimal), output after \(t\) years is</p>
+  <div class="math">\[ Y_t = Y_0\,(1 + g)^t. \]</div>
+  <p>The doubling time solves \((1 + g)^t = 2\), so \(t = \ln 2 / \ln(1 + g)\). For small growth rates this is close to the rule of 70: divide 70 by the growth rate in percent.</p>
+  <div class="math">\[ t_{\text{double}} \approx \frac{70}{g \times 100}. \]</div>
+  <h3>Try it</h3>
+  <p>Two countries start with the same income per person. Set their growth rates.</p>
+  <div class="lab">
+    <svg id="cgSvg" role="img" aria-label="Income paths of two countries"></svg>
+    <div class="legend"><span><i style="background:var(--teal)"></i>Country A</span><span><i style="background:var(--amber)"></i>Country B</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="cgA">Growth of A <output id="cgAo"></output></label><input type="range" id="cgA" min="0" max="8" step="0.25" value="2"></div>
+      <div class="ctl"><label for="cgB">Growth of B <output id="cgBo"></output></label><input type="range" id="cgB" min="0" max="8" step="0.25" value="4"></div>
+      <div class="ctl"><label for="cgN">Years <output id="cgNo"></output></label><input type="range" id="cgN" min="10" max="100" step="5" value="50"></div>
+    </div>
+    <div class="readout" id="cgOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>At 2% a year, income doubles in about \(70/2 = 35\) years. At 7%, it doubles in 10 years, so it is about \(2^{3.5} \approx 11\) times higher after 35 years. That is roughly the story of the fastest-growing East Asian economies after 1960.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">An economy grows 3.5% a year. Roughly how long until income doubles?</div>
+    <div class="opts"><button data-k="a">35 years</button><button data-k="b">20 years</button><button data-k="c">10 years</button><button data-k="d">3.5 years</button></div>
+    <div class="fb" hidden><span class="verdict"></span>70 / 3.5 = 20 years.</div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="block prose" id="b2">
+  <h2>Producing output</h2>
+  <p class="sub">Capital helps, but each extra machine helps a little less.</p>
+  <h3>The idea</h3>
+  <p>Output is made with capital (machines, buildings, roads) and labour (workers). Give a worker a better tool and she produces more. Give her a second tool and she produces more again, but not as much more: she can only use so many at once. This is diminishing returns to capital, and it drives almost everything in the Solow model.</p>
+  <h3>The formula</h3>
+  <p>The standard choice is the Cobb-Douglas production function, with capital \(K\), labour \(L\) and a number \(\alpha\) between 0 and 1:</p>
+  <div class="math">\[ Y = K^{\alpha} L^{1-\alpha}. \]</div>
+  <p>Doubling both capital and labour doubles output (constant returns to scale). That lets us write everything per worker. With \(k = K/L\) (capital per worker) and \(y = Y/L\) (output per worker):</p>
+  <div class="math">\[ y = k^{\alpha}. \]</div>
+  <p>The extra output from one more unit of capital, the marginal product of capital, is \(\alpha k^{\alpha - 1}\), which shrinks as \(k\) grows. In data, \(\alpha\) is close to the share of income paid to capital, about one third in most economies.</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="pfSvg" role="img" aria-label="Production function per worker"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="pfA">Capital share \(\alpha\) <output id="pfAo"></output></label><input type="range" id="pfA" min="0.2" max="0.8" step="0.01" value="0.33"></div>
+      <div class="ctl"><label for="pfK">Capital per worker \(k\) <output id="pfKo"></output></label><input type="range" id="pfK" min="0.5" max="20" step="0.5" value="4"></div>
+    </div>
+    <div class="readout" id="pfOut"></div>
+  </div>
+  <p>The dashed line is the slope at your point: the marginal product. Slide \(k\) to the right and watch it flatten.</p>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(\alpha = 1/3\), going from \(k = 1\) to \(k = 8\) (eight times more capital per worker) raises output per worker from 1 to \(8^{1/3} = 2\). Eight times the capital only doubles output.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">With \(y = k^{1/3}\), capital per worker rises from 8 to 27. What happens to output per worker?</div>
+    <div class="opts"><button data-k="a">It rises from 8 to 27</button><button data-k="b">It rises by 19</button><button data-k="c">It rises from 2 to 3</button><button data-k="d">It stays the same</button></div>
+    <div class="fb" hidden><span class="verdict"></span>The cube root of 8 is 2 and the cube root of 27 is 3.</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="block prose" id="b3">
+  <h2>Saving and wear</h2>
+  <p class="sub">Capital grows when new investment exceeds what wears out.</p>
+  <h3>The idea</h3>
+  <p>Each year, the economy saves a fixed share \(s\) of its income, and those savings are invested in new capital. At the same time, a share \(\delta\) (delta) of existing capital wears out or becomes obsolete: machines break, buildings age. This is depreciation.</p>
+  <p>Capital per worker rises if investment is larger than depreciation, and falls if it is smaller. Because of diminishing returns, investment grows more slowly than depreciation as capital accumulates. So eventually the two meet.</p>
+  <h3>The formula</h3>
+  <p>For now, assume no population growth and no technological progress. The change in capital per worker is</p>
+  <div class="math">\[ \Delta k = s\,k^{\alpha} - \delta\,k. \]</div>
+  <p>The first term is investment per worker; the second is depreciation per worker. This one line is the Solow model.</p>
+  <h3>Try it</h3>
+  <p>The classic Solow diagram. The teal curve is investment, the rose line is depreciation. Pick a level of capital to see which one wins.</p>
+  <div class="lab">
+    <svg id="sdSvg" role="img" aria-label="Solow diagram"></svg>
+    <div class="legend"><span><i style="background:var(--line)"></i>Output \(k^\alpha\)</span><span><i style="background:var(--teal)"></i>Investment \(s k^\alpha\)</span><span><i style="background:var(--rose)"></i>Depreciation \(\delta k\)</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="sdS">Saving rate \(s\) <output id="sdSo"></output></label><input type="range" id="sdS" min="0.05" max="0.6" step="0.01" value="0.25"></div>
+      <div class="ctl"><label for="sdD">Depreciation rate \(\delta\) <output id="sdDo"></output></label><input type="range" id="sdD" min="0.02" max="0.12" step="0.005" value="0.05"></div>
+      <div class="ctl"><label for="sdK">Capital per worker \(k\) <output id="sdKo"></output></label><input type="range" id="sdK" min="0.5" max="30" step="0.5" value="4"></div>
+    </div>
+    <div class="readout" id="sdOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(s = 0.25\), \(\delta = 0.05\), \(\alpha = 1/3\) and \(k = 8\): investment is \(0.25 \times 2 = 0.5\), depreciation is \(0.05 \times 8 = 0.4\). Capital per worker grows by 0.1 this year.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">Investment per worker is 0.6 and depreciation per worker is 0.9. What happens to capital per worker?</div>
+    <div class="opts"><button data-k="a">It falls by 0.3</button><button data-k="b">It rises by 0.3</button><button data-k="c">It rises by 1.5</button><button data-k="d">It stays the same</button></div>
+    <div class="fb" hidden><span class="verdict"></span>New capital does not even replace what wears out, so the stock shrinks by 0.9 - 0.6 = 0.3.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="block prose" id="b4">
+  <h2>The steady state</h2>
+  <p class="sub">Where the economy ends up, and how fast it gets there.</p>
+  <h3>The idea</h3>
+  <p>Where investment equals depreciation, capital per worker stops changing. This is the steady state. From any starting point the economy moves towards it: a poor economy with little capital grows fast, because each new machine adds a lot; a rich economy close to its steady state grows slowly.</p>
+  <p>This gives one of the model's most famous predictions: convergence. Countries with similar saving rates and technology should grow faster when they are poorer, catching up with richer ones.</p>
+  <h3>The formula</h3>
+  <p>Set \(\Delta k = 0\), so \(s\,k^{\alpha} = \delta\,k\), and solve:</p>
+  <div class="math">\[ k^* = \left(\frac{s}{\delta}\right)^{\frac{1}{1-\alpha}}, \qquad y^* = \left(\frac{s}{\delta}\right)^{\frac{\alpha}{1-\alpha}}. \]</div>
+  <p>Near the steady state, the gap closes at a rate of about \(\lambda = (1 - \alpha)\,\delta\) per year, so half the gap is gone after \(\ln 2 / \lambda\) years.</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <div class="pair">
+      <svg id="ssY" role="img" aria-label="Output per worker over time"></svg>
+      <svg id="ssG" role="img" aria-label="Growth rate over time"></svg>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="ssK0">Starting capital per worker <output id="ssK0o"></output></label><input type="range" id="ssK0" min="0.5" max="25" step="0.5" value="1"></div>
+      <div class="ctl"><label for="ssS">Saving rate \(s\) <output id="ssSo"></output></label><input type="range" id="ssS" min="0.05" max="0.6" step="0.01" value="0.25"></div>
+    </div>
+    <div class="readout" id="ssOut"></div>
+  </div>
+  <p>Start above the steady state (move the starting capital to 20): the economy shrinks towards it, because it cannot afford to maintain so much capital.</p>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(s = 0.25\), \(\delta = 0.05\) and \(\alpha = 1/3\): \(s/\delta = 5\), so \(k^* = 5^{1.5} \approx 11.2\) and \(y^* = 5^{0.5} \approx 2.24\). The convergence rate is \((2/3) \times 0.05 \approx 3.3\%\) a year, a half-life of about 21 years.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="d">
+    <div class="q">Two countries have the same saving rate, depreciation and technology. Country A has much less capital per worker. What does the model predict?</div>
+    <div class="opts"><button data-k="a">A stays poorer forever</button><button data-k="b">Both grow at the same rate</button><button data-k="c">B grows faster</button><button data-k="d">A grows faster and catches up</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Same parameters means the same steady state. A is further below it, so its capital earns higher returns and it grows faster.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="block prose" id="b5">
+  <h2>How much to save</h2>
+  <p class="sub">Saving raises the level of income, not its long-run growth, and saving too much is possible.</p>
+  <h3>The idea</h3>
+  <p>A higher saving rate means more capital in the steady state, so more output per worker. But growth only speeds up temporarily, while the economy moves to its new steady state. Once there, growth is zero again in this version of the model. Saving affects the level of income, not its long-run growth rate.</p>
+  <p>And what people care about is consumption, not output. Saving everything would give huge output and nothing to consume. Saving nothing gives no capital at all. Somewhere in between, steady-state consumption is as high as possible. That saving rate is called the golden rule.</p>
+  <h3>The formula</h3>
+  <p>Steady-state consumption per worker is output minus what must be invested to keep capital constant:</p>
+  <div class="math">\[ c^* = (1 - s)\,y^* = y^* - \delta\,k^*. \]</div>
+  <p>Maximising over \(s\) gives a neat answer for Cobb-Douglas production: the golden-rule saving rate equals the capital share, \(s_{\text{gold}} = \alpha\).</p>
+  <h3>Try it</h3>
+  <p>Left: steady-state consumption for every saving rate. Right: what happens over time if the saving rate switches from 25% to your choice in year 10.</p>
+  <div class="lab">
+    <div class="pair">
+      <svg id="grC" role="img" aria-label="Steady-state consumption against saving rate"></svg>
+      <svg id="grT" role="img" aria-label="Output and consumption after a change in saving"></svg>
+    </div>
+    <div class="legend"><span><i style="background:var(--teal)"></i>Output per worker</span><span><i style="background:var(--amber)"></i>Consumption per worker</span></div>
+    <div class="controls"><div class="ctl"><label for="grS">New saving rate <output id="grSo"></output></label><input type="range" id="grS" min="0.05" max="0.8" step="0.01" value="0.33"></div></div>
+    <div class="readout" id="grOut"></div>
+  </div>
+  <p>Raise saving from 25% towards the golden rule: consumption drops at first, because people save more, then rises above its old level. Push saving above the golden rule and consumption ends up lower in the long run, even though output is higher.</p>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(\alpha = 1/3\), \(\delta = 0.05\): at \(s = 0.25\), \(c^* = 0.75 \times 2.24 \approx 1.68\). At the golden rule \(s = 1/3\), \(y^* = (6.67)^{0.5} \approx 2.58\) and \(c^* = (2/3) \times 2.58 \approx 1.72\). At \(s = 0.5\), \(y^* = 10^{0.5} \approx 3.16\) but \(c^* \approx 1.58\).</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">In the long run of this model (no technological progress), a permanent rise in the saving rate changes...</div>
+    <div class="opts"><button data-k="a">the long-run growth rate</button><button data-k="b">the level of output per worker</button><button data-k="c">nothing</button><button data-k="d">the depreciation rate</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Growth rises only during the transition. In the new steady state, output per worker is higher but no longer growing.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="block prose" id="b6">
+  <h2>Population growth</h2>
+  <p class="sub">More workers each year means capital is spread more thinly.</p>
+  <h3>The idea</h3>
+  <p>If the number of workers grows at rate \(n\), new workers need machines too. Part of each year's investment just equips them, without raising capital per worker. Population growth works like extra depreciation for capital per worker.</p>
+  <p>The model therefore predicts that, other things equal, countries with faster population growth have lower income per worker in the steady state. Total output still grows, at rate \(n\), but output per worker does not.</p>
+  <h3>The formula</h3>
+  <div class="math">\[ \Delta k = s\,k^{\alpha} - (n + \delta)\,k, \qquad k^* = \left(\frac{s}{n + \delta}\right)^{\frac{1}{1-\alpha}}. \]</div>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="ngSvg" role="img" aria-label="Solow diagram with population growth"></svg>
+    <div class="legend"><span><i style="background:var(--teal)"></i>Investment \(s k^\alpha\)</span><span><i style="background:var(--rose)"></i>Break-even \((n + \delta)k\)</span><span><i style="background:var(--muted)"></i>Without population growth</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="ngN">Population growth \(n\) <output id="ngNo"></output></label><input type="range" id="ngN" min="0" max="0.04" step="0.0025" value="0.02"></div>
+      <div class="ctl"><label for="ngS">Saving rate \(s\) <output id="ngSo"></output></label><input type="range" id="ngS" min="0.05" max="0.6" step="0.01" value="0.25"></div>
+    </div>
+    <div class="readout" id="ngOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(s = 0.25\), \(\delta = 0.05\) and \(n = 0.02\): \(s/(n + \delta) = 3.57\), so \(y^* = 3.57^{0.5} \approx 1.89\), compared with 2.24 when \(n = 0\). Faster population growth lowered steady-state output per worker by about 15%.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">Population growth rises. In the new steady state, what grows faster?</div>
+    <div class="opts"><button data-k="a">Output per worker</button><button data-k="b">Capital per worker</button><button data-k="c">Total output</button><button data-k="d">Nothing</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Per-worker values are constant in the steady state, so total output grows at the rate of population growth, now faster.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="block prose" id="b7">
+  <h2>Technology</h2>
+  <p class="sub">The only source of lasting growth in income per person.</p>
+  <h3>The idea</h3>
+  <p>So far, output per worker stops growing in the steady state. Yet in rich countries it has grown about 2% a year for over a century. The model's answer: technological progress. Better knowledge, methods and organisation make each worker more productive with the same capital.</p>
+  <p>With technology improving at rate \(g\), the economy reaches a balanced growth path where capital per worker and output per worker both grow at exactly \(g\). Saving and population growth still decide the level of that path, but only technology decides its slope.</p>
+  <h3>The formula</h3>
+  <p>Let technology \(A\) multiply labour, \(Y = K^{\alpha}(AL)^{1-\alpha}\), with \(A\) growing at rate \(g\). Measure everything per effective worker, \(\hat k = K/(AL)\) and \(\hat y = Y/(AL) = \hat k^{\alpha}\). Then</p>
+  <div class="math">\[ \Delta \hat k = s\,\hat k^{\alpha} - (n + g + \delta)\,\hat k, \qquad \hat k^* = \left(\frac{s}{n + g + \delta}\right)^{\frac{1}{1-\alpha}}. \]</div>
+  <p>Output per worker is \(y = A\,\hat y\). In the steady state \(\hat y\) is constant, so \(y\) grows at the rate of \(A\), which is \(g\).</p>
+  <h3>Try it</h3>
+  <p>The chart uses a logarithmic scale, so constant growth appears as a straight line. The economy starts below its balanced growth path.</p>
+  <div class="lab">
+    <svg id="tgSvg" role="img" aria-label="Output per worker with technological progress on a log scale"></svg>
+    <div class="legend"><span><i style="background:var(--teal)"></i>Output per worker</span><span><i style="background:var(--muted)"></i>Balanced growth path</span><span><i style="background:var(--rose)"></i>No technological progress</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="tgG">Technology growth \(g\) <output id="tgGo"></output></label><input type="range" id="tgG" min="0" max="0.04" step="0.0025" value="0.02"></div>
+      <div class="ctl"><label for="tgS">Saving rate \(s\) <output id="tgSo"></output></label><input type="range" id="tgS" min="0.05" max="0.6" step="0.01" value="0.25"></div>
+    </div>
+    <div class="readout" id="tgOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(g = 2\%\), output per worker doubles roughly every 35 years along the balanced growth path, whatever the saving rate. Raising the saving rate shifts the straight line up; it does not tilt it.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">On the balanced growth path, what is the growth rate of total output?</div>
+    <div class="opts"><button data-k="a">\(n + g\)</button><button data-k="b">\(g\)</button><button data-k="c">\(s\)</button><button data-k="d">0</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Output per worker grows at g and the number of workers grows at n, so total output grows at about n + g.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="block prose" id="b8">
+  <h2>Growth accounting</h2>
+  <p class="sub">Splitting actual growth into capital, labour and the part nobody can measure directly.</p>
+  <h3>The idea</h3>
+  <p>Solow also used his production function on data. Output grows because capital grows, because labour grows, and because of everything else that makes inputs more productive. The first two can be measured. The third is what is left over: the Solow residual, also called TFP (Total Factor Productivity) growth. Solow found that in the United States most growth in output per hour came from this residual, not from more capital.</p>
+  <h3>The formula</h3>
+  <p>Taking growth rates of \(Y = A K^{\alpha} L^{1-\alpha}\) (here \(A\) multiplies everything, the usual convention for growth accounting):</p>
+  <div class="math">\[ g_Y = \alpha\,g_K + (1 - \alpha)\,g_L + g_A \quad\Longrightarrow\quad g_A = g_Y - \alpha\,g_K - (1 - \alpha)\,g_L. \]</div>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="gaSvg" role="img" aria-label="Growth accounting decomposition"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="gaY">Output growth \(g_Y\) <output id="gaYo"></output></label><input type="range" id="gaY" min="0" max="10" step="0.1" value="3"></div>
+      <div class="ctl"><label for="gaK">Capital growth \(g_K\) <output id="gaKo"></output></label><input type="range" id="gaK" min="0" max="12" step="0.1" value="4"></div>
+      <div class="ctl"><label for="gaL">Labour growth \(g_L\) <output id="gaLo"></output></label><input type="range" id="gaL" min="-2" max="5" step="0.1" value="1"></div>
+      <div class="ctl"><label for="gaA">Capital share \(\alpha\) <output id="gaAo"></output></label><input type="range" id="gaA" min="0.2" max="0.6" step="0.01" value="0.33"></div>
+    </div>
+    <div class="readout" id="gaOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>Output grows 3%, capital 4%, labour 1%, with \(\alpha = 1/3\). Capital contributes \(4/3 \approx 1.33\) points and labour \(2/3 \approx 0.67\) points. The residual is \(3 - 1.33 - 0.67 = 1.0\) point: a third of growth is unexplained by inputs.</p></div>
+  <h3>What the model gets right and wrong</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Prediction</th><th>Evidence</th></tr>
+    <tr><td>Convergence among similar economies</td><td>Holds well among regions of a country and among rich countries (conditional convergence). Fails across all countries, because steady states differ.</td></tr>
+    <tr><td>Higher saving, higher income level</td><td>Supported: high-investment economies tend to be richer.</td></tr>
+    <tr><td>Faster population growth, lower income per worker</td><td>Broadly supported across countries.</td></tr>
+    <tr><td>Long-run growth comes from technology</td><td>Supported, but the model takes technology as given. Endogenous growth models (Romer, 1990) explain it through research and ideas.</td></tr>
+    <tr><td>Capital explains income differences</td><td>Only partly. Adding human capital (education) helps a lot, as Mankiw, Romer and Weil (1992) showed, but large TFP differences remain.</td></tr>
+  </table></div>
+  <div class="aside">Link to the other lectures: the balanced growth path is what statistics offices and central banks call potential output, the \(Y^*\) in Okun's law and the natural output \(Y_n\) in AD-AS. Business cycles are fluctuations around this path.</div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="d">
+    <div class="q">Output grows 4%, capital 6%, labour 0%, with \(\alpha = 0.5\). What is TFP growth?</div>
+    <div class="opts"><button data-k="a">4%</button><button data-k="b">-2%</button><button data-k="c">3%</button><button data-k="d">1%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>4 - 0.5 x 6 - 0.5 x 0 = 1%.</div>
+  </div>
+  <h3>Summary</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Piece</th><th>Equation</th><th>Message</th></tr>
+    <tr><td>Production</td><td>\(y = k^{\alpha}\)</td><td>Diminishing returns to capital</td></tr>
+    <tr><td>Capital accumulation</td><td>\(\Delta k = s k^{\alpha} - (n + \delta) k\)</td><td>Investment versus break-even investment</td></tr>
+    <tr><td>Steady state</td><td>\(k^* = (s/(n + \delta))^{1/(1-\alpha)}\)</td><td>Saving and population set the level</td></tr>
+    <tr><td>Golden rule</td><td>\(s_{\text{gold}} = \alpha\)</td><td>Saving that maximises steady-state consumption</td></tr>
+    <tr><td>Technology</td><td>\(y\) grows at \(g\) on the balanced growth path</td><td>Only technology sustains growth per person</td></tr>
+    <tr><td>Growth accounting</td><td>\(g_A = g_Y - \alpha g_K - (1 - \alpha) g_L\)</td><td>TFP is the residual</td></tr>
+  </table></div>
+</section>
+
+<footer class="prose">
+  <p>References: Solow, R. (1956), Quarterly Journal of Economics; Solow, R. (1957), Review of Economics and Statistics; Mankiw, N. G., Romer, D. and Weil, D. (1992), Quarterly Journal of Economics; Romer, D., Advanced Macroeconomics, chapter 1. Unless a slider changes them, the parameters are \(\alpha = 1/3\) and \(\delta = 0.05\). Every chart is computed live in your browser.</p>
+</footer>
+</main>
+</div>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  function el(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  const f = (v, d = 1) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d);
+  const sg = (v, d = 1) => (v > 1e-9 ? '+' : '') + f(v, d);
+
+  // Generic frame: returns scales
+  function frame(svg, o) {
+    svg.innerHTML = '';
+    const W = o.W || 640, H = o.H || 300;
+    const p = Object.assign({ l: 50, r: 18, t: 14, b: 42 }, o.pad || {});
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const X = v => p.l + (v - o.x0) / (o.x1 - o.x0) * (W - p.l - p.r);
+    const Y = v => H - p.b - (v - o.y0) / (o.y1 - o.y0) * (H - p.t - p.b);
+    (o.xt || []).forEach(t => {
+      el('line', { x1: X(t), x2: X(t), y1: p.t, y2: H - p.b, class: 'grid' }, svg);
+      el('text', { x: X(t), y: H - p.b + 16, class: 'tick', 'text-anchor': 'middle' }, svg, (o.xf || String)(t));
+    });
+    (o.yt || []).forEach(t => {
+      el('line', { x1: p.l, x2: W - p.r, y1: Y(t), y2: Y(t), class: 'grid' }, svg);
+      el('text', { x: p.l - 7, y: Y(t) + 4, class: 'tick', 'text-anchor': 'end' }, svg, (o.yf || String)(t));
+    });
+    if (o.zeroX && o.y0 < 0 && o.y1 > 0) el('line', { x1: p.l, x2: W - p.r, y1: Y(0), y2: Y(0), class: 'zero' }, svg);
+    if (o.zeroY && o.x0 < 0 && o.x1 > 0) el('line', { x1: X(0), x2: X(0), y1: p.t, y2: H - p.b, class: 'zero' }, svg);
+    if (o.xl) el('text', { x: (p.l + W - p.r) / 2, y: H - 6, class: 'axl', 'text-anchor': 'middle' }, svg, o.xl);
+    if (o.yl) el('text', { x: 14, y: (p.t + H - p.b) / 2, class: 'axl', 'text-anchor': 'middle', transform: `rotate(-90 14 ${(p.t + H - p.b) / 2})` }, svg, o.yl);
+    return { X, Y, W, H, p };
+  }
+  const path = pts => 'M' + pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join('L');
+  const pct = t => t + '%';
+
+    const range = (a, b, st) => { const r = []; for (let x = a; x <= b + 1e-9; x += st) r.push(x); return r; };
+  const AL = 1 / 3, DL = 0.05;
+  function curve(svg, s, fn, x0, x1, y0, y1, cls, w, dash, extra) {
+    const pts = range(x0, x1, (x1 - x0) / 300).map(x => [x, fn(x)]).filter(q => q[1] >= y0 && q[1] <= y1 && isFinite(q[1]));
+    if (pts.length > 1) el('path', Object.assign({ d: path(pts.map(q => [s.X(q[0]), s.Y(q[1])])), fill: 'none', class: cls + (dash ? ' dash' : ''), 'stroke-width': w }, extra || {}), svg);
+  }
+  const simK = (k0, s, T, n = 0, d = DL, a = AL, sw) => { const k = [k0]; for (let t = 1; t <= T; t++) { const ss = sw ? sw(t) : s; k.push(k[t - 1] + ss * Math.pow(k[t - 1], a) - (n + d) * k[t - 1]); } return k; };
+  const niceTop = v => { const steps = [1, 2, 2.5, 5, 10]; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of steps) if (m * p >= v) return m * p; return 10 * p; };
+
+  /* hero */
+  function hero() {
+    const s = +$('heroS').value; $('heroSo').textContent = Math.round(s * 100) + '%';
+    const ks = simK(1, s, 120), ys = ks.map(k => Math.pow(k, AL)), ystar = Math.pow(s / DL, AL / (1 - AL));
+    const svg = $('heroSvg');
+    const sc = frame(svg, { W: 420, H: 300, x0: 0, x1: 120, y0: 0, y1: 4, xt: [0, 30, 60, 90, 120], yt: [0, 1, 2, 3, 4], xl: 'Years', yl: 'Output per worker' });
+    el('line', { x1: sc.X(0), x2: sc.X(120), y1: sc.Y(ystar), y2: sc.Y(ystar), stroke: 'var(--muted)', class: 'dash', 'stroke-width': 1.3 }, svg);
+    el('text', { x: sc.X(118), y: sc.Y(ystar) - 7, class: 'lbl halo', fill: 'var(--muted)', 'text-anchor': 'end' }, svg, 'steady state');
+    el('path', { d: path(ys.map((y, t) => [sc.X(t), sc.Y(Math.min(4, y))])), fill: 'none', class: 's-teal', 'stroke-width': 3 }, svg);
+    $('heroSay').innerHTML = `Saving <b>${Math.round(s * 100)}%</b> of income, output per worker settles at <b>${f(ystar, 2)}</b>, ${f(ystar, 1)} times its starting level. Saving more raises the level, not the long-run growth rate.`;
+  }
+  $('heroS').addEventListener('input', hero);
+
+  /* compounding */
+  function cg() {
+    const a = +$('cgA').value / 100, b = +$('cgB').value / 100, N = +$('cgN').value;
+    $('cgAo').textContent = f(a * 100, 2) + '%'; $('cgBo').textContent = f(b * 100, 2) + '%'; $('cgNo').textContent = N;
+    const top = niceTop(Math.max(Math.pow(1 + a, N), Math.pow(1 + b, N)) * 100);
+    const svg = $('cgSvg');
+    const s = frame(svg, { W: 640, H: 280, x0: 0, x1: N, y0: 0, y1: top, xt: range(0, N, N > 50 ? 20 : 10), yt: range(0, top, top / 5), yf: t => f(t, 0), xl: 'Years', yl: 'Income (start = 100)', pad: { l: 60 } });
+    curve(svg, s, t => 100 * Math.pow(1 + a, t), 0, N, 0, top, 's-teal', 3);
+    curve(svg, s, t => 100 * Math.pow(1 + b, t), 0, N, 0, top, 's-amber', 3);
+    const dt = g => g > 0 ? `${f(Math.log(2) / Math.log(1 + g), 1)} years (rule of 70: ${f(70 / (g * 100), 1)})` : 'never';
+    $('cgOut').innerHTML = `<span class="k">after ${N} years</span>: A = ${f(100 * Math.pow(1 + a, N), 0)}, B = ${f(100 * Math.pow(1 + b, N), 0)}; B is <b>${f(Math.pow((1 + b) / (1 + a), N), 2)}</b> times richer than A<br>` +
+      `<span class="k">doubling time</span>: A ${dt(a)}; B ${dt(b)}`;
+  }
+  ['cgA', 'cgB', 'cgN'].forEach(id => $(id).addEventListener('input', cg));
+
+  /* production */
+  function pf() {
+    const a = +$('pfA').value, k = +$('pfK').value; $('pfAo').textContent = f(a, 2); $('pfKo').textContent = f(k, 1);
+    const y = Math.pow(k, a), mpk = a * Math.pow(k, a - 1);
+    const top = Math.max(3, Math.ceil(Math.pow(20, a)));
+    const svg = $('pfSvg');
+    const s = frame(svg, { W: 640, H: 280, x0: 0, x1: 20, y0: 0, y1: top, xt: [0, 5, 10, 15, 20], yt: range(0, top, top > 6 ? 2 : 1), xl: 'Capital per worker k', yl: 'Output per worker y' });
+    curve(svg, s, x => Math.pow(x, a), 0, 20, 0, top, 's-teal', 3);
+    curve(svg, s, x => y + mpk * (x - k), Math.max(0, k - 4), Math.min(20, k + 4), 0, top, 's-amber', 2, true);
+    el('circle', { cx: s.X(k), cy: s.Y(y), r: 7, class: 'f-rose' }, svg);
+    $('pfOut').innerHTML = `<span class="k">y</span> = ${f(k, 1)}^${f(a, 2)} = <b>${f(y, 3)}</b>; <span class="k">marginal product</span> = ${f(a, 2)} x ${f(k, 1)}^(${f(a - 1, 2)}) = <b>${f(mpk, 3)}</b><br>` +
+      `<span class="k">doubling k</span> multiplies y by 2^${f(a, 2)} = ${f(Math.pow(2, a), 3)}`;
+  }
+  ['pfA', 'pfK'].forEach(id => $(id).addEventListener('input', pf));
+
+  /* Solow diagram */
+  function sd() {
+    const sv = +$('sdS').value, d = +$('sdD').value, k = +$('sdK').value;
+    $('sdSo').textContent = Math.round(sv * 100) + '%'; $('sdDo').textContent = f(d * 100, 1) + '%'; $('sdKo').textContent = f(k, 1);
+    const ks = Math.pow(sv / d, 1 / (1 - AL)), inv = sv * Math.pow(k, AL), dep = d * k, xmax = Math.max(30, Math.ceil(ks * 1.3 / 5) * 5);
+    const svg = $('sdSvg');
+    const top = Math.max(1.6, Math.ceil(Math.pow(xmax, AL) * 2) / 2);
+    const s = frame(svg, { W: 640, H: 300, x0: 0, x1: xmax, y0: 0, y1: top, xt: range(0, xmax, xmax > 40 ? 10 : 5), yt: range(0, top, 0.5), yf: t => f(t, 1), xl: 'Capital per worker k', yl: 'Per worker' });
+    curve(svg, s, x => Math.pow(x, AL), 0, xmax, 0, top, '', 2, false, { stroke: 'var(--line)' });
+    curve(svg, s, x => sv * Math.pow(x, AL), 0, xmax, 0, top, 's-teal', 3);
+    curve(svg, s, x => d * x, 0, xmax, 0, top, 's-rose', 3);
+    if (ks <= xmax) {
+      el('line', { x1: s.X(ks), x2: s.X(ks), y1: s.Y(0), y2: s.Y(d * ks), class: 's-ink dash', 'stroke-width': 1.2 }, svg);
+      el('text', { x: s.X(ks), y: s.Y(0) - 6, class: 'lbl f-ink halo', 'text-anchor': 'middle' }, svg, 'k* = ' + f(ks, 1));
+    }
+    el('line', { x1: s.X(k), x2: s.X(k), y1: s.Y(inv), y2: s.Y(dep), class: inv > dep ? 's-teal' : 's-rose', 'stroke-width': 5, opacity: .5 }, svg);
+    el('circle', { cx: s.X(k), cy: s.Y(inv), r: 6, class: 'f-teal' }, svg);
+    el('circle', { cx: s.X(k), cy: s.Y(dep), r: 6, class: 'f-rose' }, svg);
+    const dk = inv - dep, dir = Math.abs(dk) < 1e-3 ? 'stays put (steady state)' : dk > 0 ? 'grows: the economy moves right' : 'shrinks: the economy moves left';
+    $('sdOut').innerHTML = `<span class="k">investment</span> = ${f(sv, 2)} x ${f(k, 1)}^(1/3) = ${f(inv, 3)}; <span class="k">depreciation</span> = ${f(d, 3)} x ${f(k, 1)} = ${f(dep, 3)}<br>` +
+      `<span class="k">Δk</span> = <b>${sg(dk, 3)}</b>, so capital per worker ${dir}; <span class="k">steady state</span> k* = ${f(ks, 2)}`;
+  }
+  ['sdS', 'sdD', 'sdK'].forEach(id => $(id).addEventListener('input', sd));
+
+  /* transition */
+  function ss() {
+    const k0 = +$('ssK0').value, sv = +$('ssS').value; $('ssK0o').textContent = f(k0, 1); $('ssSo').textContent = Math.round(sv * 100) + '%';
+    const ks = simK(k0, sv, 100), ys = ks.map(k => Math.pow(k, AL)), ystar = Math.pow(sv / DL, AL / (1 - AL));
+    const gr = ys.slice(1).map((y, t) => (y / ys[t] - 1) * 100);
+    const top = Math.max(3, Math.ceil(Math.max(ystar, ...ys) + 0.5));
+    let svg = $('ssY');
+    let s = frame(svg, { W: 320, H: 240, x0: 0, x1: 100, y0: 0, y1: top, xt: [0, 50, 100], yt: range(0, top, 1), xl: 'Years', yl: 'Output per worker', pad: { l: 44, r: 10 } });
+    el('line', { x1: s.X(0), x2: s.X(100), y1: s.Y(ystar), y2: s.Y(ystar), stroke: 'var(--muted)', class: 'dash', 'stroke-width': 1.3 }, svg);
+    el('path', { d: path(ys.map((y, t) => [s.X(t), s.Y(y)])), fill: 'none', class: 's-teal', 'stroke-width': 2.8 }, svg);
+    const gmax = Math.max(1, Math.ceil(Math.max(...gr.map(Math.abs))));
+    svg = $('ssG');
+    s = frame(svg, { W: 320, H: 240, x0: 0, x1: 100, y0: -gmax, y1: gmax, xt: [0, 50, 100], yt: range(-gmax, gmax, gmax > 4 ? 2 : 1), yf: t => sg(t, 0) + '%', zeroX: true, xl: 'Years', yl: 'Growth of output per worker', pad: { l: 48, r: 10 } });
+    el('path', { d: path(gr.map((g, t) => [s.X(t + 1), s.Y(g)])), fill: 'none', class: 's-amber', 'stroke-width': 2.8 }, svg);
+    const lam = (1 - AL) * DL, half = Math.log(2) / lam;
+    $('ssOut').innerHTML = `<span class="k">steady state</span>: k* = (${f(sv, 2)}/0.05)^1.5 = ${f(Math.pow(sv / DL, 1.5), 2)}, y* = <b>${f(ystar, 3)}</b><br>` +
+      `<span class="k">growth in year 1</span> = ${sg(gr[0], 2)}%; <span class="k">output after 50 years</span> = ${f(ys[50], 3)}; <span class="k">half-life of the gap</span> ≈ ${f(half, 0)} years`;
+  }
+  ['ssK0', 'ssS'].forEach(id => $(id).addEventListener('input', ss));
+
+  /* golden rule */
+  function gr() {
+    const s1 = +$('grS').value; $('grSo').textContent = Math.round(s1 * 100) + '%';
+    const cstar = s => (1 - s) * Math.pow(s / DL, AL / (1 - AL));
+    let svg = $('grC');
+    let sc = frame(svg, { W: 320, H: 240, x0: 0, x1: 1, y0: 0, y1: 2, xt: [0, 0.25, 0.5, 0.75, 1], yt: [0, 0.5, 1, 1.5, 2], xf: t => Math.round(t * 100) + '%', yf: t => f(t, 1), xl: 'Saving rate', yl: 'Steady-state consumption', pad: { l: 44, r: 12 } });
+    curve(svg, sc, cstar, 0.001, 0.999, 0, 2, 's-amber', 3);
+    el('line', { x1: sc.X(AL), x2: sc.X(AL), y1: sc.Y(0), y2: sc.Y(cstar(AL)), class: 's-ink dash', 'stroke-width': 1.2 }, svg);
+    el('text', { x: sc.X(AL) + 5, y: sc.Y(0.15), class: 'lbl f-ink halo' }, svg, 'golden rule');
+    el('circle', { cx: sc.X(0.25), cy: sc.Y(cstar(0.25)), r: 4, class: 'f-ink' }, svg);
+    el('circle', { cx: sc.X(s1), cy: sc.Y(cstar(s1)), r: 7, class: 'f-rose' }, svg);
+    const k = simK(Math.pow(0.25 / DL, 1.5), 0.25, 80, 0, DL, AL, t => t > 10 ? s1 : 0.25);
+    const y = k.map(v => Math.pow(v, AL)), c = y.map((v, t) => (1 - (t >= 10 ? s1 : 0.25)) * v);
+    const top = Math.max(3, Math.ceil(Math.max(...y) + 0.5));
+    svg = $('grT');
+    sc = frame(svg, { W: 320, H: 240, x0: 0, x1: 80, y0: 0, y1: top, xt: [0, 20, 40, 60, 80], yt: range(0, top, 1), xl: 'Years', yl: 'Per worker', pad: { l: 40, r: 10 } });
+    el('line', { x1: sc.X(10), x2: sc.X(10), y1: sc.p.t, y2: sc.H - sc.p.b, stroke: 'var(--muted)', class: 'dash', 'stroke-width': 1 }, svg);
+    el('path', { d: path(y.map((v, t) => [sc.X(t), sc.Y(v)])), fill: 'none', class: 's-teal', 'stroke-width': 2.6 }, svg);
+    el('path', { d: path(c.map((v, t) => [sc.X(t), sc.Y(v)])), fill: 'none', class: 's-amber', 'stroke-width': 2.6 }, svg);
+    const c0 = cstar(0.25), c1 = cstar(s1);
+    $('grOut').innerHTML = `<span class="k">steady-state consumption</span>: ${f(c0, 3)} at 25% saving, <b>${f(c1, 3)}</b> at ${Math.round(s1 * 100)}%; maximum ${f(cstar(AL), 3)} at the golden rule (33%)<br>` +
+      `<span class="k">consumption just after the switch</span> = ${f(c[10], 3)}; <span class="k">after 80 years</span> = ${f(c[80], 3)}` +
+      (s1 > AL + 0.005 ? ' (above the golden rule: saving less would raise consumption both now and later)' : '');
+  }
+  $('grS').addEventListener('input', gr);
+
+  /* population */
+  function ng() {
+    const n = +$('ngN').value, sv = +$('ngS').value; $('ngNo').textContent = f(n * 100, 2) + '%'; $('ngSo').textContent = Math.round(sv * 100) + '%';
+    const k0 = Math.pow(sv / DL, 1.5), k1 = Math.pow(sv / (n + DL), 1.5), xmax = Math.max(30, Math.ceil(k0 * 1.25 / 5) * 5);
+    const top = Math.max(1.6, Math.ceil(sv * Math.pow(xmax, AL) * 2 + 1) / 2);
+    const svg = $('ngSvg');
+    const s = frame(svg, { W: 640, H: 280, x0: 0, x1: xmax, y0: 0, y1: top, xt: range(0, xmax, xmax > 40 ? 10 : 5), yt: range(0, top, 0.5), yf: t => f(t, 1), xl: 'Capital per worker k', yl: 'Per worker' });
+    curve(svg, s, x => sv * Math.pow(x, AL), 0, xmax, 0, top, 's-teal', 3);
+    curve(svg, s, x => DL * x, 0, xmax, 0, top, 's-ink', 1.4, true);
+    curve(svg, s, x => (n + DL) * x, 0, xmax, 0, top, 's-rose', 3);
+    [[k0, 'f-ink', 4], [k1, 'f-rose', 7]].forEach(([k, cls, r]) => { if (k <= xmax) el('circle', { cx: s.X(k), cy: s.Y(DL * k + (cls === 'f-rose' ? n * k : 0)), r, class: cls }, svg); });
+    const y0 = Math.pow(k0, AL), y1 = Math.pow(k1, AL);
+    $('ngOut').innerHTML = `<span class="k">steady state with n = ${f(n * 100, 2)}%</span>: k* = ${f(k1, 2)}, y* = <b>${f(y1, 3)}</b><br>` +
+      `<span class="k">without population growth</span>: k* = ${f(k0, 2)}, y* = ${f(y0, 3)}; <span class="k">difference</span> = ${f((y1 / y0 - 1) * 100, 1)}%`;
+  }
+  ['ngN', 'ngS'].forEach(id => $(id).addEventListener('input', ng));
+
+  /* technology */
+  function tg() {
+    const g = +$('tgG').value, sv = +$('tgS').value, n = 0.01; $('tgGo').textContent = f(g * 100, 2) + '%'; $('tgSo').textContent = Math.round(sv * 100) + '%';
+    const T = 100, khs = Math.pow(sv / (n + g + DL), 1.5);
+    const run = gg => { const kh = [0.3 * Math.pow(sv / (n + gg + DL), 1.5)], y = []; for (let t = 0; t <= T; t++) { if (t > 0) kh.push((sv * Math.pow(kh[t - 1], AL) + (1 - DL) * kh[t - 1]) / ((1 + n) * (1 + gg))); y.push(Math.pow(1 + gg, t) * Math.pow(kh[t], AL)); } return y; };
+    const y = run(g), y0 = run(0), bgp = range(0, T, 1).map(t => Math.pow(1 + g, t) * Math.pow(khs, AL));
+    const all = [...y, ...y0, ...bgp], lo = Math.log(Math.min(...all)), hi = Math.log(Math.max(...all));
+    const tick = [0.5, 1, 2, 4, 8, 16, 32, 64].filter(v => Math.log(v) >= lo - 0.2 && Math.log(v) <= hi + 0.2);
+    const svg = $('tgSvg');
+    const s = frame(svg, { W: 640, H: 300, x0: 0, x1: T, y0: lo - 0.1, y1: hi + 0.1, xt: range(0, T, 20), yt: tick.map(Math.log), yf: v => f(Math.exp(v), Math.exp(v) < 1 ? 1 : 0), xl: 'Years', yl: 'Output per worker (log scale)' });
+    el('path', { d: path(bgp.map((v, t) => [s.X(t), s.Y(Math.log(v))])), fill: 'none', stroke: 'var(--muted)', class: 'dash', 'stroke-width': 1.6 }, svg);
+    el('path', { d: path(y0.map((v, t) => [s.X(t), s.Y(Math.log(v))])), fill: 'none', class: 's-rose', 'stroke-width': 2 }, svg);
+    el('path', { d: path(y.map((v, t) => [s.X(t), s.Y(Math.log(v))])), fill: 'none', class: 's-teal', 'stroke-width': 3 }, svg);
+    const gLast = (y[T] / y[T - 1] - 1) * 100, gFirst = (y[1] / y[0] - 1) * 100;
+    $('tgOut').innerHTML = `<span class="k">growth of output per worker</span>: ${f(gFirst, 2)}% in year 1 (catching up), ${f(gLast, 2)}% in year 100 (balanced growth = g = ${f(g * 100, 2)}%)<br>` +
+      `<span class="k">output per worker after 100 years</span>: ${f(y[T], 2)} with technology growth, ${f(y0[T], 2)} without`;
+  }
+  ['tgG', 'tgS'].forEach(id => $(id).addEventListener('input', tg));
+
+  /* growth accounting */
+  function ga() {
+    const gY = +$('gaY').value, gK = +$('gaK').value, gL = +$('gaL').value, a = +$('gaA').value;
+    $('gaYo').textContent = f(gY) + '%'; $('gaKo').textContent = f(gK) + '%'; $('gaLo').textContent = sg(gL) + '%'; $('gaAo').textContent = f(a, 2);
+    const cK = a * gK, cL = (1 - a) * gL, tfp = gY - cK - cL;
+    const svg = $('gaSvg');
+    const lo = Math.min(0, cK, cL, tfp, gY) - 0.5, hi = Math.max(cK, cL, tfp, gY) + 1;
+    const s = frame(svg, { W: 640, H: 220, x0: Math.floor(lo), x1: Math.ceil(hi), y0: 0, y1: 4, xt: range(Math.floor(lo), Math.ceil(hi), Math.ceil(hi - lo) > 10 ? 2 : 1), xf: t => sg(t, 0), zeroY: true, xl: 'Percentage points of growth', pad: { l: 130, t: 6 } });
+    [['Output growth', gY, 'f-ink'], ['Capital', cK, 'f-amber'], ['Labour', cL, 'f-violet'], ['TFP (residual)', tfp, 'f-teal']].forEach(([nm, v, cls], i) => {
+      const yc = s.Y(3.5 - i), h = 26, x0 = s.X(Math.min(0, v)), x1 = s.X(Math.max(0, v));
+      el('text', { x: s.p.l - 10, y: yc + 5, class: 'lbl f-ink', 'text-anchor': 'end' }, svg, nm);
+      el('rect', { x: x0, y: yc - h / 2, width: Math.max(1, x1 - x0), height: h, rx: 4, class: cls, opacity: i === 0 ? .75 : 1 }, svg);
+      el('text', { x: v >= 0 ? x1 + 6 : x0 - 6, y: yc + 5, class: 'tick halo', 'text-anchor': v >= 0 ? 'start' : 'end' }, svg, sg(v, 2));
+    });
+    $('gaOut').innerHTML = `<span class="k">capital</span> ${f(a, 2)} x ${f(gK)} = ${f(cK, 2)}; <span class="k">labour</span> ${f(1 - a, 2)} x ${sg(gL)} = ${f(cL, 2)}<br>` +
+      `<span class="k">TFP growth</span> = ${f(gY)} - ${f(cK, 2)} - ${f(cL, 2)} = <b>${f(tfp, 2)}%</b>` + (gY > 0 ? ` (${f(tfp / gY * 100, 0)}% of output growth)` : '');
+  }
+  ['gaY', 'gaK', 'gaL', 'gaA'].forEach(id => $(id).addEventListener('input', ga));
+
+  /* ---------- quick checks ---------- */
+  document.querySelectorAll('.check').forEach(c => {
+    const ans = c.dataset.answer;
+    c.querySelectorAll('.opts button').forEach(b => b.addEventListener('click', () => {
+      c.querySelectorAll('.opts button').forEach(x => x.classList.remove('right', 'wrong'));
+      const ok = b.dataset.k === ans;
+      b.classList.add(ok ? 'right' : 'wrong');
+      if (!ok) c.querySelector(`.opts [data-k="${ans}"]`).classList.add('right');
+      const fb = c.querySelector('.fb'); fb.hidden = false;
+      fb.querySelector('.verdict').textContent = ok ? 'Correct.' : 'Not quite.';
+    }));
+  });
+
+  /* ---------- nav highlight ---------- */
+  const links = [...document.querySelectorAll('nav.toc a')];
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+    }), { rootMargin: '-30% 0px -60% 0px' });
+    document.querySelectorAll('section.block').forEach(s => io.observe(s));
+  }
+
+  hero(); cg(); pf(); sd(); ss(); gr(); ng(); tg(); ga();
+})();
+</script>
+</body>
+</html>

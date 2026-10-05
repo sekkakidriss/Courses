@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Okun's law, from the beginning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&family=Karla:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' },
+  startup: { typeset: true }
+};
+</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+:root {
+  --paper: #f3f4f0; --dot: #d3d7cd; --ink: #1b2326; --muted: #5a6568;
+  --line: #c8ccc2; --card: #ffffff; --card2: #f8f9f6;
+  --teal: #0f766e; --amber: #b45309; --rose: #be123c; --violet: #6d28d9;
+  --teal-soft: #d3ebe7; --amber-soft: #f5e4cf; --rose-soft: #f6d9df; --violet-soft: #e5dbf7;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Karla", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+    --line: #333d40; --card: #1b2225; --card2: #182023;
+    --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+    --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+  --line: #333d40; --card: #1b2225; --card2: #182023;
+  --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+  --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+}
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; color: var(--ink); background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  font-family: var(--sans); font-size: 18px; line-height: 1.62;
+}
+a { color: var(--teal); }
+:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+
+.wrap { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 56px; max-width: 1120px; margin: 0 auto; padding: 0 24px 96px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 28px); align-self: start; padding-top: 28px; }
+nav.toc p { font-family: var(--serif); font-size: 1.05rem; margin: 0 0 12px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: b; }
+nav.toc li { counter-increment: b; }
+nav.toc a { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: .92rem; line-height: 1.3; }
+nav.toc a::before { content: counter(b); font-family: var(--mono); font-size: .8rem; color: var(--teal); min-width: 1.2em; padding-top: 1px; }
+nav.toc a:hover, nav.toc a.on { background: var(--teal-soft); color: var(--ink); }
+
+main { min-width: 0; }
+.prose { max-width: 720px; }
+
+header.hero { padding: 64px 0 24px; }
+header.hero h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(3rem, 8vw, 5.4rem); line-height: .95; letter-spacing: -.02em; margin: 0 0 18px; font-variation-settings: "opsz" 144; }
+header.hero .lede { font-family: var(--serif); font-size: 1.35rem; line-height: 1.45; max-width: 640px; margin: 0 0 28px; color: var(--ink); }
+.hero-lab { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.hero-say { font-family: var(--serif); font-size: 1.5rem; line-height: 1.35; margin: 0 0 14px; }
+.hero-say b { color: var(--teal); font-weight: 600; }
+.hero-say b.up { color: var(--rose); }
+.hint { color: var(--muted); font-size: .95rem; margin: 6px 0 0; }
+
+section.block { padding-top: 56px; }
+section.block > h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.1; margin: 0 0 8px; letter-spacing: -.01em; }
+section.block > .sub { color: var(--muted); margin: 0 0 18px; font-size: 1.02rem; }
+h3 { font-family: var(--serif); font-weight: 600; font-size: 1.22rem; margin: 30px 0 8px; }
+p { margin: 0 0 14px; }
+.math { overflow-x: auto; padding: 4px 0; margin: 6px 0 14px; }
+mjx-container[display="true"] { margin: .6em 0 !important; }
+
+.lab { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 14px 0 18px; }
+.lab svg { display: block; width: 100%; height: auto; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin-top: 14px; }
+.ctl label { display: flex; justify-content: space-between; gap: 10px; font-size: .92rem; color: var(--muted); }
+.ctl label output { font-family: var(--mono); color: var(--ink); font-size: .88rem; }
+input[type=range] { width: 100%; accent-color: var(--teal); margin: 6px 0 0; }
+.readout { font-family: var(--mono); font-size: .9rem; background: var(--card2); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; margin-top: 14px; overflow-x: auto; line-height: 1.7; }
+.readout .k { color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+button.act { font: 600 .92rem var(--sans); color: var(--ink); background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+button.act:hover { border-color: var(--teal); }
+button.act.primary { background: var(--teal); border-color: var(--teal); color: var(--card); }
+
+table.t { border-collapse: collapse; width: 100%; font-size: .95rem; margin: 10px 0 18px; }
+table.t th, table.t td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-weight: 700; color: var(--muted); font-size: .88rem; }
+table.t td.n { font-family: var(--mono); font-size: .88rem; white-space: nowrap; }
+.tw { overflow-x: auto; }
+
+.example { border-left: 4px solid var(--amber); background: var(--amber-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; }
+.example p:last-child { margin-bottom: 0; }
+.aside { border-left: 4px solid var(--violet); background: var(--violet-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: .97rem; }
+
+.check { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 16px 18px; margin: 14px 0 0; }
+.check .q { font-weight: 600; margin-bottom: 10px; }
+.check .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.check .opts button { font: 1rem var(--sans); text-align: left; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); cursor: pointer; }
+.check .opts button:hover { border-color: var(--teal); }
+.check .opts button.right { background: var(--teal-soft); border-color: var(--teal); }
+.check .opts button.wrong { background: var(--rose-soft); border-color: var(--rose); }
+.check .fb { margin-top: 10px; font-size: .97rem; }
+.check .fb .verdict { font-weight: 700; margin-right: 4px; }
+
+.people { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 520px; }
+.people button { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--teal); background: var(--teal); cursor: pointer; padding: 0; position: relative; }
+.people button[aria-pressed="false"] { background: transparent; border-color: var(--rose); border-style: dashed; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: .9rem; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+.years { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.years .ctl label { flex-direction: column; gap: 0; }
+.cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cards2 .lab { margin: 0; }
+.big { font-family: var(--serif); font-size: 2rem; line-height: 1.1; margin: 10px 0 2px; }
+.big small { font-family: var(--sans); font-size: .95rem; color: var(--muted); }
+
+/* svg */
+.grid { stroke: var(--line); stroke-width: 1; }
+.zero { stroke: var(--muted); stroke-width: 1.2; }
+.tick { fill: var(--muted); font: 11px var(--mono); }
+.axl { fill: var(--muted); font: 12px var(--sans); }
+.lbl { font: 600 12px var(--sans); }
+.s-teal { stroke: var(--teal); } .f-teal { fill: var(--teal); }
+.s-amber { stroke: var(--amber); } .f-amber { fill: var(--amber); }
+.s-rose { stroke: var(--rose); } .f-rose { fill: var(--rose); }
+.s-violet { stroke: var(--violet); } .f-violet { fill: var(--violet); }
+.s-ink { stroke: var(--ink); } .f-ink { fill: var(--ink); }
+.f-teal-soft { fill: var(--teal-soft); } .f-rose-soft { fill: var(--rose-soft); }
+.f-amber-soft { fill: var(--amber-soft); } .f-violet-soft { fill: var(--violet-soft); }
+.f-card { fill: var(--card); }
+.dash { stroke-dasharray: 5 4; }
+.halo { stroke: var(--card); stroke-width: 4px; paint-order: stroke; stroke-linejoin: round; }
+
+footer { margin-top: 72px; color: var(--muted); font-size: .9rem; }
+
+@media (max-width: 880px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 16px 72px; }
+  nav.toc { position: sticky; top: 0; z-index: 5; padding: calc(env(safe-area-inset-top, 0px) + 8px) 0 8px; margin: 0 -16px; background: var(--paper); border-bottom: 1px solid var(--line); }
+  :root { padding-top: 0; }
+  nav.toc p { display: none; }
+  nav.toc ol { display: flex; overflow-x: auto; gap: 4px; padding: 0 12px; }
+  nav.toc a { white-space: nowrap; }
+  .hero-lab { grid-template-columns: minmax(0, 1fr); }
+  header.hero { padding-top: 36px; }
+  .years { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body { font-size: 17px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Lecture sections">
+  <p>Okun's law</p>
+  <ol>
+    <li><a href="#b1">Two numbers</a></li>
+    <li><a href="#b2">Normal levels</a></li>
+    <li><a href="#b3">The gap version</a></li>
+    <li><a href="#b4">The growth version</a></li>
+    <li><a href="#b5">Estimating it</a></li>
+    <li><a href="#b6">Why not one for one</a></li>
+    <li><a href="#b7">Around the world</a></li>
+    <li><a href="#b8">Putting it to work</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>Okun's law</h1>
+  <p class="lede">When an economy grows faster than usual, unemployment falls. When it grows slower, unemployment rises. In 1962 the economist Arthur Okun put a number on that link.</p>
+  <div class="lab hero-lab">
+    <div>
+      <p class="hero-say" id="heroSay"></p>
+      <div class="ctl">
+        <label for="heroG">Economic growth this year <output id="heroGo"></output></label>
+        <input type="range" id="heroG" min="-4" max="8" step="0.5" value="1">
+      </div>
+      <p class="hint">A textbook economy: unemployment starts at 5%, and the economy needs about 3% growth just to keep it there. Move the slider.</p>
+    </div>
+    <svg id="heroSvg" role="img" aria-label="Okun line: change in unemployment against economic growth"></svg>
+  </div>
+</header>
+
+<!-- ========== 1 ========== -->
+<section class="block prose" id="b1">
+  <h2>Two numbers</h2>
+  <p class="sub">Before linking them, we need to know exactly what the two quantities are.</p>
+
+  <h3>The idea</h3>
+  <p>Okun's law connects two numbers that every statistics office publishes. The first is how much the economy produced, measured by GDP (Gross Domestic Product): the total value of goods and services produced in a country in a year. The second is the unemployment rate: the share of people who want a job and are looking for one, but do not have one.</p>
+  <p>The link between them is common sense. Producing things takes people. If firms want to produce more, they usually need more workers. If they produce less, some workers lose their jobs.</p>
+
+  <h3>Try it</h3>
+  <p>Here is a tiny island with 20 people in its labour force (everyone who either works or is actively looking for work). Each employed person catches 5 crates of fish a year. Click a person to switch them between employed and unemployed.</p>
+  <div class="lab">
+    <div class="people" id="people" aria-label="Labour force of 20 people"></div>
+    <div class="legend"><span><i style="background:var(--teal)"></i>Employed</span><span><i style="border:2px dashed var(--rose)"></i>Unemployed, looking for work</span></div>
+    <div class="readout" id="islandOut"></div>
+  </div>
+  <p>Notice that every person you remove from work lowers output and raises the unemployment rate at the same time. That is the seed of Okun's law. Real economies are messier, as we will see, but the direction is the same.</p>
+
+  <h3>The formulas</h3>
+  <p>Write \(E\) for the number employed, \(U\) for the number unemployed, and \(L = E + U\) for the labour force. The unemployment rate in percent is</p>
+  <div class="math">\[ u = \frac{U}{L} \times 100. \]</div>
+  <p>Write \(Y_t\) for real GDP in year \(t\) ("real" means adjusted for price changes, so it measures quantities, not inflation). The growth rate of GDP in percent is</p>
+  <div class="math">\[ g_t = \frac{Y_t - Y_{t-1}}{Y_{t-1}} \times 100. \]</div>
+  <p>People who do not work and are not looking (students, retirees, people caring for family full time) are outside the labour force. They count in neither \(E\) nor \(U\).</p>
+
+  <h3>Worked example</h3>
+  <div class="example">
+    <p>A city has 480,000 employed people and 20,000 unemployed people. The labour force is 500,000, so \(u = 20{,}000 / 500{,}000 \times 100 = 4\%\). Its real GDP went from 50.0 billion to 51.5 billion, so growth was \(1.5 / 50 \times 100 = 3\%\).</p>
+  </div>
+
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">A labour force of 200 people includes 14 unemployed. What is the unemployment rate?</div>
+    <div class="opts"><button data-k="a">7%</button><button data-k="b">14%</button><button data-k="c">93%</button><button data-k="d">6.5%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>14 divided by 200 is 0.07, so 7%. The 93% would be the employment share of the labour force, not the unemployment rate.</div>
+  </div>
+</section>
+
+<!-- ========== 2 ========== -->
+<section class="block prose" id="b2">
+  <h2>Normal levels</h2>
+  <p class="sub">Okun's law is not about output and unemployment directly. It is about how far each one sits from its normal level.</p>
+
+  <h3>The idea</h3>
+  <p>Even a healthy economy has some unemployment, because people change jobs, move cities, or finish their studies and start searching. Economists call this background level the natural rate of unemployment, written \(u^*\).</p>
+  <p>Output also has a normal level: what the economy can produce when its workers, machines and technology are used at a normal, sustainable intensity. This is called potential output, written \(Y^*\). It grows over time as the population grows and technology improves.</p>
+  <p>In a boom, actual output rises above potential and unemployment falls below its natural rate. In a recession, output falls below potential and unemployment rises above its natural rate. The two deviations move like mirror images.</p>
+
+  <h3>Try it</h3>
+  <p>Below is 20 years of a simulated economy. Potential output grows steadily at 3% a year. Actual output swings around it in a business cycle. Drag through time and watch the bottom chart answer the top one.</p>
+  <div class="lab">
+    <svg id="cycTop" role="img" aria-label="Actual and potential output over time"></svg>
+    <svg id="cycBot" role="img" aria-label="Unemployment rate and natural rate over time" style="margin-top:6px"></svg>
+    <div class="legend">
+      <span><i style="background:var(--teal)"></i>Actual output \(Y\)</span>
+      <span><i style="background:var(--muted)"></i>Potential output \(Y^*\)</span>
+      <span><i style="background:var(--rose)"></i>Unemployment rate \(u\)</span>
+      <span><i style="background:var(--muted)"></i>Natural rate \(u^*\)</span>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="cycT">Year <output id="cycTo"></output></label><input type="range" id="cycT" min="0" max="20" step="0.1" value="6"></div>
+      <div class="ctl"><label for="cycA">Size of the business cycle <output id="cycAo"></output></label><input type="range" id="cycA" min="0" max="6" step="0.5" value="3"></div>
+    </div>
+    <div class="readout" id="cycOut"></div>
+  </div>
+
+  <h3>The formulas</h3>
+  <p>The output gap measures how far actual output is from potential, as a percentage of potential:</p>
+  <div class="math">\[ \text{gap}_t = \frac{Y_t - Y^*_t}{Y^*_t} \times 100. \]</div>
+  <p>A negative gap means the economy is producing less than it could (a recession). The matching deviation for unemployment, \(u_t - u^*\), is called cyclical unemployment: the part of unemployment caused by the business cycle rather than by normal job changes.</p>
+
+  <h3>Worked example</h3>
+  <div class="example">
+    <p>Potential output is 200 billion but actual output is 194 billion. The gap is \((194 - 200)/200 \times 100 = -3\%\). If the natural rate is 5% and actual unemployment is 6.5%, cyclical unemployment is 1.5 points.</p>
+  </div>
+  <div class="aside">One honest warning: \(Y^*\) and \(u^*\) cannot be observed directly. Statistics offices and central banks estimate them, usually with smoothing filters or models. We come back to this in block 7.</div>
+
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">Actual output is 97 and potential output is 100. What is the output gap?</div>
+    <div class="opts"><button data-k="a">+3%</button><button data-k="b">97%</button><button data-k="c">-3%</button><button data-k="d">-0.03%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>(97 - 100) / 100 x 100 = -3%. The economy is producing 3% less than its normal capacity.</div>
+  </div>
+</section>
+
+<!-- ========== 3 ========== -->
+<section class="block prose" id="b3">
+  <h2>The gap version</h2>
+  <p class="sub">Okun's first formulation: a straight line between the output gap and cyclical unemployment.</p>
+
+  <h3>The idea</h3>
+  <p>Okun looked at United States data from the 1950s and noticed that the two deviations from block 2 lined up closely. When output was a few percent below potential, unemployment was above its normal level by roughly a third as many points. The relationship looked like a straight line through the origin: no gap, no cyclical unemployment.</p>
+
+  <h3>The formula</h3>
+  <div class="math">\[ u_t - u^* = -\beta \, \text{gap}_t \]</div>
+  <p>The number \(\beta\) (beta) is Okun's coefficient. It answers one question: if output falls 1% below potential, by how many percentage points does unemployment rise above its natural rate? The minus sign says the two move in opposite directions. Okun's own estimate was about \(\beta \approx 0.3\). Many modern estimates for the United States are closer to 0.5.</p>
+
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="gapSvg" role="img" aria-label="Unemployment rate as a function of the output gap"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="gapX">Output gap <output id="gapXo"></output></label><input type="range" id="gapX" min="-8" max="4" step="0.5" value="-4"></div>
+      <div class="ctl"><label for="gapB">Okun's coefficient \(\beta\) <output id="gapBo"></output></label><input type="range" id="gapB" min="0.1" max="1" step="0.05" value="0.5"></div>
+      <div class="ctl"><label for="gapU">Natural rate \(u^*\) <output id="gapUo"></output></label><input type="range" id="gapU" min="3" max="8" step="0.5" value="5"></div>
+    </div>
+    <div class="readout" id="gapOut"></div>
+  </div>
+  <p>Raise \(\beta\) and the line gets steeper: the same recession throws more people out of work. Lower it and unemployment barely reacts.</p>
+
+  <h3>Reading it backwards</h3>
+  <p>The same equation can be read as a cost. Divide both sides by \(-\beta\): each point of cyclical unemployment goes with a gap of \(1/\beta\) percent of output. With \(\beta = 0.5\), one extra point of unemployment means roughly 2% of GDP not produced. Okun's original figure was about 3%, which is why his result is often quoted as "1 point of unemployment costs 3% of output".</p>
+
+  <h3>Worked example</h3>
+  <div class="example">
+    <p>A country has a natural rate of 4.5%, an output gap of -2%, and \(\beta = 0.4\). Then \(u = 4.5 - 0.4 \times (-2) = 4.5 + 0.8 = 5.3\%\).</p>
+  </div>
+
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">With \(\beta = 0.5\) and \(u^* = 5\%\), unemployment is 8%. What output gap does Okun's law imply?</div>
+    <div class="opts"><button data-k="a">-6%</button><button data-k="b">-1.5%</button><button data-k="c">-3%</button><button data-k="d">+6%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Cyclical unemployment is 8 - 5 = 3 points. Then 3 = -0.5 x gap, so gap = -6%.</div>
+  </div>
+</section>
+
+<!-- ========== 4 ========== -->
+<section class="block prose" id="b4">
+  <h2>The growth version</h2>
+  <p class="sub">The form most often used in practice, because it needs only growth rates, which are published every quarter.</p>
+
+  <h3>The idea</h3>
+  <p>The gap version needs potential output, which nobody observes. Okun also proposed a version that avoids it. Think about what makes the gap change from one year to the next. Potential output grows at some steady rate, call it \(g^*\). If actual output grows faster than that, the economy catches up with its potential and the gap closes, so unemployment falls. If it grows slower, the gap widens and unemployment rises.</p>
+  <p>So the rule becomes: unemployment stays put when the economy grows at its normal pace \(g^*\), and every point of growth above or below that pace moves unemployment by \(\beta\) points in the opposite direction.</p>
+
+  <h3>From the gap version to the growth version</h3>
+  <p>Write the gap version for this year and for last year, then subtract. The natural rate cancels:</p>
+  <div class="math">\[ (u_t - u^*) - (u_{t-1} - u^*) = -\beta \,(\text{gap}_t - \text{gap}_{t-1}). \]</div>
+  <p>The left side is simply the change in unemployment, \(\Delta u_t = u_t - u_{t-1}\). On the right, the gap changes by approximately actual growth minus potential growth, \(\text{gap}_t - \text{gap}_{t-1} \approx g_t - g^*\). Putting these together:</p>
+  <div class="math">\[ \Delta u_t = -\beta\,(g_t - g^*). \]</div>
+  <p>The value \(g^*\) is sometimes called the break-even growth rate: the growth needed just to keep unemployment from rising.</p>
+
+  <h3>Try it</h3>
+  <p>Set the growth rate for five years. The economy starts at 5% unemployment, with \(\beta = 0.5\) and \(g^* = 3\%\).</p>
+  <div class="lab">
+    <svg id="yrSvg" role="img" aria-label="Unemployment path over five years"></svg>
+    <div class="years" id="yrCtl"></div>
+    <div class="tw"><table class="t" id="yrTab"></table></div>
+    <div class="btns">
+      <button class="act" data-preset="rec">Recession and recovery</button>
+      <button class="act" data-preset="steady">Steady 3% growth</button>
+      <button class="act" data-preset="slow">Slow growth</button>
+    </div>
+  </div>
+  <p>Try "Slow growth": the economy never shrinks, yet unemployment keeps rising. Positive growth is not enough. It has to beat \(g^*\).</p>
+
+  <h3>Worked example</h3>
+  <div class="example">
+    <p>With \(\beta = 0.5\) and \(g^* = 3\%\), suppose the economy grows by only 1%. Then \(\Delta u = -0.5 \times (1 - 3) = +1\) point. Unemployment rises from 5% to 6% even though output grew.</p>
+  </div>
+
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">With \(\beta = 0.4\) and \(g^* = 2.5\%\), what growth rate lowers unemployment by 1 point in a year?</div>
+    <div class="opts"><button data-k="a">3.5%</button><button data-k="b">5%</button><button data-k="c">2.5%</button><button data-k="d">6.5%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>We need -1 = -0.4 x (g - 2.5), so g - 2.5 = 2.5 and g = 5%.</div>
+  </div>
+</section>
+
+<!-- ========== 5 ========== -->
+<section class="block prose" id="b5">
+  <h2>Estimating it</h2>
+  <p class="sub">Where the numbers \(\beta\) and \(g^*\) come from: a straight line fitted through past data.</p>
+
+  <h3>The idea</h3>
+  <p>Take a country's history: for each year, the GDP growth rate and the change in unemployment. Plot one dot per year. If Okun's law holds, the dots fall roughly along a downward-sloping line. The slope of that line tells us \(\beta\), and where it crosses zero tells us \(g^*\).</p>
+
+  <h3>The formula</h3>
+  <p>We fit the line \(\Delta u_t = a + b\,g_t + \varepsilon_t\), where \(\varepsilon_t\) is everything the line does not explain. Comparing with block 4, \(\Delta u_t = \beta g^* - \beta g_t\), so</p>
+  <div class="math">\[ \beta = -b, \qquad g^* = -\frac{a}{b}. \]</div>
+  <p>The standard way to choose \(a\) and \(b\) is OLS (Ordinary Least Squares): pick the line that makes the sum of squared vertical distances from the dots to the line as small as possible. The solution has a closed form:</p>
+  <div class="math">\[ \hat b = \frac{\sum_t (g_t - \bar g)(\Delta u_t - \overline{\Delta u})}{\sum_t (g_t - \bar g)^2}, \qquad \hat a = \overline{\Delta u} - \hat b\,\bar g. \]</div>
+
+  <h3>Try it</h3>
+  <p>These are 30 simulated years. First fit the line by eye with the sliders and try to make the squared error small. Then reveal the least squares line and compare.</p>
+  <div class="lab">
+    <svg id="olsSvg" role="img" aria-label="Scatter plot of growth against change in unemployment with fitted lines"></svg>
+    <div class="legend">
+      <span><i style="background:var(--violet)"></i>Your line and its errors</span>
+      <span><i style="background:var(--amber)"></i>Least squares line</span>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="olsB">Your slope \(b\) <output id="olsBo"></output></label><input type="range" id="olsB" min="-1" max="0.2" step="0.01" value="-0.15"></div>
+      <div class="ctl"><label for="olsA">Your intercept \(a\) <output id="olsAo"></output></label><input type="range" id="olsA" min="-1" max="3" step="0.05" value="0.3"></div>
+    </div>
+    <div class="btns">
+      <button class="act primary" id="olsFit">Show least squares line</button>
+      <button class="act" id="olsNew">New sample</button>
+    </div>
+    <div class="readout" id="olsOut"></div>
+  </div>
+
+  <h3>Worked example</h3>
+  <div class="example">
+    <p>A regression on annual data gives \(\Delta u = 1.2 - 0.4\,g\). Then \(\beta = 0.4\) and \(g^* = 1.2 / 0.4 = 3\%\). In words: unemployment is stable at 3% growth, and each extra point of growth lowers it by 0.4 points.</p>
+  </div>
+  <div class="aside">With real data, analysts usually check that the estimate is stable across sub-periods, and many use quarterly data with a few lags of growth, because unemployment tends to react to output with some delay.</div>
+
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="d">
+    <div class="q">A fitted line is \(\Delta u = 0.9 - 0.3\,g\). What are \(\beta\) and \(g^*\)?</div>
+    <div class="opts"><button data-k="a">0.9 and 0.3%</button><button data-k="b">-0.3 and 3%</button><button data-k="c">0.3 and 0.27%</button><button data-k="d">0.3 and 3%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>\(\beta\) is minus the slope, so 0.3. Break-even growth is 0.9 / 0.3 = 3%.</div>
+  </div>
+</section>
+
+<!-- ========== 6 ========== -->
+<section class="block prose" id="b6">
+  <h2>Why not one for one</h2>
+  <p class="sub">If output falls 4%, why does unemployment rise by only about 2 points, not 4?</p>
+
+  <h3>The idea</h3>
+  <p>On our island in block 1, output and jobs moved exactly together. Real economies have shock absorbers. When demand falls, a firm has several options before firing anyone:</p>
+  <div class="tw"><table class="t">
+    <tr><th>Channel</th><th>What happens in a downturn</th></tr>
+    <tr><td>Productivity</td><td>Firms keep workers even when there is less to do, because hiring and training replacements later is expensive. This is called labour hoarding. Output per hour falls.</td></tr>
+    <tr><td>Hours</td><td>Workers stay employed but work fewer hours: less overtime, shorter shifts, part-time arrangements.</td></tr>
+    <tr><td>Participation</td><td>Some people who lose jobs stop searching (discouraged workers) or never start. They leave the labour force, so they are not counted as unemployed.</td></tr>
+    <tr><td>Unemployment</td><td>Whatever is left shows up as people losing jobs while still looking for work.</td></tr>
+  </table></div>
+  <p>Only the last channel moves the unemployment rate. Okun's coefficient is, roughly, the share of an output swing that ends up in that channel.</p>
+
+  <h3>The formula</h3>
+  <p>Output can be split into a product of pieces: output per hour, hours per worker, the employment rate, the participation rate, and the working-age population \(N\):</p>
+  <div class="math">\[ Y = \frac{Y}{H}\cdot\frac{H}{E}\cdot\frac{E}{L}\cdot\frac{L}{N}\cdot N. \]</div>
+  <p>Growth rates of a product add up approximately, so a percentage change in \(Y\) is the sum of the percentage changes of the pieces. The employment rate is \(E/L = 1 - u/100\), so a 1% fall in it means unemployment rises by about 1 point.</p>
+
+  <h3>Try it</h3>
+  <p>A recession pushes output below its normal path. Decide how much of the hit each shock absorber takes. Whatever you do not assign falls on unemployment.</p>
+  <div class="lab">
+    <svg id="decSvg" role="img" aria-label="Split of an output fall across channels"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="decS">Output fall below normal <output id="decSo"></output></label><input type="range" id="decS" min="1" max="8" step="0.5" value="4"></div>
+      <div class="ctl"><label for="decP">Share absorbed by productivity <output id="decPo"></output></label><input type="range" id="decP" min="0" max="80" step="5" value="30"></div>
+      <div class="ctl"><label for="decH">Share absorbed by hours <output id="decHo"></output></label><input type="range" id="decH" min="0" max="80" step="5" value="15"></div>
+      <div class="ctl"><label for="decL">Share absorbed by participation <output id="decLo"></output></label><input type="range" id="decL" min="0" max="80" step="5" value="10"></div>
+    </div>
+    <div class="readout" id="decOut"></div>
+  </div>
+
+  <h3>Worked example</h3>
+  <div class="example">
+    <p>Output falls 2% below normal. Productivity absorbs 0.8 points, hours 0.4, participation 0.2. That leaves \(2 - 0.8 - 0.4 - 0.2 = 0.6\) points for the employment rate, so unemployment rises about 0.6 points. The implied coefficient is \(0.6 / 2 = 0.3\), close to what Okun found.</p>
+  </div>
+
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">A country introduces a scheme that pays firms to cut hours instead of firing workers. What happens to its Okun coefficient?</div>
+    <div class="opts"><button data-k="a">It rises</button><button data-k="b">It stays the same</button><button data-k="c">It falls</button><button data-k="d">It becomes negative</button></div>
+    <div class="fb" hidden><span class="verdict"></span>More of each output fall is absorbed by hours, so less reaches unemployment. The coefficient gets smaller. Germany's short-time work scheme in 2009 is the classic example.</div>
+  </div>
+</section>
+
+<!-- ========== 7 ========== -->
+<section class="block prose" id="b7">
+  <h2>Around the world</h2>
+  <p class="sub">The coefficient is not a constant of nature. It depends on how a country's labour market works.</p>
+
+  <h3>The idea</h3>
+  <p>Because \(\beta\) measures how much of an output swing reaches unemployment, countries with flexible hiring and firing have large coefficients, and countries where firms protect jobs have small ones. The values below are rounded illustrations of a pattern found in published cross-country studies. Exact estimates vary by study, method and period, so treat them as orders of magnitude.</p>
+
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="ctySvg" role="img" aria-label="Unemployment rise for the same recession in four countries"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="ctyS">Same recession everywhere: output gap <output id="ctySo"></output></label><input type="range" id="ctyS" min="-8" max="-1" step="0.5" value="-4"></div>
+    </div>
+  </div>
+  <div class="tw"><table class="t">
+    <tr><th>Country</th><th>Rough \(\beta\)</th><th>Why</th></tr>
+    <tr><td>Spain</td><td class="n">about 0.8</td><td>Many workers on temporary contracts that are easy to end, so job losses come quickly.</td></tr>
+    <tr><td>United States</td><td class="n">about 0.4 to 0.5</td><td>Flexible labour market with few barriers to layoffs.</td></tr>
+    <tr><td>Germany</td><td class="n">about 0.3 to 0.4</td><td>Short-time work schemes and working-time accounts absorb shocks through hours.</td></tr>
+    <tr><td>Japan</td><td class="n">about 0.1 to 0.2</td><td>Strong norms of long-term employment; firms adjust hours, bonuses and productivity instead.</td></tr>
+  </table></div>
+
+  <h3>Where it breaks down</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Issue</th><th>What it means for the rule</th></tr>
+    <tr><td>It is a regularity, not a law</td><td>The name is historical. It is a pattern in the data, and the coefficient drifts as institutions change.</td></tr>
+    <tr><td>Jobless recoveries</td><td>After some recessions (United States 1991, 2001, 2009) output recovered well before jobs did, so unemployment stayed high longer than the rule predicted.</td></tr>
+    <tr><td>Job retention schemes</td><td>In 2020, countries with furlough schemes saw output collapse while unemployment barely moved. In the United States, with fewer such schemes, unemployment jumped far more.</td></tr>
+    <tr><td>Unobserved quantities</td><td>Potential output and the natural rate are estimates and get revised, which changes the gap version's inputs after the fact.</td></tr>
+    <tr><td>Data revisions</td><td>Early GDP figures are revised for years. A fit on first-release data can differ from a fit on final data.</td></tr>
+    <tr><td>Asymmetry</td><td>Unemployment often rises faster in recessions than it falls in expansions, which a single straight line cannot capture.</td></tr>
+  </table></div>
+
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">Two countries suffer the same 3% output gap. Country A has \(\beta = 0.8\), country B has \(\beta = 0.2\). How much more does unemployment rise in A?</div>
+    <div class="opts"><button data-k="a">0.6 points more</button><button data-k="b">1.8 points more</button><button data-k="c">4 times as many points, about 3 more</button><button data-k="d">The same</button></div>
+    <div class="fb" hidden><span class="verdict"></span>A: 0.8 x 3 = 2.4 points. B: 0.2 x 3 = 0.6 points. The difference is 1.8 points (A rises 4 times as much, but that is 2.4 versus 0.6, not 3 more).</div>
+  </div>
+</section>
+
+<!-- ========== 8 ========== -->
+<section class="block prose" id="b8">
+  <h2>Putting it to work</h2>
+  <p class="sub">The two everyday uses: turning a GDP forecast into an unemployment forecast, and the reverse.</p>
+
+  <h3>The idea</h3>
+  <p>Forecasters often predict GDP growth first, because it comes out of their main macroeconomic models. Okun's law then gives a quick, transparent translation into unemployment. Run backwards, it answers a policy question: how fast must the economy grow to bring unemployment down to a target?</p>
+
+  <div class="math">\[ \text{Forecast:}\quad u_{t+1} = u_t - \beta\,(g_{t+1} - g^*) \qquad \text{Target:}\quad g_{\text{needed}} = g^* - \frac{u_{\text{target}} - u_t}{\beta} \]</div>
+
+  <h3>Try it</h3>
+  <div class="lab" style="padding-bottom:16px">
+    <div class="controls" style="margin-top:0">
+      <div class="ctl"><label for="wB">Okun's coefficient \(\beta\) <output id="wBo"></output></label><input type="range" id="wB" min="0.1" max="1" step="0.05" value="0.5"></div>
+      <div class="ctl"><label for="wG">Break-even growth \(g^*\) <output id="wGo"></output></label><input type="range" id="wG" min="0" max="5" step="0.1" value="3"></div>
+      <div class="ctl"><label for="wU">Unemployment now <output id="wUo"></output></label><input type="range" id="wU" min="2" max="15" step="0.1" value="6"></div>
+    </div>
+  </div>
+  <div class="cards2">
+    <div class="lab">
+      <div class="ctl"><label for="wF">GDP growth forecast <output id="wFo"></output></label><input type="range" id="wF" min="-5" max="8" step="0.1" value="1.5"></div>
+      <p class="big" id="wOut1"></p>
+      <p class="hint" id="wTxt1"></p>
+    </div>
+    <div class="lab">
+      <div class="ctl"><label for="wT">Unemployment target next year <output id="wTo"></output></label><input type="range" id="wT" min="1" max="15" step="0.1" value="5"></div>
+      <p class="big" id="wOut2"></p>
+      <p class="hint" id="wTxt2"></p>
+    </div>
+  </div>
+
+  <h3>Worked example</h3>
+  <div class="example">
+    <p>A central bank expects 1.5% growth next year. Unemployment is 6%, \(\beta = 0.5\) and \(g^* = 3\%\). The forecast is \(6 - 0.5 \times (1.5 - 3) = 6.75\%\). To bring unemployment down to 5% instead, the economy would need \(3 - (5 - 6)/0.5 = 5\%\) growth.</p>
+  </div>
+
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">With \(g^* = 2\%\) and \(\beta = 0.25\), unemployment is 7% and the target is 6.5% next year. What growth is needed?</div>
+    <div class="opts"><button data-k="a">4%</button><button data-k="b">2.5%</button><button data-k="c">3%</button><button data-k="d">0%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>g = 2 - (6.5 - 7)/0.25 = 2 + 2 = 4%.</div>
+  </div>
+
+  <h3>Summary</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Version</th><th>Formula</th><th>Read it as</th></tr>
+    <tr><td>Gap</td><td>\(u_t - u^* = -\beta\,\text{gap}_t\)</td><td>Output 1% below potential means unemployment \(\beta\) points above normal.</td></tr>
+    <tr><td>Growth</td><td>\(\Delta u_t = -\beta\,(g_t - g^*)\)</td><td>Each point of growth above \(g^*\) lowers unemployment by \(\beta\) points.</td></tr>
+    <tr><td>Estimation</td><td>\(\Delta u_t = a + b\,g_t\)</td><td>\(\beta = -b\) and \(g^* = -a/b\), fitted by least squares.</td></tr>
+  </table></div>
+</section>
+
+<footer class="prose">
+  <p>Reference: Okun, A. M. (1962). Potential GNP: its measurement and significance. Proceedings of the Business and Economic Statistics Section, American Statistical Association. All charts on this page are computed live in your browser from simulated data.</p>
+</footer>
+</main>
+</div>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  function el(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  const f = (v, d = 1) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d);
+  const sg = (v, d = 1) => (v > 1e-9 ? '+' : '') + f(v, d);
+
+  // Generic frame: returns scales
+  function frame(svg, o) {
+    svg.innerHTML = '';
+    const W = o.W || 640, H = o.H || 300;
+    const p = Object.assign({ l: 50, r: 18, t: 14, b: 42 }, o.pad || {});
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const X = v => p.l + (v - o.x0) / (o.x1 - o.x0) * (W - p.l - p.r);
+    const Y = v => H - p.b - (v - o.y0) / (o.y1 - o.y0) * (H - p.t - p.b);
+    (o.xt || []).forEach(t => {
+      el('line', { x1: X(t), x2: X(t), y1: p.t, y2: H - p.b, class: 'grid' }, svg);
+      el('text', { x: X(t), y: H - p.b + 16, class: 'tick', 'text-anchor': 'middle' }, svg, (o.xf || String)(t));
+    });
+    (o.yt || []).forEach(t => {
+      el('line', { x1: p.l, x2: W - p.r, y1: Y(t), y2: Y(t), class: 'grid' }, svg);
+      el('text', { x: p.l - 7, y: Y(t) + 4, class: 'tick', 'text-anchor': 'end' }, svg, (o.yf || String)(t));
+    });
+    if (o.zeroX && o.y0 < 0 && o.y1 > 0) el('line', { x1: p.l, x2: W - p.r, y1: Y(0), y2: Y(0), class: 'zero' }, svg);
+    if (o.zeroY && o.x0 < 0 && o.x1 > 0) el('line', { x1: X(0), x2: X(0), y1: p.t, y2: H - p.b, class: 'zero' }, svg);
+    if (o.xl) el('text', { x: (p.l + W - p.r) / 2, y: H - 6, class: 'axl', 'text-anchor': 'middle' }, svg, o.xl);
+    if (o.yl) el('text', { x: 14, y: (p.t + H - p.b) / 2, class: 'axl', 'text-anchor': 'middle', transform: `rotate(-90 14 ${(p.t + H - p.b) / 2})` }, svg, o.yl);
+    return { X, Y, W, H, p };
+  }
+  const path = pts => 'M' + pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join('L');
+  const pct = t => t + '%';
+
+  /* ---------- hero ---------- */
+  function hero() {
+    const g = +$('heroG').value, du = -0.5 * (g - 3), u1 = 5 + du;
+    $('heroGo').textContent = f(g) + '%';
+    let msg;
+    if (Math.abs(du) < 1e-9) msg = `Growth of <b>${f(g)}%</b> is exactly enough: unemployment <b>stays at 5.0%</b>.`;
+    else if (du > 0) msg = `Growth of <b class="up">${f(g)}%</b> is too slow: unemployment <b class="up">rises ${f(du)} point${Math.abs(du) === 1 ? '' : 's'}</b>, from 5.0% to ${f(u1)}%.`;
+    else msg = `Growth of <b>${f(g)}%</b> beats the normal pace: unemployment <b>falls ${f(-du)} point${Math.abs(du) === 1 ? '' : 's'}</b>, from 5.0% to ${f(u1)}%.`;
+    $('heroSay').innerHTML = msg;
+    const svg = $('heroSvg');
+    const s = frame(svg, { W: 420, H: 300, x0: -4, x1: 8, y0: -3, y1: 4, xt: [-4, -2, 0, 2, 4, 6, 8], yt: [-3, -2, -1, 0, 1, 2, 3, 4], xf: pct, yf: sg.bind(null), zeroX: true, zeroY: true,
+      xl: 'GDP growth this year', yl: 'Change in unemployment (points)', pad: { l: 52 } });
+    el('path', { d: path([[s.X(-4), s.Y(3.5)], [s.X(8), s.Y(-2.5)]]), class: 's-teal', 'stroke-width': 3, fill: 'none' }, svg);
+    el('circle', { cx: s.X(3), cy: s.Y(0), r: 4, class: 'f-ink' }, svg);
+    el('text', { x: s.X(3) + 8, y: s.Y(0) - 8, class: 'lbl f-ink halo' }, svg, 'g* = 3%');
+    el('line', { x1: s.X(g), x2: s.X(g), y1: s.Y(0), y2: s.Y(du), class: 's-ink dash', 'stroke-width': 1.2 }, svg);
+    el('circle', { cx: s.X(g), cy: s.Y(du), r: 8, class: du > 0 ? 'f-rose' : 'f-teal' }, svg);
+  }
+  $('heroG').addEventListener('input', hero);
+
+  /* ---------- island ---------- */
+  const peopleBox = $('people');
+  for (let i = 0; i < 20; i++) {
+    const b = document.createElement('button');
+    b.setAttribute('aria-pressed', i < 18 ? 'true' : 'false');
+    b.setAttribute('aria-label', 'Person ' + (i + 1));
+    b.addEventListener('click', () => { b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); island(); });
+    peopleBox.appendChild(b);
+  }
+  function island() {
+    const E = peopleBox.querySelectorAll('[aria-pressed="true"]').length, U = 20 - E;
+    $('islandOut').innerHTML =
+      `<span class="k">Labour force L</span> = 20 &nbsp; <span class="k">Employed E</span> = ${E} &nbsp; <span class="k">Unemployed U</span> = ${U}<br>` +
+      `<span class="k">Unemployment rate</span> = ${U} / 20 = <b>${f(U / 20 * 100)}%</b><br>` +
+      `<span class="k">Output</span> = ${E} x 5 = <b>${E * 5} crates</b> (full employment would give 100)`;
+  }
+
+  /* ---------- business cycle ---------- */
+  function cycle() {
+    const T = +$('cycT').value, A = +$('cycA').value;
+    $('cycTo').textContent = f(T); $('cycAo').textContent = '±' + f(A) + '%';
+    const gap = t => A * Math.sin(2 * Math.PI * t / 8);
+    const Ys = t => 100 * Math.pow(1.03, t);
+    const Yv = t => Ys(t) * (1 + gap(t) / 100);
+    const uv = t => 5 - 0.5 * gap(t);
+    const ts = []; for (let t = 0; t <= 20.0001; t += 0.1) ts.push(t);
+    // top
+    let s = frame($('cycTop'), { W: 640, H: 220, x0: 0, x1: 20, y0: 94, y1: 188, xt: [0, 4, 8, 12, 16, 20], yt: [100, 125, 150, 175], yl: 'Output', pad: { b: 26 } });
+    const svgT = $('cycTop');
+    // shaded gap
+    for (let i = 0; i < ts.length - 1; i++) {
+      const a = ts[i], b = ts[i + 1];
+      const below = gap((a + b) / 2) < 0;
+      el('path', { d: path([[s.X(a), s.Y(Ys(a))], [s.X(b), s.Y(Ys(b))], [s.X(b), s.Y(Yv(b))], [s.X(a), s.Y(Yv(a))]]) + 'Z', class: below ? 'f-rose-soft' : 'f-teal-soft', stroke: 'none' }, svgT);
+    }
+    el('path', { d: path(ts.map(t => [s.X(t), s.Y(Ys(t))])), fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.6, class: 'dash' }, svgT);
+    el('path', { d: path(ts.map(t => [s.X(t), s.Y(Yv(t))])), fill: 'none', class: 's-teal', 'stroke-width': 2.6 }, svgT);
+    el('line', { x1: s.X(T), x2: s.X(T), y1: s.p.t, y2: s.H - s.p.b, class: 's-ink', 'stroke-width': 1 }, svgT);
+    el('circle', { cx: s.X(T), cy: s.Y(Yv(T)), r: 5, class: 'f-teal' }, svgT);
+    // bottom
+    s = frame($('cycBot'), { W: 640, H: 200, x0: 0, x1: 20, y0: 1.5, y1: 8.5, xt: [0, 4, 8, 12, 16, 20], yt: [2, 4, 6, 8], yf: pct, xl: 'Year', yl: 'Unemployment' });
+    const svgB = $('cycBot');
+    el('line', { x1: s.X(0), x2: s.X(20), y1: s.Y(5), y2: s.Y(5), stroke: 'var(--muted)', 'stroke-width': 1.6, class: 'dash' }, svgB);
+    el('path', { d: path(ts.map(t => [s.X(t), s.Y(uv(t))])), fill: 'none', class: 's-rose', 'stroke-width': 2.6 }, svgB);
+    el('line', { x1: s.X(T), x2: s.X(T), y1: s.p.t, y2: s.H - s.p.b, class: 's-ink', 'stroke-width': 1 }, svgB);
+    el('circle', { cx: s.X(T), cy: s.Y(uv(T)), r: 5, class: 'f-rose' }, svgB);
+    const gp = gap(T);
+    const state = Math.abs(gp) < 0.25 ? 'close to normal' : gp < 0 ? 'in a slump' : 'in a boom';
+    $('cycOut').innerHTML =
+      `<span class="k">Year ${f(T)}:</span> Y = ${f(Yv(T))}, Y* = ${f(Ys(T))}, <span class="k">output gap</span> = <b>${sg(gp)}%</b><br>` +
+      `<span class="k">unemployment</span> = ${f(uv(T))}%, u* = 5.0%, <span class="k">cyclical unemployment</span> = <b>${sg(uv(T) - 5)} points</b> (economy ${state})`;
+  }
+  ['cycT', 'cycA'].forEach(id => $(id).addEventListener('input', cycle));
+
+  /* ---------- gap version ---------- */
+  function gapv() {
+    const x = +$('gapX').value, b = +$('gapB').value, us = +$('gapU').value;
+    $('gapXo').textContent = sg(x) + '%'; $('gapBo').textContent = f(b, 2); $('gapUo').textContent = f(us) + '%';
+    const u = us - b * x;
+    const svg = $('gapSvg');
+    const s = frame(svg, { W: 640, H: 300, x0: -8, x1: 4, y0: 0, y1: 14, xt: [-8, -6, -4, -2, 0, 2, 4], yt: [0, 2, 4, 6, 8, 10, 12, 14], xf: t => sg(t, 0) + '%', yf: pct, zeroY: true,
+      xl: 'Output gap (% of potential)', yl: 'Unemployment rate' });
+    el('line', { x1: s.X(-8), x2: s.X(4), y1: s.Y(us), y2: s.Y(us), stroke: 'var(--muted)', 'stroke-width': 1.4, class: 'dash' }, svg);
+    el('text', { x: s.X(4) - 4, y: s.Y(us) - 6, class: 'lbl', 'text-anchor': 'end', fill: 'var(--muted)' }, svg, 'natural rate u*');
+    el('path', { d: path([[s.X(-8), s.Y(us + 8 * b)], [s.X(4), s.Y(us - 4 * b)]]), class: 's-teal', 'stroke-width': 3, fill: 'none' }, svg);
+    el('line', { x1: s.X(x), x2: s.X(x), y1: s.Y(us), y2: s.Y(u), class: 's-rose', 'stroke-width': 3 }, svg);
+    el('circle', { cx: s.X(x), cy: s.Y(u), r: 8, class: 'f-rose' }, svg);
+    el('text', { x: s.X(x) + 12, y: (s.Y(us) + s.Y(u)) / 2 + 4, class: 'lbl f-rose' }, svg, sg(u - us) + ' pts');
+    $('gapOut').innerHTML =
+      `<span class="k">u</span> = u* - β x gap = ${f(us)} - ${f(b, 2)} x (${sg(x)}) = <b>${f(u, 2)}%</b><br>` +
+      `<span class="k">cyclical unemployment</span> = ${sg(u - us, 2)} points; <span class="k">output cost of 1 point</span> = 1/β = ${f(1 / b, 1)}% of GDP`;
+  }
+  ['gapX', 'gapB', 'gapU'].forEach(id => $(id).addEventListener('input', gapv));
+
+  /* ---------- growth version, 5 years ---------- */
+  const presets = { rec: [3, 1, -2, 2, 5], steady: [3, 3, 3, 3, 3], slow: [1.5, 1.5, 1.5, 1.5, 1.5] };
+  const yrCtl = $('yrCtl');
+  presets.rec.forEach((v, i) => {
+    const d = document.createElement('div'); d.className = 'ctl';
+    d.innerHTML = `<label for="y${i}">Year ${i + 1} growth <output id="y${i}o"></output></label><input type="range" id="y${i}" min="-4" max="7" step="0.5" value="${v}">`;
+    yrCtl.appendChild(d);
+  });
+  function years() {
+    const gs = [0, 1, 2, 3, 4].map(i => +$('y' + i).value);
+    gs.forEach((g, i) => $('y' + i + 'o').textContent = f(g) + '%');
+    const us = [5]; const dus = [];
+    gs.forEach(g => { const du = -0.5 * (g - 3); dus.push(du); us.push(us[us.length - 1] + du); });
+    const svg = $('yrSvg');
+    const ymax = Math.max(10, Math.ceil(Math.max(...us) + 1));
+    const s = frame(svg, { W: 640, H: 260, x0: -0.5, x1: 5.5, y0: 0, y1: ymax, xt: [], yt: [0, 2, 4, 6, 8, 10, 12, 14].filter(v => v <= ymax), yf: pct, yl: 'Unemployment' });
+    el('line', { x1: s.X(-0.5), x2: s.X(5.5), y1: s.Y(5), y2: s.Y(5), stroke: 'var(--muted)', 'stroke-width': 1.2, class: 'dash' }, svg);
+    us.forEach((u, i) => {
+      const w = 46, x = s.X(i) - w / 2, up = i > 0 && dus[i - 1] > 1e-9, down = i > 0 && dus[i - 1] < -1e-9;
+      el('rect', { x, y: s.Y(Math.max(u, 0)), width: w, height: s.Y(0) - s.Y(Math.max(u, 0)), rx: 4, class: i === 0 ? 'f-violet-soft' : up ? 'f-rose' : down ? 'f-teal' : 'f-amber' }, svg);
+      el('text', { x: s.X(i), y: s.Y(Math.max(u, 0)) - 7, class: 'lbl f-ink', 'text-anchor': 'middle' }, svg, f(u) + '%');
+      el('text', { x: s.X(i), y: s.H - s.p.b + 17, class: 'tick', 'text-anchor': 'middle' }, svg, i === 0 ? 'start' : 'year ' + i);
+    });
+    let h = '<tr><th>Year</th><th>Growth g</th><th>Δu = -0.5 x (g - 3)</th><th>Unemployment</th></tr><tr><td>Start</td><td class="n"></td><td class="n"></td><td class="n">5.0%</td></tr>';
+    gs.forEach((g, i) => { h += `<tr><td>${i + 1}</td><td class="n">${f(g)}%</td><td class="n">${sg(dus[i], 2)}</td><td class="n">${f(us[i + 1], 2)}%</td></tr>`; });
+    $('yrTab').innerHTML = h;
+  }
+  yrCtl.addEventListener('input', years);
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    presets[b.dataset.preset].forEach((v, i) => $('y' + i).value = v); years();
+  }));
+
+  /* ---------- OLS ---------- */
+  let seed = 7, data = [], showFit = false;
+  function rng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function sample() {
+    const r = rng(seed);
+    const n = () => { let u = 0, v = 0; while (u === 0) u = r(); v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    const beta = 0.35 + 0.25 * r(), gs = 2 + 1.5 * r();
+    data = [];
+    for (let i = 0; i < 30; i++) {
+      const g = Math.max(-2.8, Math.min(7.8, 2.6 + 2 * n()));
+      data.push([g, beta * gs - beta * g + 0.35 * n()]);
+    }
+  }
+  function ols() {
+    const n = data.length, mg = data.reduce((s, d) => s + d[0], 0) / n, mu = data.reduce((s, d) => s + d[1], 0) / n;
+    let sxy = 0, sxx = 0, syy = 0;
+    data.forEach(d => { sxy += (d[0] - mg) * (d[1] - mu); sxx += (d[0] - mg) ** 2; syy += (d[1] - mu) ** 2; });
+    const b = sxy / sxx, a = mu - b * mg;
+    return { a, b, r2: sxy * sxy / (sxx * syy) };
+  }
+  const sse = (a, b) => data.reduce((s, d) => s + (d[1] - a - b * d[0]) ** 2, 0);
+  function olsDraw() {
+    const b = +$('olsB').value, a = +$('olsA').value;
+    $('olsBo').textContent = f(b, 2); $('olsAo').textContent = f(a, 2);
+    const svg = $('olsSvg');
+    const s = frame(svg, { W: 640, H: 320, x0: -3, x1: 8, y0: -3, y1: 3, xt: [-2, 0, 2, 4, 6, 8], yt: [-3, -2, -1, 0, 1, 2, 3], xf: pct, yf: t => sg(t, 0), zeroX: true, zeroY: true,
+      xl: 'GDP growth g (%)', yl: 'Change in unemployment Δu (points)' });
+    const clipY = v => Math.max(-3, Math.min(3, v));
+    data.forEach(d => el('line', { x1: s.X(d[0]), x2: s.X(d[0]), y1: s.Y(d[1]), y2: s.Y(clipY(a + b * d[0])), class: 's-violet', 'stroke-width': 1, opacity: .6 }, svg));
+    const seg = (A, B, cls, w) => {
+      const pts = []; for (let x = -3; x <= 8.001; x += 0.05) { const y = A + B * x; if (y >= -3 && y <= 3) pts.push([s.X(x), s.Y(y)]); }
+      if (pts.length > 1) el('path', { d: path(pts), fill: 'none', class: cls, 'stroke-width': w }, svg);
+    };
+    seg(a, b, 's-violet', 2.4);
+    let txt = `<span class="k">Your line:</span> Δu = ${f(a, 2)} ${b < 0 ? '-' : '+'} ${f(Math.abs(b), 2)} g &nbsp; <span class="k">sum of squared errors</span> = <b>${f(sse(a, b), 2)}</b><br>` +
+      `<span class="k">implied</span> β = ${f(-b, 2)}${b < -0.005 ? `, g* = ${f(-a / b, 2)}%` : ', g* undefined (slope must be negative)'}`;
+    if (showFit) {
+      const o = ols();
+      seg(o.a, o.b, 's-amber', 3);
+      txt += `<br><span class="k">Least squares:</span> Δu = ${f(o.a, 2)} - ${f(-o.b, 2)} g &nbsp; <span class="k">sum of squared errors</span> = <b>${f(sse(o.a, o.b), 2)}</b><br>` +
+        `<span class="k">estimates</span> β̂ = <b>${f(-o.b, 2)}</b>, ĝ* = <b>${f(-o.a / o.b, 2)}%</b>, R² = ${f(o.r2, 2)} (share of the variation in Δu the line explains)`;
+    }
+    data.forEach(d => el('circle', { cx: s.X(d[0]), cy: s.Y(d[1]), r: 5, class: 'f-ink', opacity: .85 }, svg));
+    $('olsOut').innerHTML = txt;
+  }
+  ['olsB', 'olsA'].forEach(id => $(id).addEventListener('input', olsDraw));
+  $('olsFit').addEventListener('click', () => { showFit = !showFit; $('olsFit').textContent = showFit ? 'Hide least squares line' : 'Show least squares line'; olsDraw(); });
+  $('olsNew').addEventListener('click', () => { seed++; sample(); olsDraw(); });
+
+  /* ---------- decomposition ---------- */
+  const decIds = ['decP', 'decH', 'decL'];
+  function dec(e) {
+    if (e && decIds.includes(e.target.id)) {
+      const others = decIds.filter(i => i !== e.target.id).reduce((s, i) => s + +$(i).value, 0);
+      if (+e.target.value + others > 100) e.target.value = 100 - others;
+    }
+    const S = +$('decS').value, P = +$('decP').value, Hh = +$('decH').value, L = +$('decL').value, Em = 100 - P - Hh - L;
+    $('decSo').textContent = '-' + f(S) + '%'; $('decPo').textContent = P + '%'; $('decHo').textContent = Hh + '%'; $('decLo').textContent = L + '%';
+    const svg = $('decSvg'); svg.innerHTML = ''; svg.setAttribute('viewBox', '0 0 640 130');
+    const parts = [['Productivity', P, 'f-violet'], ['Hours', Hh, 'f-amber'], ['Participation', L, 'f-teal'], ['Unemployment', Em, 'f-rose']];
+    let x = 10; const W = 620;
+    el('text', { x: 10, y: 18, class: 'axl' }, svg, `Output is ${f(S)}% below normal. Where does the fall go?`);
+    parts.forEach(([name, sh, cls]) => {
+      const w = W * sh / 100; if (w <= 0) return;
+      el('rect', { x, y: 30, width: w, height: 46, class: cls }, svg);
+      if (w > 60) {
+        el('text', { x: x + w / 2, y: 98, class: 'lbl f-ink', 'text-anchor': 'middle' }, svg, name);
+        el('text', { x: x + w / 2, y: 114, class: 'tick', 'text-anchor': 'middle' }, svg, f(S * sh / 100, 2) + ' pts');
+      }
+      x += w;
+    });
+    const du = S * Em / 100;
+    $('decOut').innerHTML =
+      `<span class="k">productivity</span> ${f(S * P / 100, 2)} + <span class="k">hours</span> ${f(S * Hh / 100, 2)} + <span class="k">participation</span> ${f(S * L / 100, 2)} + <span class="k">employment</span> ${f(du, 2)} = ${f(S, 2)} points<br>` +
+      `<span class="k">unemployment rises by about</span> <b>${f(du, 2)} points</b>; <span class="k">implied Okun coefficient</span> β ≈ ${f(du, 2)} / ${f(S, 1)} = <b>${f(Em / 100, 2)}</b>`;
+  }
+  ['decS', ...decIds].forEach(id => $(id).addEventListener('input', dec));
+
+  /* ---------- countries ---------- */
+  const cty = [['Spain', 0.8, 'f-rose'], ['United States', 0.45, 'f-amber'], ['Germany', 0.35, 'f-teal'], ['Japan', 0.15, 'f-violet']];
+  function countries() {
+    const S = +$('ctyS').value; $('ctySo').textContent = f(S) + '%';
+    const svg = $('ctySvg');
+    const s = frame(svg, { W: 640, H: 230, x0: 0, x1: 7, y0: 0, y1: 4, xt: [0, 1, 2, 3, 4, 5, 6, 7], xf: t => '+' + t, xl: 'Rise in unemployment (points)', pad: { l: 118, t: 8 } });
+    cty.forEach(([name, b, cls], i) => {
+      const yc = s.Y(3.5 - i), h = 30, du = -b * S;
+      el('text', { x: s.p.l - 10, y: yc + 5, class: 'lbl f-ink', 'text-anchor': 'end' }, svg, name);
+      el('rect', { x: s.X(0), y: yc - h / 2, width: Math.max(0, s.X(du) - s.X(0)), height: h, rx: 4, class: cls }, svg);
+      el('text', { x: s.X(du) + 8, y: yc + 5, class: 'tick halo' }, svg, sg(du) + ' pts (β ≈ ' + b + ')');
+    });
+  }
+  $('ctyS').addEventListener('input', countries);
+
+  /* ---------- forecaster ---------- */
+  function work() {
+    const b = +$('wB').value, gs = +$('wG').value, u = +$('wU').value, gf = +$('wF').value, ut = +$('wT').value;
+    $('wBo').textContent = f(b, 2); $('wGo').textContent = f(gs) + '%'; $('wUo').textContent = f(u) + '%';
+    $('wFo').textContent = f(gf) + '%'; $('wTo').textContent = f(ut) + '%';
+    const un = u - b * (gf - gs);
+    $('wOut1').innerHTML = `${f(Math.max(un, 0), 2)}% <small>unemployment next year</small>`;
+    $('wTxt1').textContent = `${f(u)} - ${f(b, 2)} x (${f(gf)} - ${f(gs)}) = ${f(un, 2)}. ` + (un < 0 ? 'A negative value shows the rule has been pushed far outside its range.' : gf > gs ? 'Growth above break-even, so unemployment falls.' : gf < gs ? 'Growth below break-even, so unemployment rises.' : 'Growth equals break-even, so unemployment is unchanged.');
+    const gn = gs - (ut - u) / b;
+    $('wOut2').innerHTML = `${f(gn, 2)}% <small>growth needed</small>`;
+    $('wTxt2').textContent = `${f(gs)} - (${f(ut)} - ${f(u)}) / ${f(b, 2)} = ${f(gn, 2)}. ` + (gn > 6 ? 'Very fast growth for one year: in practice a target like this is usually spread over several years.' : 'Compare it with realistic growth rates for the economy.');
+  }
+  ['wB', 'wG', 'wU', 'wF', 'wT'].forEach(id => $(id).addEventListener('input', work));
+
+  /* ---------- quick checks ---------- */
+  document.querySelectorAll('.check').forEach(c => {
+    const ans = c.dataset.answer;
+    c.querySelectorAll('.opts button').forEach(b => b.addEventListener('click', () => {
+      c.querySelectorAll('.opts button').forEach(x => x.classList.remove('right', 'wrong'));
+      const ok = b.dataset.k === ans;
+      b.classList.add(ok ? 'right' : 'wrong');
+      if (!ok) c.querySelector(`.opts [data-k="${ans}"]`).classList.add('right');
+      const fb = c.querySelector('.fb'); fb.hidden = false;
+      fb.querySelector('.verdict').textContent = ok ? 'Correct.' : 'Not quite.';
+    }));
+  });
+
+  /* ---------- nav highlight ---------- */
+  const links = [...document.querySelectorAll('nav.toc a')];
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+    }), { rootMargin: '-30% 0px -60% 0px' });
+    document.querySelectorAll('section.block').forEach(s => io.observe(s));
+  }
+
+  sample();
+  hero(); island(); cycle(); gapv(); years(); olsDraw(); dec(); countries(); work();
+})();
+</script>
+</body>
+</html>

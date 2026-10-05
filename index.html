@@ -126,7 +126,8 @@ footer code{font-family:var(--mono);font-size:12.5px;background:rgba(15,122,131,
      field    used by the filter buttons
      parts    the sections of the lecture, in order
      tags     short keywords
-     motif    "graph" | "algo" | "text" | "net" | "reg" | "blank", picks the thumbnail
+     motif    "graph" | "algo" | "text" | "net" | "reg" | "rag"
+              | "solow" | "islm" | "okun" | "phillips" | "taylor" | "open" | "dsge" | "blank", picks the thumbnail
    ========================================================= */
 const LECTURES = [
   {
@@ -184,6 +185,28 @@ const LECTURES = [
     motif:"text"
   },
   {
+    title:"Information retrieval and RAG",
+    subject:"How a machine decides which information matters, from words to vectors to generation",
+    href:"retrievalRAG.html",
+    status:"ready",
+    field:"Data science",
+    parts:[
+      "The retrieval problem",
+      "TF-IDF: the importance of a word",
+      "BM25: stronger lexical retrieval",
+      "Dense retrieval: search by meaning",
+      "Hybrid retrieval: combining signals",
+      "Entity retrieval",
+      "Graph retrieval: using relationships",
+      "Reranking: retrieve first, judge again",
+      "RAG: retrieval-augmented generation",
+      "Evaluation: did retrieval actually work?",
+      "Check your understanding"
+    ],
+    tags:["BM25","dense retrieval","reranking","RAG"],
+    motif:"rag"
+  },
+  {
     title:"Neural networks",
     subject:"An interactive lecture, twelve blocks, with a board in every block",
     href:"neural-networks-lecture.html",
@@ -221,6 +244,139 @@ const LECTURES = [
     ],
     tags:["four notes","GLM","ridge and LASSO","live fitting"],
     motif:"reg"
+  },
+  {
+    title:"The Solow growth model",
+    subject:"Why some countries are rich and others poor, in a model that fits on one line",
+    href:"The Solow growth model, from the beginning.html",
+    status:"ready",
+    field:"Economics",
+    parts:[
+      "Why growth matters",
+      "Producing output",
+      "Saving and wear",
+      "The steady state",
+      "How much to save",
+      "Population growth",
+      "Technology",
+      "Growth accounting"
+    ],
+    tags:["long run","steady state","golden rule","growth accounting"],
+    motif:"solow"
+  },
+  {
+    title:"IS-LM and AD-AS",
+    subject:"Spending and interest rates in the short run, then prices and the drift back to normal",
+    href:"IS-LM and AD-AS, from the beginning.html",
+    status:"ready",
+    field:"Economics",
+    parts:[
+      "The goods market",
+      "The IS curve",
+      "The LM curve",
+      "IS-LM and policy",
+      "Aggregate demand",
+      "Aggregate supply",
+      "Shocks and adjustment",
+      "Links and limits"
+    ],
+    tags:["short run","fiscal and monetary policy","shocks"],
+    motif:"islm"
+  },
+  {
+    title:"Okun's law",
+    subject:"Faster growth, lower unemployment: the number Arthur Okun put on the link",
+    href:"Okun's law, from the beginning.html",
+    status:"ready",
+    field:"Economics",
+    parts:[
+      "Two numbers",
+      "Normal levels",
+      "The gap version",
+      "The growth version",
+      "Estimating it",
+      "Why not one for one",
+      "Around the world",
+      "Putting it to work"
+    ],
+    tags:["output gap","unemployment","estimation"],
+    motif:"okun"
+  },
+  {
+    title:"The Phillips curve",
+    subject:"Slack, wages and prices, and the curve macroeconomics has argued about since 1958",
+    href:"The Phillips curve, from the beginning.html",
+    status:"ready",
+    field:"Economics",
+    parts:[
+      "Measuring inflation",
+      "Phillips's discovery",
+      "A menu for policy",
+      "Expectations",
+      "Supply shocks",
+      "Anchored expectations",
+      "Estimating it",
+      "The cost of disinflation"
+    ],
+    tags:["inflation","expectations","sacrifice ratio"],
+    motif:"phillips"
+  },
+  {
+    title:"The Taylor rule and r*",
+    subject:"A one-line answer to how a central bank should set its rate, built on a number nobody observes",
+    href:"The Taylor rule and r_, from the beginning.html",
+    status:"ready",
+    field:"Economics",
+    parts:[
+      "Nominal and real rates",
+      "The neutral rate r*",
+      "The Taylor rule",
+      "The Taylor principle",
+      "Variants in practice",
+      "Estimating r*",
+      "Why r* fell",
+      "Fixed exchange rates"
+    ],
+    tags:["monetary policy","neutral rate","central banks"],
+    motif:"taylor"
+  },
+  {
+    title:"Open-economy macro",
+    subject:"Trade, capital flows, and the choice between a floating and a fixed exchange rate",
+    href:"Open-economy macro, from the beginning.html",
+    status:"ready",
+    field:"Economics",
+    parts:[
+      "Exchange rates",
+      "The balance of payments",
+      "Prices and trade",
+      "Interest parity",
+      "Mundell-Fleming",
+      "The trilemma",
+      "Pegs under pressure",
+      "Pegs in practice"
+    ],
+    tags:["exchange rates","Mundell-Fleming","trilemma"],
+    motif:"open"
+  },
+  {
+    title:"DSGE models",
+    subject:"A small artificial economy in equations, and what it says when a shock hits",
+    href:"DSGE models, from the beginning.html",
+    status:"ready",
+    field:"Economics",
+    parts:[
+      "The four words",
+      "Households",
+      "Firms and sticky prices",
+      "The central bank",
+      "Shocks",
+      "Equilibrium",
+      "Giving it numbers",
+      "Uses and limits"
+    ],
+    tags:["New Keynesian","impulse responses","calibration"],
+    motif:"dsge"
   }
 ];
 
@@ -349,7 +505,181 @@ function motifAlgo(){
   });
   return svg;
 }
-const MOTIFS = {graph:motifGraph, text:motifText, net:motifNet, reg:motifReg, algo:motifAlgo, blank:motifBlank};
+/* ---------- economics thumbnails, one per topic ---------- */
+function label(svg, x, y, txt, color, anchor){
+  const t = sv("text", {x:x, y:y});
+  t.setAttribute("style", "font-family:var(--mono);font-size:10px;dominant-baseline:central;text-anchor:" + (anchor || "start") + ";fill:" + (color || "var(--muted)"));
+  t.textContent = txt;
+  svg.appendChild(t);
+}
+function axes(svg, x0, y0, x1, y1){
+  svg.appendChild(sv("line", {x1:x0, y1:y1, x2:x0, y2:y0, stroke:"var(--line-strong)", "stroke-width":"1.4"}));
+  svg.appendChild(sv("line", {x1:x0, y1:y0, x2:x1, y2:y0, stroke:"var(--line-strong)", "stroke-width":"1.4"}));
+}
+function curve(fn, a, b, step){
+  let d = "";
+  for (let x = a; x <= b; x += (step || 4)) d += (d ? " L" : "M") + x.toFixed(1) + "," + fn(x).toFixed(1);
+  return d;
+}
+function stroke(svg, d, color, w, dash){
+  const a = {d:d, fill:"none", stroke:color, "stroke-width":w || "2.4", "stroke-linecap":"round", "stroke-linejoin":"round"};
+  if (dash) a["stroke-dasharray"] = dash;
+  svg.appendChild(sv("path", a));
+}
+function dot(svg, x, y, color, r){
+  svg.appendChild(sv("circle", {cx:x, cy:y, r:r || 5.5, fill:color, stroke:"var(--ink)", "stroke-width":"1.8"}));
+}
+
+/* Solow: output f(k), saving sf(k) and break-even (n+d)k meet at k* */
+function motifSolow(){
+  const svg = sv("svg", {viewBox:"0 0 360 120"});
+  axes(svg, 40, 108, 330, 12);
+  const k = function(x){ return (x - 40) / 280; };
+  stroke(svg, curve(function(x){ return 108 - 92*Math.sqrt(k(x)); }, 40, 320), "var(--ink)", "1.6");
+  stroke(svg, curve(function(x){ return 108 - 41.4*Math.sqrt(k(x)); }, 40, 320), "var(--teal)");
+  stroke(svg, "M40,108 L320," + (108 - 58.5), "var(--rose)");
+  svg.appendChild(sv("line", {x1:180, y1:78.7, x2:180, y2:108, stroke:"var(--line-strong)", "stroke-dasharray":"3 3"}));
+  dot(svg, 180, 78.7, "var(--amber)");
+  label(svg, 324, 26, "f(k)", "var(--ink)");
+  label(svg, 324, 74, "sf(k)", "var(--teal)");
+  label(svg, 324, 50, "(n+δ)k", "var(--rose)");
+  label(svg, 180, 116, "k*", "var(--ink)", "middle");
+  return svg;
+}
+
+/* IS-LM: a fiscal expansion shifts IS right along LM */
+function motifIslm(){
+  const svg = sv("svg", {viewBox:"0 0 360 120"});
+  axes(svg, 60, 108, 310, 12);
+  stroke(svg, "M80,22 C130,70 200,92 280,100", "var(--teal)");
+  stroke(svg, "M118,18 C170,64 240,86 306,92", "var(--teal)", "1.6", "5 4");
+  stroke(svg, "M80,100 C160,94 230,62 290,18", "var(--rose)");
+  dot(svg, 172, 82, "var(--panel)", 4.5);
+  dot(svg, 214, 70, "var(--amber)");
+  stroke(svg, "M182,80 L204,73", "var(--ink)", "1.4");
+  label(svg, 74, 16, "IS", "var(--teal)", "end");
+  label(svg, 122, 12, "IS′", "var(--teal)");
+  label(svg, 296, 18, "LM", "var(--rose)");
+  label(svg, 54, 60, "i", "var(--ink)", "end");
+  label(svg, 310, 116, "Y", "var(--ink)", "end");
+  return svg;
+}
+
+/* Okun: growth against the change in unemployment, a downward fit through the cloud */
+function motifOkun(){
+  const svg = sv("svg", {viewBox:"0 0 360 120"});
+  svg.appendChild(sv("line", {x1:180, y1:10, x2:180, y2:110, stroke:"var(--line-strong)", "stroke-width":"1.4"}));
+  svg.appendChild(sv("line", {x1:40, y1:60, x2:330, y2:60, stroke:"var(--line-strong)", "stroke-width":"1.4"}));
+  const fit = function(x){ return 60 - (230 - x)*0.3; };
+  const xs = [58,78,96,112,128,142,156,170,186,200,214,230,246,262,280,298,314];
+  const noise = [6,-8,4,-5,9,-3,-9,5,-4,8,-6,3,-7,6,-3,7,-5];
+  xs.forEach(function(x, i){
+    svg.appendChild(sv("circle", {cx:x, cy:fit(x) + noise[i], r:4, fill:"var(--teal)", "fill-opacity":".7", stroke:"var(--teal)"}));
+  });
+  stroke(svg, "M48," + fit(48) + " L322," + fit(322), "var(--rose)", "2.6");
+  dot(svg, 230, 60, "var(--amber)", 4.5);
+  label(svg, 186, 14, "Δu", "var(--ink)");
+  label(svg, 44, 70, "growth", "var(--ink)");
+  return svg;
+}
+
+/* Phillips: short-run curves shift up with expectations; the long run is vertical at u* */
+function motifPhillips(){
+  const svg = sv("svg", {viewBox:"0 0 360 120"});
+  axes(svg, 40, 108, 330, 10);
+  const pc = function(x){ return 112 - 2400/(x - 30); };
+  stroke(svg, curve(pc, 58, 320), "var(--teal)");
+  stroke(svg, curve(function(x){ return pc(x) - 26; }, 72, 320), "var(--teal)", "1.6", "5 4");
+  svg.appendChild(sv("line", {x1:168, y1:12, x2:168, y2:108, stroke:"var(--amber)", "stroke-width":"2", "stroke-dasharray":"2 4"}));
+  dot(svg, 168, pc(168), "var(--teal)", 4.5);
+  dot(svg, 168, pc(168) - 26, "var(--rose)", 4.5);
+  stroke(svg, "M168," + (pc(168) - 8) + " L168," + (pc(168) - 18), "var(--ink)", "1.4");
+  label(svg, 34, 16, "π", "var(--ink)", "end");
+  label(svg, 330, 116, "u", "var(--ink)", "end");
+  label(svg, 174, 16, "u*", "var(--amber)");
+  label(svg, 324, 84, "πᵉ↑", "var(--teal)", "end");
+  return svg;
+}
+
+/* Taylor: the rule's prescription, the policy rate that follows it in steps, and r* */
+function motifTaylor(){
+  const svg = sv("svg", {viewBox:"0 0 360 120"});
+  axes(svg, 30, 108, 334, 10);
+  const rule = function(x){ return 64 - 28*Math.sin((x - 30)/46) + (x - 30)*0.06; };
+  svg.appendChild(sv("line", {x1:30, y1:72, x2:334, y2:72, stroke:"var(--amber)", "stroke-width":"1.8", "stroke-dasharray":"6 4"}));
+  stroke(svg, curve(rule, 30, 330, 3), "var(--teal)", "1.8");
+  let d = "", prev = null;
+  for (let x = 30; x <= 330; x += 20){
+    const y = Math.round(rule(x - 10)/6)*6;
+    d += prev === null ? "M" + x + "," + y : " L" + x + "," + prev + " L" + x + "," + y;
+    prev = y;
+  }
+  d += " L330," + prev;
+  stroke(svg, d, "var(--rose)", "2.4");
+  label(svg, 36, 82, "r*", "var(--amber)");
+  label(svg, 36, 14, "rule", "var(--teal)");
+  label(svg, 74, 14, "policy rate", "var(--rose)");
+  return svg;
+}
+
+/* Open economy: the trilemma, pick two of three corners */
+function motifOpen(){
+  const svg = sv("svg", {viewBox:"0 0 360 120"});
+  const A = [180,16], B = [96,102], C = [264,102];
+  stroke(svg, "M" + A + " L" + B, "var(--line-strong)", "1.6", "5 4");
+  stroke(svg, "M" + B + " L" + C, "var(--teal)", "3.2");
+  stroke(svg, "M" + C + " L" + A, "var(--line-strong)", "1.6", "5 4");
+  dot(svg, A[0], A[1], "var(--panel)", 7);
+  dot(svg, B[0], B[1], "var(--teal)", 7);
+  dot(svg, C[0], C[1], "var(--teal)", 7);
+  label(svg, 194, 16, "fixed exchange rate", "var(--muted)");
+  label(svg, 84, 102, "free capital", "var(--ink)", "end");
+  label(svg, 276, 102, "own policy", "var(--ink)");
+  label(svg, 180, 72, "pick two", "var(--rose)", "middle");
+  return svg;
+}
+
+/* DSGE: impulse responses of output, inflation and the rate to a monetary shock */
+function motifDsge(){
+  const svg = sv("svg", {viewBox:"0 0 360 120"});
+  const panels = [
+    {x:16, name:"y", color:"var(--teal)", f:function(t){ return -1.9*t*Math.exp(-t/1.2); }},
+    {x:130, name:"π", color:"var(--rose)", f:function(t){ return -1.2*t*Math.exp(-t/1.6); }},
+    {x:244, name:"i", color:"var(--amber)", f:function(t){ return 1.05*Math.exp(-t/1.1); }}
+  ];
+  panels.forEach(function(P){
+    svg.appendChild(sv("rect", {x:P.x, y:12, width:100, height:96, rx:8, fill:"none", stroke:"var(--line)", "stroke-width":"1.2"}));
+    svg.appendChild(sv("line", {x1:P.x + 8, y1:60, x2:P.x + 92, y2:60, stroke:"var(--line-strong)", "stroke-width":"1.2", "stroke-dasharray":"3 3"}));
+    stroke(svg, curve(function(x){ return 60 - 40*P.f((x - P.x - 8)/12); }, P.x + 8, P.x + 92, 2), P.color, "2.4");
+    label(svg, P.x + 90, 22, P.name, "var(--ink)", "end");
+  });
+  return svg;
+}
+function motifRag(){
+  const svg = sv("svg", {viewBox:"0 0 360 120"});
+  const q = sv("rect", {x:16, y:48, width:70, height:24, rx:7, fill:"var(--ink)"});
+  svg.appendChild(q);
+  const qt = sv("text", {x:51, y:60});
+  qt.setAttribute("style", "font-family:var(--mono);font-size:11px;text-anchor:middle;dominant-baseline:central;fill:#fff");
+  qt.textContent = "query";
+  svg.appendChild(qt);
+  const scores = [0.92, 0.81, 0.47, 0.22];
+  scores.forEach(function(s, i){
+    const y = 18 + i*26;
+    const top = i < 2;
+    svg.appendChild(sv("path", {d:"M86,60 C120,60 120," + (y + 9) + " 150," + (y + 9),
+      fill:"none", stroke:top ? "var(--teal)" : "var(--line-strong)", "stroke-width":top ? "1.8" : "1.1"}));
+    svg.appendChild(sv("rect", {x:150, y:y, width:110, height:18, rx:5,
+      fill:"rgba(16,27,51,.05)", stroke:top ? "var(--teal)" : "var(--line)"}));
+    svg.appendChild(sv("rect", {x:150, y:y, width:110*s, height:18, rx:5,
+      fill:top ? "var(--teal)" : "var(--line)", opacity:top ? ".75" : ".9"}));
+    if (top) svg.appendChild(sv("path", {d:"M260," + (y + 9) + " C290," + (y + 9) + " 290,60 312,60",
+      fill:"none", stroke:"var(--teal)", "stroke-width":"1.8"}));
+  });
+  svg.appendChild(sv("circle", {cx:326, cy:60, r:13, fill:"var(--rose)", stroke:"var(--ink)", "stroke-width":"1.8"}));
+  return svg;
+}
+const MOTIFS = {graph:motifGraph, text:motifText, net:motifNet, reg:motifReg, algo:motifAlgo, solow:motifSolow, islm:motifIslm, okun:motifOkun, phillips:motifPhillips, taylor:motifTaylor, open:motifOpen, dsge:motifDsge, rag:motifRag, blank:motifBlank};
 
 /* ---------- render ---------- */
 let filter = "All";
@@ -358,7 +688,7 @@ function card(L){
   const ready = L.status === "ready" && L.href;
   const el = document.createElement(ready ? "a" : "div");
   el.className = "card" + (ready ? "" : " soon");
-  if (ready) el.href = L.href;
+  if (ready) el.href = encodeURI(L.href);
 
   const thumb = document.createElement("div");
   thumb.className = "thumb";

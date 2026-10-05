@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DSGE models, from the beginning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&family=Karla:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' },
+  startup: { typeset: true }
+};
+</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+:root {
+  --paper: #f3f4f0; --dot: #d3d7cd; --ink: #1b2326; --muted: #5a6568;
+  --line: #c8ccc2; --card: #ffffff; --card2: #f8f9f6;
+  --teal: #0f766e; --amber: #b45309; --rose: #be123c; --violet: #6d28d9;
+  --teal-soft: #d3ebe7; --amber-soft: #f5e4cf; --rose-soft: #f6d9df; --violet-soft: #e5dbf7;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Karla", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+    --line: #333d40; --card: #1b2225; --card2: #182023;
+    --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+    --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+  --line: #333d40; --card: #1b2225; --card2: #182023;
+  --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+  --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+}
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; color: var(--ink); background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  font-family: var(--sans); font-size: 18px; line-height: 1.62;
+}
+a { color: var(--teal); }
+:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+
+.wrap { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 56px; max-width: 1120px; margin: 0 auto; padding: 0 24px 96px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 28px); align-self: start; padding-top: 28px; }
+nav.toc p { font-family: var(--serif); font-size: 1.05rem; margin: 0 0 12px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: b; }
+nav.toc li { counter-increment: b; }
+nav.toc a { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: .92rem; line-height: 1.3; }
+nav.toc a::before { content: counter(b); font-family: var(--mono); font-size: .8rem; color: var(--teal); min-width: 1.2em; padding-top: 1px; }
+nav.toc a:hover, nav.toc a.on { background: var(--teal-soft); color: var(--ink); }
+
+main { min-width: 0; }
+.prose { max-width: 720px; }
+
+header.hero { padding: 64px 0 24px; }
+header.hero h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(3rem, 8vw, 5.4rem); line-height: .95; letter-spacing: -.02em; margin: 0 0 18px; font-variation-settings: "opsz" 144; }
+header.hero .lede { font-family: var(--serif); font-size: 1.35rem; line-height: 1.45; max-width: 640px; margin: 0 0 28px; color: var(--ink); }
+.hero-lab { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.hero-say { font-family: var(--serif); font-size: 1.5rem; line-height: 1.35; margin: 0 0 14px; }
+.hero-say b { color: var(--teal); font-weight: 600; }
+.hero-say b.up { color: var(--rose); }
+.hint { color: var(--muted); font-size: .95rem; margin: 6px 0 0; }
+
+section.block { padding-top: 56px; }
+section.block > h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.1; margin: 0 0 8px; letter-spacing: -.01em; }
+section.block > .sub { color: var(--muted); margin: 0 0 18px; font-size: 1.02rem; }
+h3 { font-family: var(--serif); font-weight: 600; font-size: 1.22rem; margin: 30px 0 8px; }
+p { margin: 0 0 14px; }
+.math { overflow-x: auto; padding: 4px 0; margin: 6px 0 14px; }
+mjx-container[display="true"] { margin: .6em 0 !important; }
+
+.lab { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 14px 0 18px; }
+.lab svg { display: block; width: 100%; height: auto; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin-top: 14px; }
+.ctl label { display: flex; justify-content: space-between; gap: 10px; font-size: .92rem; color: var(--muted); }
+.ctl label output { font-family: var(--mono); color: var(--ink); font-size: .88rem; }
+input[type=range] { width: 100%; accent-color: var(--teal); margin: 6px 0 0; }
+.readout { font-family: var(--mono); font-size: .9rem; background: var(--card2); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; margin-top: 14px; overflow-x: auto; line-height: 1.7; }
+.readout .k { color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+button.act { font: 600 .92rem var(--sans); color: var(--ink); background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+button.act:hover { border-color: var(--teal); }
+button.act.primary { background: var(--teal); border-color: var(--teal); color: var(--card); }
+
+table.t { border-collapse: collapse; width: 100%; font-size: .95rem; margin: 10px 0 18px; }
+table.t th, table.t td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-weight: 700; color: var(--muted); font-size: .88rem; }
+table.t td.n { font-family: var(--mono); font-size: .88rem; white-space: nowrap; }
+.tw { overflow-x: auto; }
+
+.example { border-left: 4px solid var(--amber); background: var(--amber-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; }
+.example p:last-child { margin-bottom: 0; }
+.aside { border-left: 4px solid var(--violet); background: var(--violet-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: .97rem; }
+
+.check { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 16px 18px; margin: 14px 0 0; }
+.check .q { font-weight: 600; margin-bottom: 10px; }
+.check .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.check .opts button { font: 1rem var(--sans); text-align: left; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); cursor: pointer; }
+.check .opts button:hover { border-color: var(--teal); }
+.check .opts button.right { background: var(--teal-soft); border-color: var(--teal); }
+.check .opts button.wrong { background: var(--rose-soft); border-color: var(--rose); }
+.check .fb { margin-top: 10px; font-size: .97rem; }
+.check .fb .verdict { font-weight: 700; margin-right: 4px; }
+
+.people { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 520px; }
+.people button { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--teal); background: var(--teal); cursor: pointer; padding: 0; position: relative; }
+.people button[aria-pressed="false"] { background: transparent; border-color: var(--rose); border-style: dashed; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: .9rem; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+.years { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.years .ctl label { flex-direction: column; gap: 0; }
+.cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cards2 .lab { margin: 0; }
+.big { font-family: var(--serif); font-size: 2rem; line-height: 1.1; margin: 10px 0 2px; }
+.big small { font-family: var(--sans); font-size: .95rem; color: var(--muted); }
+
+/* svg */
+.grid { stroke: var(--line); stroke-width: 1; }
+.zero { stroke: var(--muted); stroke-width: 1.2; }
+.tick { fill: var(--muted); font: 11px var(--mono); }
+.axl { fill: var(--muted); font: 12px var(--sans); }
+.lbl { font: 600 12px var(--sans); }
+.s-teal { stroke: var(--teal); } .f-teal { fill: var(--teal); }
+.s-amber { stroke: var(--amber); } .f-amber { fill: var(--amber); }
+.s-rose { stroke: var(--rose); } .f-rose { fill: var(--rose); }
+.s-violet { stroke: var(--violet); } .f-violet { fill: var(--violet); }
+.s-ink { stroke: var(--ink); } .f-ink { fill: var(--ink); }
+.f-teal-soft { fill: var(--teal-soft); } .f-rose-soft { fill: var(--rose-soft); }
+.f-amber-soft { fill: var(--amber-soft); } .f-violet-soft { fill: var(--violet-soft); }
+.f-card { fill: var(--card); }
+.dash { stroke-dasharray: 5 4; }
+.halo { stroke: var(--card); stroke-width: 4px; paint-order: stroke; stroke-linejoin: round; }
+
+footer { margin-top: 72px; color: var(--muted); font-size: .9rem; }
+
+@media (max-width: 880px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 16px 72px; }
+  nav.toc { position: sticky; top: 0; z-index: 5; padding: calc(env(safe-area-inset-top, 0px) + 8px) 0 8px; margin: 0 -16px; background: var(--paper); border-bottom: 1px solid var(--line); }
+  :root { padding-top: 0; }
+  nav.toc p { display: none; }
+  nav.toc ol { display: flex; overflow-x: auto; gap: 4px; padding: 0 12px; }
+  nav.toc a { white-space: nowrap; }
+  .hero-lab { grid-template-columns: minmax(0, 1fr); }
+  header.hero { padding-top: 36px; }
+  .years { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body { font-size: 17px; }
+}
+</style>
+<style>
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 12px; }
+.seg button { font: 600 .9rem var(--sans); padding: 8px 14px; border: 0; background: var(--card2); color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--teal); color: var(--card); }
+.node { cursor: pointer; }
+.node:focus-visible rect { stroke: var(--amber); stroke-width: 3; }
+.warn { border-left: 4px solid var(--rose); background: var(--rose-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; margin-top: 12px; font-size: .95rem; }
+.words { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.words button { font: 1rem var(--sans); text-align: left; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); cursor: pointer; }
+.words button b { display: block; font-family: var(--serif); font-size: 1.25rem; font-weight: 600; }
+.words button[aria-pressed="true"] { border-color: var(--teal); background: var(--teal-soft); }
+.wordtxt { margin-top: 14px; min-height: 5.5em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Lecture sections">
+  <p>DSGE models</p>
+  <ol>
+    <li><a href="#b1">The four words</a></li>
+    <li><a href="#b2">Households</a></li>
+    <li><a href="#b3">Firms and sticky prices</a></li>
+    <li><a href="#b4">The central bank</a></li>
+    <li><a href="#b5">Shocks</a></li>
+    <li><a href="#b6">Equilibrium</a></li>
+    <li><a href="#b7">Giving it numbers</a></li>
+    <li><a href="#b8">Uses and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>DSGE models</h1>
+  <p class="lede">A Dynamic Stochastic General Equilibrium model is a small artificial economy written in equations. Central banks use them to ask: if an unexpected event hits today, what happens to output, inflation and interest rates over the next few years?</p>
+  <div class="lab hero-lab">
+    <div>
+      <p class="hero-say" id="heroSay"></p>
+      <div class="seg" role="group" aria-label="Choose a shock" id="heroSeg">
+        <button aria-pressed="true" data-s="mon">Rate rise</button><button aria-pressed="false" data-s="dem">Demand boom</button><button aria-pressed="false" data-s="cost">Cost surge</button>
+      </div>
+      <p class="hint">A three-equation New Keynesian model, the core of most DSGE models, solved live. By block 6 you will know every piece of it.</p>
+    </div>
+    <svg id="heroSvg" role="img" aria-label="Response of output gap, inflation and interest rate to a shock"></svg>
+  </div>
+</header>
+
+<!-- 1 -->
+<section class="block prose" id="b1">
+  <h2>The four words</h2>
+  <p class="sub">The name is long, but each word adds one specific ingredient.</p>
+  <h3>The idea</h3>
+  <p>Older forecasting models were large sets of equations fitted to past data, for example "consumption equals 0.8 times income". In 1976 Robert Lucas pointed out a problem, now called the Lucas critique: those coefficients summarise how people behaved under past policies. If policy changes, people change their behaviour, and the coefficients break.</p>
+  <p>DSGE models answer this by starting from decisions. Households and firms are described by what they want and what limits them. Their behaviour is derived from those goals, so when policy changes, the model recomputes how they respond. Click each word.</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <div class="words" id="words">
+      <button aria-pressed="true" data-w="0"><b>Dynamic</b>time matters</button>
+      <button aria-pressed="false" data-w="1"><b>Stochastic</b>random shocks</button>
+      <button aria-pressed="false" data-w="2"><b>General</b>all markets at once</button>
+      <button aria-pressed="false" data-w="3"><b>Equilibrium</b>plans fit together</button>
+    </div>
+    <div class="wordtxt" id="wordTxt"></div>
+  </div>
+  <h3>The cast</h3>
+  <p>A basic DSGE model has three actors. Click one to see what it decides and which equation it contributes.</p>
+  <div class="lab">
+    <svg id="castSvg" role="img" aria-label="Diagram of households, firms and the central bank"></svg>
+    <div class="readout" id="castOut" style="font-family:var(--sans);font-size:.98rem"></div>
+  </div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">What does the "stochastic" in DSGE refer to?</div>
+    <div class="opts"><button data-k="a">The model changes over time</button><button data-k="b">The economy is hit by random, unpredictable shocks</button><button data-k="c">All markets clear together</button><button data-k="d">The parameters are estimated</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Stochastic means random. The model is driven by shocks such as surprise changes in demand, costs or policy.</div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="block prose" id="b2">
+  <h2>Households</h2>
+  <p class="sub">People like a smooth standard of living, and interest rates decide when they spend.</p>
+  <h3>The idea</h3>
+  <p>Imagine you will earn a lot this year and little next year. Most people would not spend everything now and starve later. They save some of this year's income to spread spending across both years. This is consumption smoothing.</p>
+  <p>The interest rate changes the deal. A higher rate makes saving more rewarding: every unit saved today buys more tomorrow. So people tend to spend a bit less now and more later.</p>
+  <h3>Try it</h3>
+  <p>A household lives two years. Set its income in each year and the interest rate. Its patience is fixed: it values next year's enjoyment at 96% of this year's.</p>
+  <div class="lab">
+    <svg id="hhSvg" role="img" aria-label="Income and consumption in two periods"></svg>
+    <div class="legend"><span><i style="background:var(--line)"></i>Income</span><span><i style="background:var(--teal)"></i>Consumption chosen</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="hhY1">Income this year <output id="hhY1o"></output></label><input type="range" id="hhY1" min="0" max="150" step="5" value="120"></div>
+      <div class="ctl"><label for="hhY2">Income next year <output id="hhY2o"></output></label><input type="range" id="hhY2" min="0" max="150" step="5" value="40"></div>
+      <div class="ctl"><label for="hhR">Interest rate <output id="hhRo"></output></label><input type="range" id="hhR" min="0" max="20" step="0.5" value="5"></div>
+    </div>
+    <div class="readout" id="hhOut"></div>
+  </div>
+  <p>Try swapping the two incomes: consumption barely moves, because only total lifetime resources matter. Then raise the interest rate: consumption shifts towards next year.</p>
+  <h3>The formula</h3>
+  <p>The household chooses consumption \(C_t\) to maximise lifetime enjoyment, with patience \(\beta\) (here 0.96) and real interest rate \(r\). The optimal choice satisfies the Euler equation (here with log utility, a common simple choice):</p>
+  <div class="math">\[ \frac{1}{C_t} = \beta\,(1 + r_t)\,\mathbb{E}_t\!\left[\frac{1}{C_{t+1}}\right]. \]</div>
+  <p>In words: the enjoyment lost by giving up one unit today must equal the discounted enjoyment gained from \((1 + r)\) units tomorrow. \(\mathbb{E}_t\) means "expected, given what is known today".</p>
+  <p>In a DSGE model, output equals consumption in this simple version, so this equation becomes a demand equation for the whole economy. Written for the output gap \(x_t\) (percent gap between output and potential), it is called the dynamic IS curve (IS stands for Investment and Saving, an older name for the demand side):</p>
+  <div class="math">\[ x_t = \mathbb{E}_t\,x_{t+1} - \frac{1}{\sigma}\left(i_t - \mathbb{E}_t\,\pi_{t+1} - r^n_t\right). \]</div>
+  <p>Here \(i_t\) is the nominal interest rate set by the central bank, \(i_t - \mathbb{E}_t\pi_{t+1}\) is the real interest rate, \(r^n_t\) is the natural rate (the real rate that would keep output at potential), and \(\sigma\) measures how strongly spending reacts. A real rate above its natural level makes people postpone spending, and output falls below potential.</p>
+  <h3>Worked example</h3>
+  <div class="example"><p>Income is 120 this year and 40 next year, the interest rate is 5%. Lifetime resources are \(120 + 40/1.05 \approx 158.1\). With \(\beta = 0.96\) and log utility, the household spends \(158.1 / 1.96 \approx 80.7\) this year, saves about 39.3, and spends \(0.96 \times 1.05 \times 80.7 \approx 81.3\) next year.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">In the dynamic IS curve, the central bank raises the real interest rate above the natural rate. What happens to the output gap today?</div>
+    <div class="opts"><button data-k="a">It rises</button><button data-k="b">Nothing</button><button data-k="c">It falls</button><button data-k="d">Only inflation changes</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Saving becomes more attractive, households spend less today, and output falls below potential.</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="block prose" id="b3">
+  <h2>Firms and sticky prices</h2>
+  <p class="sub">Why money and interest rates affect real output at all.</p>
+  <h3>The idea</h3>
+  <p>If every firm could change its prices instantly, a change in interest rates would just change prices, and output would not move. In reality, many prices are fixed for months: menus, catalogues, contracts. Economists call this price stickiness.</p>
+  <p>The standard way to model it, due to Guillermo Calvo (1983), is a lottery. Each quarter, only a random share of firms gets to reset its price. The rest keep last quarter's price. Because firms know their price may be stuck for a while, those who can reset look ahead: they set a price that will be right on average over the coming quarters. That is why expected future inflation appears in the equation below.</p>
+  <h3>Try it</h3>
+  <p>All firms' costs rise permanently by 10%. Choose the share of firms that are stuck each quarter and watch the average price catch up.</p>
+  <div class="lab">
+    <svg id="cvSvg" role="img" aria-label="Average price adjusting after a cost increase"></svg>
+    <div class="legend"><span><i style="background:var(--teal)"></i>Average price, sticky</span><span><i style="background:var(--muted)"></i>Flexible prices</span></div>
+    <div class="controls"><div class="ctl"><label for="cvT">Share of firms stuck each quarter \(\theta\) <output id="cvTo"></output></label><input type="range" id="cvT" min="0" max="0.95" step="0.05" value="0.75"></div></div>
+    <div class="readout" id="cvOut"></div>
+  </div>
+  <h3>The formula</h3>
+  <p>Aggregating the firms' decisions gives the New Keynesian Phillips curve:</p>
+  <div class="math">\[ \pi_t = \beta\,\mathbb{E}_t\,\pi_{t+1} + \kappa\,x_t + u_t. \]</div>
+  <p>Inflation today depends on expected inflation tomorrow and on the output gap, because a booming economy pushes up wages and other costs. \(u_t\) is a cost-push shock, such as an energy price jump. The slope \(\kappa\) depends on stickiness. In the simplest setup,</p>
+  <div class="math">\[ \kappa = \frac{(1 - \theta)(1 - \beta\theta)}{\theta}\times(\text{a term for how costs respond to output}). \]</div>
+  <p>Stickier prices (higher \(\theta\)) give a smaller \(\kappa\): inflation reacts less to the output gap, and monetary policy has bigger effects on output.</p>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(\theta = 0.75\), a quarter of firms reset each quarter, so prices last \(1/(1 - 0.75) = 4\) quarters on average, about a year. This is close to what studies of individual price records find for many economies.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">If \(\theta = 0.5\), how long does a price last on average?</div>
+    <div class="opts"><button data-k="a">2 quarters</button><button data-k="b">0.5 quarters</button><button data-k="c">4 quarters</button><button data-k="d">1 quarter</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Half of firms reset each quarter, so the average duration is 1 / (1 - 0.5) = 2 quarters.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="block prose" id="b4">
+  <h2>The central bank</h2>
+  <p class="sub">A simple rule for setting the interest rate closes the model.</p>
+  <h3>The idea</h3>
+  <p>Households and firms react to the interest rate, but who sets it? In 1993 John Taylor showed that the United States Federal Reserve's decisions were described well by a simple rule: raise the rate when inflation is above target or the economy runs hot, cut it when the opposite happens. DSGE models usually include such a Taylor rule.</p>
+  <p>One detail is crucial. When inflation rises by 1 point, the central bank must raise the nominal rate by more than 1 point, so that the real rate actually rises and cools the economy. This is the Taylor principle.</p>
+  <h3>The formula</h3>
+  <p>Taylor's original rule, in percent per year, with a 2% inflation target and a 2% neutral real rate:</p>
+  <div class="math">\[ i_t = 2 + \pi_t + 0.5\,(\pi_t - 2) + 0.5\,x_t. \]</div>
+  <p>In DSGE models it is written in deviations from steady state, with a policy shock \(v_t\):</p>
+  <div class="math">\[ i_t = \phi_\pi\,\pi_t + \phi_x\,x_t + v_t, \qquad \phi_\pi > 1. \]</div>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="tySvg" role="img" aria-label="Taylor rule interest rate against inflation"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="tyP">Inflation <output id="tyPo"></output></label><input type="range" id="tyP" min="-1" max="10" step="0.25" value="4"></div>
+      <div class="ctl"><label for="tyX">Output gap <output id="tyXo"></output></label><input type="range" id="tyX" min="-6" max="4" step="0.5" value="0"></div>
+      <div class="ctl"><label for="tyF">Response to inflation \(\phi_\pi\) <output id="tyFo"></output></label><input type="range" id="tyF" min="0.5" max="3" step="0.05" value="1.5"></div>
+    </div>
+    <div class="readout" id="tyOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>Inflation is 4% and the output gap is -2%. Taylor's rule gives \(i = 2 + 4 + 0.5 \times 2 + 0.5 \times (-2) = 6\%\). The real rate is \(6 - 4 = 2\%\): the high inflation and the weak economy pull in opposite directions and cancel.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="d">
+    <div class="q">A central bank uses \(\phi_\pi = 0.8\). Inflation rises by 1 point. What happens to the real interest rate?</div>
+    <div class="opts"><button data-k="a">It rises by 0.8</button><button data-k="b">It rises by 1.8</button><button data-k="c">It stays the same</button><button data-k="d">It falls by 0.2</button></div>
+    <div class="fb" hidden><span class="verdict"></span>The nominal rate rises 0.8 while inflation rises 1, so the real rate falls 0.2. Policy loosens just when it should tighten, which violates the Taylor principle.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="block prose" id="b5">
+  <h2>Shocks</h2>
+  <p class="sub">The "stochastic" part: what keeps the model economy moving.</p>
+  <h3>The idea</h3>
+  <p>Without surprises, the model economy would sit at its steady state forever. Shocks push it away: a sudden burst of consumer confidence, an energy price jump, an unexpected interest rate decision. Most shocks fade gradually rather than vanishing at once, so they are modelled as persistent processes.</p>
+  <h3>The formula</h3>
+  <p>The workhorse is the AR(1) (first-order autoregressive) process:</p>
+  <div class="math">\[ z_t = \rho\,z_{t-1} + \varepsilon_t, \qquad \varepsilon_t \sim \mathcal{N}(0, s^2). \]</div>
+  <p>Each period, the shock keeps a share \(\rho\) (rho) of last period's value and receives a fresh random kick \(\varepsilon_t\) with standard deviation \(s\). With \(\rho\) close to 1, shocks last a long time. After a single kick, the shock decays as \(\rho^t\).</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="arSvg" role="img" aria-label="Simulated AR(1) shock path"></svg>
+    <div class="legend"><span><i style="background:var(--violet)"></i>Simulated shock</span><span><i style="background:var(--amber)"></i>Decay after one kick of size 1</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="arR">Persistence \(\rho\) <output id="arRo"></output></label><input type="range" id="arR" min="0" max="0.98" step="0.01" value="0.8"></div>
+      <div class="ctl"><label for="arS">Size of kicks \(s\) <output id="arSo"></output></label><input type="range" id="arS" min="0.1" max="1" step="0.05" value="0.5"></div>
+    </div>
+    <div class="btns"><button class="act" id="arNew">Draw new shocks</button></div>
+    <div class="readout" id="arOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(\rho = 0.8\), a shock of size 1 is worth 0.8 after one quarter, 0.64 after two, and about 0.33 after five. Its half-life is \(\ln 0.5 / \ln 0.8 \approx 3.1\) quarters.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">With \(\rho = 0.5\), how much of a shock is left after 3 quarters?</div>
+    <div class="opts"><button data-k="a">50%</button><button data-k="b">12.5%</button><button data-k="c">25%</button><button data-k="d">0%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>0.5 x 0.5 x 0.5 = 0.125, so 12.5%.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="block prose" id="b6">
+  <h2>Equilibrium</h2>
+  <p class="sub">Putting the three equations together and solving them.</p>
+  <h3>The idea</h3>
+  <p>We now have three equations, one per actor. Each contains variables the others determine. Households' spending depends on the interest rate. The interest rate depends on inflation. Inflation depends on spending and on what everyone expects. Equilibrium means finding paths for all three that satisfy every equation at once, with expectations that are consistent with the model itself (rational expectations).</p>
+  <div class="math">\[ \begin{aligned} x_t &= \mathbb{E}_t x_{t+1} - \tfrac{1}{\sigma}\left(i_t - \mathbb{E}_t\pi_{t+1}\right) + d_t &&\text{households (demand)}\\ \pi_t &= \beta\,\mathbb{E}_t\pi_{t+1} + \kappa\,x_t + u_t &&\text{firms (supply)}\\ i_t &= \phi_\pi\,\pi_t + \phi_x\,x_t + v_t &&\text{central bank} \end{aligned} \]</div>
+  <p>Here \(d_t\), \(u_t\) and \(v_t\) are demand, cost-push and monetary shocks, each following an AR(1) with persistence \(\rho\).</p>
+  <h3>How it is solved</h3>
+  <p>For one shock \(z_t\) at a time, guess that the solution is proportional to it: \(x_t = a\,z_t\) and \(\pi_t = b\,z_t\). Since \(\mathbb{E}_t z_{t+1} = \rho z_t\), the expectations become \(\rho a z_t\) and \(\rho b z_t\). Substituting into the three equations leaves two ordinary linear equations in \(a\) and \(b\), solved exactly. This is the method of undetermined coefficients. Software such as Dynare (a free tool for solving and estimating DSGE models) does the same for models with dozens of equations.</p>
+  <p>The solution is unique only if policy reacts strongly enough to inflation. For this model the condition is</p>
+  <div class="math">\[ \kappa\,(\phi_\pi - 1) + (1 - \beta)\,\phi_x > 0, \]</div>
+  <p>essentially the Taylor principle from block 4.</p>
+  <h3>Try it</h3>
+  <p>The chart shows impulse responses: what happens, quarter by quarter, after one shock hits. Values are percent deviations from steady state; inflation and the interest rate are at a quarterly rate.</p>
+  <div class="lab">
+    <div class="seg" role="group" aria-label="Choose a shock" id="irSeg" style="margin-top:0">
+      <button aria-pressed="true" data-s="mon">Monetary tightening</button><button aria-pressed="false" data-s="dem">Demand boom</button><button aria-pressed="false" data-s="cost">Cost-push</button>
+    </div>
+    <svg id="irSvg" role="img" aria-label="Impulse responses" style="margin-top:10px"></svg>
+    <div class="legend"><span><i style="background:var(--teal)"></i>Output gap \(x\)</span><span><i style="background:var(--rose)"></i>Inflation \(\pi\)</span><span><i style="background:var(--amber)"></i>Nominal interest rate \(i\)</span><span><i style="background:var(--violet)"></i>Real interest rate</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="irF">Response to inflation \(\phi_\pi\) <output id="irFo"></output></label><input type="range" id="irF" min="0.5" max="3" step="0.05" value="1.5"></div>
+      <div class="ctl"><label for="irX">Response to output gap \(\phi_x\) <output id="irXo"></output></label><input type="range" id="irX" min="0" max="1" step="0.025" value="0.125"></div>
+      <div class="ctl"><label for="irK">Phillips slope \(\kappa\) <output id="irKo"></output></label><input type="range" id="irK" min="0.02" max="0.5" step="0.01" value="0.1"></div>
+      <div class="ctl"><label for="irR">Shock persistence \(\rho\) <output id="irRo"></output></label><input type="range" id="irR" min="0" max="0.95" step="0.05" value="0.5"></div>
+    </div>
+    <div id="irWarn"></div>
+    <div class="readout" id="irOut"></div>
+  </div>
+  <p>Things to try: with the cost-push shock, raise \(\phi_\pi\) and watch the central bank trade a deeper fall in output for less inflation. Then push \(\phi_\pi\) below 1 and see the model lose its unique solution.</p>
+  <h3>Worked example</h3>
+  <div class="example"><p>Monetary tightening with \(\beta = 0.99\), \(\sigma = 1\), \(\kappa = 0.1\), \(\phi_\pi = 1.5\), \(\phi_x = 0.125\), \(\rho = 0.5\) and a shock of 0.25. The coefficients solve \(a(1 - \rho + \phi_x/\sigma) + b(\phi_\pi - \rho)/\sigma = -0.25/\sigma\) and \(-\kappa a + b(1 - \beta\rho) = 0\). This gives \(a \approx -0.30\) and \(b \approx -0.06\): output falls 0.30% below potential and quarterly inflation falls 0.06 points on impact, then both fade at rate 0.5 per quarter.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">After a cost-push shock, why does output fall even though nothing happened to demand?</div>
+    <div class="opts"><button data-k="a">Firms close because costs rose</button><button data-k="b">Households become more patient</button><button data-k="c">The central bank raises the real rate to fight inflation</button><button data-k="d">The natural rate falls</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Higher inflation triggers a more than one-for-one rise in the nominal rate, so the real rate rises and spending falls. This is the trade-off a cost shock creates.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="block prose" id="b7">
+  <h2>Giving it numbers</h2>
+  <p class="sub">Calibration and Bayesian estimation.</p>
+  <h3>The idea</h3>
+  <p>The model needs values for its parameters. There are two approaches. Calibration picks values from other evidence: average interest rates for \(\beta\), studies of price records for \(\theta\), long-run ratios in national accounts. Estimation fits the parameters to time series such as GDP, inflation and interest rates.</p>
+  <p>Most modern DSGE estimation is Bayesian. You start with a prior: what you believe about a parameter before seeing the data, from theory or earlier studies. The data then provide a likelihood: which values make the observed history most probable. Combining the two gives the posterior, an updated belief. When the data are informative, they dominate. When they say little, the prior dominates.</p>
+  <h3>A typical calibration (quarterly)</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Parameter</th><th>Meaning</th><th>Typical value</th></tr>
+    <tr><td>\(\beta\)</td><td>Patience; implies a steady-state real rate near 4% a year</td><td class="n">0.99</td></tr>
+    <tr><td>\(\sigma\)</td><td>How strongly spending reacts to the real rate (inverse)</td><td class="n">1 to 2</td></tr>
+    <tr><td>\(\theta\)</td><td>Share of firms that cannot reset prices each quarter</td><td class="n">0.66 to 0.75</td></tr>
+    <tr><td>\(\phi_\pi\)</td><td>Policy response to inflation</td><td class="n">1.5</td></tr>
+    <tr><td>\(\phi_x\)</td><td>Policy response to the output gap (0.5 per year)</td><td class="n">0.125</td></tr>
+    <tr><td>\(\rho\)</td><td>Persistence of shocks</td><td class="n">0.5 to 0.9</td></tr>
+  </table></div>
+  <h3>Try it</h3>
+  <p>Estimating one parameter, the policy response \(\phi_\pi\). With normal shapes, the posterior is a precision-weighted average of prior and data (precision is one over the variance).</p>
+  <div class="lab">
+    <svg id="byFig" role="img" aria-label="Prior, likelihood and posterior densities"></svg>
+    <div class="legend"><span><i style="background:var(--violet)"></i>Prior</span><span><i style="background:var(--amber)"></i>Likelihood (data)</span><span><i style="background:var(--teal)"></i>Posterior</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="byM0">Prior mean <output id="byM0o"></output></label><input type="range" id="byM0" min="1" max="3" step="0.05" value="1.5"></div>
+      <div class="ctl"><label for="byS0">Prior uncertainty (sd) <output id="byS0o"></output></label><input type="range" id="byS0" min="0.05" max="1" step="0.05" value="0.25"></div>
+      <div class="ctl"><label for="byM1">Data estimate <output id="byM1o"></output></label><input type="range" id="byM1" min="1" max="3" step="0.05" value="2.2"></div>
+      <div class="ctl"><label for="byS1">Data uncertainty (sd) <output id="byS1o"></output></label><input type="range" id="byS1" min="0.05" max="1" step="0.05" value="0.4"></div>
+    </div>
+    <div class="readout" id="byOut"></div>
+  </div>
+  <p>In a full model there are many parameters at once, and the posterior is explored by simulation (a Markov chain Monte Carlo sampler), with a Kalman filter computing the likelihood of the data. The logic is the same as in this one-parameter picture.</p>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">The data are very noisy about \(\theta\) (large data uncertainty). Where does the posterior end up?</div>
+    <div class="opts"><button data-k="a">Close to the prior</button><button data-k="b">Close to the data estimate</button><button data-k="c">Exactly halfway</button><button data-k="d">At zero</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Noisy data carry little precision, so the precision-weighted average leans on the prior. This is why priors matter so much in DSGE estimation.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="block prose" id="b8">
+  <h2>Uses and limits</h2>
+  <p class="sub">What DSGE models are good for, and the main criticisms.</p>
+  <h3>What they are used for</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Use</th><th>Example question</th></tr>
+    <tr><td>Policy analysis</td><td>What happens to inflation and output if the central bank raises rates by 0.25 points?</td></tr>
+    <tr><td>Telling stories about the data</td><td>Was the last slowdown mainly a demand shock or a supply shock? (shock decomposition)</td></tr>
+    <tr><td>Comparing rules</td><td>Would a rule that reacts more strongly to inflation make the economy more stable?</td></tr>
+    <tr><td>Forecasting</td><td>Used alongside statistical models, with the advantage that every forecast comes with an economic explanation.</td></tr>
+  </table></div>
+  <h3>Main criticisms</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Criticism</th><th>What it means</th><th>Response in newer models</th></tr>
+    <tr><td>Missing finance</td><td>Early models had no banks or credit, so they could not explain the 2008 crisis.</td><td>Financial frictions, bank balance sheets, borrowing limits.</td></tr>
+    <tr><td>One representative household</td><td>Everyone is identical, so inequality and hand-to-mouth spending are ignored.</td><td>HANK models (Heterogeneous Agent New Keynesian) with many different households.</td></tr>
+    <tr><td>Rational expectations</td><td>People are assumed to know the model and forecast perfectly on average.</td><td>Learning, limited attention, survey-based expectations.</td></tr>
+    <tr><td>Linear approximations</td><td>Small shocks around a steady state; large crises and the zero lower bound on rates are hard to capture.</td><td>Nonlinear solution methods, occasionally binding constraints.</td></tr>
+    <tr><td>Weak identification</td><td>The data often cannot separate parameters, so priors drive results.</td><td>Careful prior choice, more data series, micro evidence.</td></tr>
+  </table></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">Why are DSGE models said to answer the Lucas critique?</div>
+    <div class="opts"><button data-k="a">They fit past data better than older models</button><button data-k="b">Behaviour is derived from goals and constraints, so it adapts when policy changes</button><button data-k="c">They contain no shocks</button><button data-k="d">They use more equations</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Because decisions are derived from preferences and technology, a new policy rule leads the model's agents to re-optimise, rather than relying on coefficients from a past regime.</div>
+  </div>
+  <h3>Summary</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Piece</th><th>Equation</th><th>Comes from</th></tr>
+    <tr><td>Dynamic IS curve</td><td>\(x_t = \mathbb{E}_t x_{t+1} - \frac{1}{\sigma}(i_t - \mathbb{E}_t\pi_{t+1} - r^n_t)\)</td><td>Households smoothing consumption</td></tr>
+    <tr><td>New Keynesian Phillips curve</td><td>\(\pi_t = \beta\,\mathbb{E}_t\pi_{t+1} + \kappa x_t + u_t\)</td><td>Firms with sticky prices</td></tr>
+    <tr><td>Taylor rule</td><td>\(i_t = \phi_\pi\pi_t + \phi_x x_t + v_t\)</td><td>Central bank</td></tr>
+    <tr><td>Shocks</td><td>\(z_t = \rho z_{t-1} + \varepsilon_t\)</td><td>Random events</td></tr>
+  </table></div>
+</section>
+
+<footer class="prose">
+  <p>References: Lucas, R. (1976), Carnegie-Rochester Conference Series; Calvo, G. (1983), Journal of Monetary Economics; Taylor, J. (1993), Carnegie-Rochester Conference Series; Galí, J. (2015), Monetary Policy, Inflation, and the Business Cycle, Princeton University Press. Every chart on this page is computed live in your browser.</p>
+</footer>
+</main>
+</div>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  function el(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  const f = (v, d = 1) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d);
+  const sg = (v, d = 1) => (v > 1e-9 ? '+' : '') + f(v, d);
+
+  // Generic frame: returns scales
+  function frame(svg, o) {
+    svg.innerHTML = '';
+    const W = o.W || 640, H = o.H || 300;
+    const p = Object.assign({ l: 50, r: 18, t: 14, b: 42 }, o.pad || {});
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const X = v => p.l + (v - o.x0) / (o.x1 - o.x0) * (W - p.l - p.r);
+    const Y = v => H - p.b - (v - o.y0) / (o.y1 - o.y0) * (H - p.t - p.b);
+    (o.xt || []).forEach(t => {
+      el('line', { x1: X(t), x2: X(t), y1: p.t, y2: H - p.b, class: 'grid' }, svg);
+      el('text', { x: X(t), y: H - p.b + 16, class: 'tick', 'text-anchor': 'middle' }, svg, (o.xf || String)(t));
+    });
+    (o.yt || []).forEach(t => {
+      el('line', { x1: p.l, x2: W - p.r, y1: Y(t), y2: Y(t), class: 'grid' }, svg);
+      el('text', { x: p.l - 7, y: Y(t) + 4, class: 'tick', 'text-anchor': 'end' }, svg, (o.yf || String)(t));
+    });
+    if (o.zeroX && o.y0 < 0 && o.y1 > 0) el('line', { x1: p.l, x2: W - p.r, y1: Y(0), y2: Y(0), class: 'zero' }, svg);
+    if (o.zeroY && o.x0 < 0 && o.x1 > 0) el('line', { x1: X(0), x2: X(0), y1: p.t, y2: H - p.b, class: 'zero' }, svg);
+    if (o.xl) el('text', { x: (p.l + W - p.r) / 2, y: H - 6, class: 'axl', 'text-anchor': 'middle' }, svg, o.xl);
+    if (o.yl) el('text', { x: 14, y: (p.t + H - p.b) / 2, class: 'axl', 'text-anchor': 'middle', transform: `rotate(-90 14 ${(p.t + H - p.b) / 2})` }, svg, o.yl);
+    return { X, Y, W, H, p };
+  }
+  const path = pts => 'M' + pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join('L');
+  const pct = t => t + '%';
+
+    const range = (a, b, st) => { const r = []; for (let x = a; x <= b + 1e-9; x += st) r.push(x); return r; };
+  function rng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const normal = r => { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); };
+
+  /* ---------- NK solver ---------- */
+  const BETA = 0.99, SIGMA = 1;
+  const SHOCKS = { mon: { cv: 0.25, cd: 0, cu: 0 }, dem: { cv: 0, cd: 0.5, cu: 0 }, cost: { cv: 0, cd: 0, cu: 0.25 } };
+  function solve(kind, P) {
+    const { cv, cd, cu } = SHOCKS[kind], { fp, fx, k, rho } = P;
+    const det_ok = k * (fp - 1) + (1 - BETA) * fx > 0;
+    const A11 = 1 - rho + fx / SIGMA, A12 = (fp - rho) / SIGMA, A21 = -k, A22 = 1 - BETA * rho;
+    const r1 = cd - cv / SIGMA, r2 = cu, D = A11 * A22 - A12 * A21;
+    const a = (r1 * A22 - A12 * r2) / D, b = (A11 * r2 - A21 * r1) / D;
+    const c = fp * b + fx * a + cv, rr = c - rho * b;
+    return { ok: det_ok, a, b, c, rr, rho };
+  }
+  function irfChart(svg, sol, T, opts) {
+    const series = [['a', 's-teal'], ['b', 's-rose'], ['c', 's-amber'], ['rr', 's-violet']].filter(q => !(opts.noReal && q[0] === 'rr'));
+    const vals = series.flatMap(([key]) => range(0, T, 1).map(t => sol[key] * Math.pow(sol.rho, t)));
+    let m = Math.max(0.1, ...vals.map(Math.abs)); m = Math.ceil(m * 10 / 1) / 10;
+    const step = m <= 0.2 ? 0.05 : m <= 0.5 ? 0.1 : m <= 1 ? 0.25 : 0.5;
+    m = Math.ceil(m / step) * step;
+    const s = frame(svg, { W: opts.W || 640, H: opts.H || 300, x0: 0, x1: T, y0: -m, y1: m, xt: range(0, T, T > 12 ? 4 : 2), yt: range(-m, m, step), yf: t => sg(t, 2), zeroX: true, xl: 'Quarters after the shock', yl: 'Deviation (%)', pad: { l: 56, t: opts.padT || 14 } });
+    series.forEach(([key, cls]) => {
+      el('path', { d: path(range(0, T, 1).map(t => [s.X(t), s.Y(sol[key] * Math.pow(sol.rho, t))])), fill: 'none', class: cls, 'stroke-width': key === 'rr' ? 2 : 2.8, opacity: key === 'rr' ? .8 : 1 }, svg);
+      el('circle', { cx: s.X(0), cy: s.Y(sol[key]), r: 4, class: cls.replace('s-', 'f-') }, svg);
+    });
+  }
+
+  /* ---------- hero ---------- */
+  let heroKind = 'mon';
+  const heroText = {
+    mon: s => `A surprise rate rise of 0.25 points: output falls <b class="up">${f(-s.a, 2)}%</b> below potential and inflation dips <b>${f(-s.b, 2)} points</b>, then both fade.`,
+    dem: s => `A burst of spending: output rises <b>${f(s.a, 2)}%</b> above potential, inflation climbs <b class="up">${f(s.b, 2)} points</b>, and the central bank raises rates.`,
+    cost: s => `An energy price surge: inflation jumps <b class="up">${f(s.b, 2)} points</b>, the central bank tightens, and output falls <b class="up">${f(-s.a, 2)}%</b> below potential.`
+  };
+  function hero() {
+    const sol = solve(heroKind, { fp: 1.5, fx: 0.125, k: 0.1, rho: 0.6 });
+    $('heroSay').innerHTML = heroText[heroKind](sol);
+    irfChart($('heroSvg'), sol, 12, { W: 420, H: 310, noReal: true, padT: 32 });
+    const svg = $('heroSvg');
+    [['output gap', 'f-teal'], ['inflation', 'f-rose'], ['interest rate', 'f-amber']].forEach(([n, c], i) => {
+      el('rect', { x: 70 + i * 112, y: 8, width: 10, height: 10, rx: 5, class: c }, svg);
+      el('text', { x: 84 + i * 112, y: 17, class: 'axl' }, svg, n);
+    });
+  }
+  function segInit(id, cb) {
+    const box = $(id);
+    box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      box.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+      cb(b.dataset.s);
+    }));
+  }
+  segInit('heroSeg', k => { heroKind = k; hero(); });
+
+  /* ---------- four words ---------- */
+  const W = [
+    ['Decisions link today and tomorrow. Households decide how much to save for the future, firms set prices they may be stuck with for months, and everyone forms expectations about what comes next.', 'Without it, the model would be a single snapshot: no saving, no investment, and no reason for a recession to last.'],
+    ['The economy is constantly hit by random events: changes in demand, technology, energy prices, policy surprises. These shocks are what make the model economy fluctuate like a real one.', 'Without it, the model would sit at its steady state forever and could not reproduce business cycles.'],
+    ['All the main markets are modelled together: goods, labour, money and credit. A change in one market feeds back into the others, for example higher rates reduce spending, which reduces hiring, which reduces income.', 'Without it, you get partial equilibrium: studying one market while holding everything else fixed.'],
+    ['Each actor does the best it can given prices and expectations, and prices and interest rates adjust until all plans fit together: what households want to buy equals what firms produce.', 'Without it, the model could contain plans that contradict each other, such as everyone saving with no one borrowing.']
+  ];
+  function words(i) {
+    $('words').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.w == i ? 'true' : 'false'));
+    $('wordTxt').innerHTML = `<p>${W[i][0]}</p><p class="hint">${W[i][1]}</p>`;
+  }
+  $('words').querySelectorAll('button').forEach(b => b.addEventListener('click', () => words(+b.dataset.w)));
+
+  /* ---------- cast diagram ---------- */
+  const CAST = {
+    hh: ['Households', 'Choose how much to consume and save, and how much to work, given the interest rate and their income. Contribute the <b>dynamic IS curve</b> (block 2).', 'f-teal-soft', 's-teal'],
+    fi: ['Firms', 'Hire workers, produce goods, and set prices, which they can only change from time to time. Contribute the <b>New Keynesian Phillips curve</b> (block 3).', 'f-amber-soft', 's-amber'],
+    cb: ['Central bank', 'Sets the short-term interest rate by reacting to inflation and the output gap. Contributes the <b>Taylor rule</b> (block 4).', 'f-violet-soft', 's-violet']
+  };
+  let castSel = 'hh';
+  function cast() {
+    const svg = $('castSvg'); svg.innerHTML = ''; svg.setAttribute('viewBox', '0 0 640 300');
+    const defs = el('defs', {}, svg);
+    const mk = el('marker', { id: 'arr', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, defs);
+    el('path', { d: 'M0,0 L10,5 L0,10 z', fill: 'var(--muted)' }, mk);
+    const pos = { hh: [40, 30], fi: [440, 30], cb: [240, 200] };
+    const arrow = (x1, y1, x2, y2, label, lx, ly) => {
+      el('line', { x1, y1, x2, y2, stroke: 'var(--muted)', 'stroke-width': 1.6, 'marker-end': 'url(#arr)' }, svg);
+      el('text', { x: lx, y: ly, class: 'axl', 'text-anchor': 'middle' }, svg, label);
+    };
+    arrow(205, 50, 435, 50, 'spending on goods', 320, 42);
+    arrow(435, 90, 205, 90, 'wages and jobs', 320, 108);
+    arrow(520, 115, 402, 214, 'inflation', 500, 172);
+    arrow(130, 115, 250, 198, 'output gap', 232, 150);
+    arrow(240, 252, 80, 116, 'interest rate', 118, 222);
+    Object.entries(pos).forEach(([key, [x, y]]) => {
+      const g = el('g', { class: 'node', tabindex: 0, role: 'button', 'aria-label': CAST[key][0] }, svg);
+      el('rect', { x, y, width: 160, height: 82, rx: 12, class: CAST[key][2] + ' ' + CAST[key][3], 'stroke-width': key === castSel ? 3 : 1.2 }, g);
+      el('text', { x: x + 80, y: y + 47, class: 'lbl f-ink', 'text-anchor': 'middle', style: 'font-size:15px' }, g, CAST[key][0]);
+      const go = () => { castSel = key; cast(); };
+      g.addEventListener('click', go);
+      g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    });
+    $('castOut').innerHTML = `<b>${CAST[castSel][0]}.</b> ${CAST[castSel][1]}`;
+  }
+
+  /* ---------- household ---------- */
+  function hh() {
+    const y1 = +$('hhY1').value, y2 = +$('hhY2').value, r = +$('hhR').value / 100, b = 0.96;
+    $('hhY1o').textContent = y1; $('hhY2o').textContent = y2; $('hhRo').textContent = f(r * 100) + '%';
+    const Wl = y1 + y2 / (1 + r), c1 = Wl / (1 + b), c2 = b * (1 + r) * c1, sav = y1 - c1;
+    const svg = $('hhSvg');
+    const ymax = Math.max(160, Math.ceil(Math.max(y1, y2, c1, c2) / 20) * 20 + 20);
+    const s = frame(svg, { W: 640, H: 260, x0: 0, x1: 2, y0: 0, y1: ymax, xt: [], yt: range(0, ymax, ymax > 200 ? 50 : 40), yl: 'Amount' });
+    [[y1, c1, 'This year'], [y2, c2, 'Next year']].forEach(([y, c, lab], i) => {
+      const cx = s.X(0.5 + i), w = 70;
+      el('rect', { x: cx - w - 4, y: s.Y(y), width: w, height: s.Y(0) - s.Y(y), rx: 4, fill: 'var(--line)' }, svg);
+      el('rect', { x: cx + 4, y: s.Y(c), width: w, height: s.Y(0) - s.Y(c), rx: 4, class: 'f-teal' }, svg);
+      el('text', { x: cx - w / 2 - 4, y: s.Y(y) - 6, class: 'tick', 'text-anchor': 'middle' }, svg, f(y, 0));
+      el('text', { x: cx + w / 2 + 4, y: s.Y(c) - 6, class: 'lbl f-ink', 'text-anchor': 'middle' }, svg, f(c, 1));
+      el('text', { x: cx, y: s.H - s.p.b + 18, class: 'axl', 'text-anchor': 'middle' }, svg, lab);
+    });
+    $('hhOut').innerHTML = `<span class="k">lifetime resources</span> = ${y1} + ${y2} / ${f(1 + r, 3)} = ${f(Wl, 1)}<br>` +
+      `<span class="k">consumption</span>: ${f(c1, 1)} this year, ${f(c2, 1)} next year; <span class="k">${sav >= 0 ? 'saving' : 'borrowing'}</span> this year = <b>${f(Math.abs(sav), 1)}</b><br>` +
+      `<span class="k">Euler check</span>: C<sub>2</sub> / C<sub>1</sub> = β(1 + r) = ${f(b * (1 + r), 3)}`;
+  }
+  ['hhY1', 'hhY2', 'hhR'].forEach(id => $(id).addEventListener('input', hh));
+
+  /* ---------- Calvo ---------- */
+  function calvo() {
+    const th = +$('cvT').value; $('cvTo').textContent = f(th, 2);
+    const svg = $('cvSvg');
+    const s = frame(svg, { W: 640, H: 260, x0: 0, x1: 12, y0: 0, y1: 11, xt: range(0, 12, 2), yt: [0, 2, 4, 6, 8, 10], yf: t => '+' + t + '%', xl: 'Quarters after the cost increase', yl: 'Average price' });
+    el('path', { d: path([[s.X(0), s.Y(0)], [s.X(1), s.Y(0)], [s.X(1), s.Y(10)], [s.X(12), s.Y(10)]]), fill: 'none', stroke: 'var(--muted)', 'stroke-width': 1.8, class: 'dash' }, svg);
+    const pts = range(0, 12, 1).map(t => [t, 10 * (1 - Math.pow(th, t))]);
+    el('path', { d: path(pts.map(q => [s.X(q[0]), s.Y(q[1])])), fill: 'none', class: 's-teal', 'stroke-width': 3 }, svg);
+    pts.forEach(q => el('circle', { cx: s.X(q[0]), cy: s.Y(q[1]), r: 4, class: 'f-teal' }, svg));
+    const dur = th < 1 ? 1 / (1 - th) : Infinity, half = th > 0 ? Math.log(0.5) / Math.log(th) : 0;
+    const kf = th >= 0.05 ? (1 - th) * (1 - BETA * th) / th : null;
+    $('cvOut').innerHTML = `<span class="k">price after quarter t</span> = 10 x (1 - θ<sup>t</sup>); after 4 quarters: <b>+${f(10 * (1 - Math.pow(th, 4)), 2)}%</b><br>` +
+      `<span class="k">average price duration</span> = 1 / (1 - θ) = ${f(dur, 1)} quarters; <span class="k">half the adjustment done after</span> ${th > 0 ? f(half, 1) + ' quarters' : 'immediately'}<br>` +
+      `<span class="k">stickiness factor in κ</span>: (1 - θ)(1 - βθ)/θ = ${kf === null ? 'very large (prices nearly flexible)' : f(kf, 3)}`;
+  }
+  $('cvT').addEventListener('input', calvo);
+
+  /* ---------- Taylor ---------- */
+  function taylor() {
+    const p = +$('tyP').value, x = +$('tyX').value, fp = +$('tyF').value;
+    $('tyPo').textContent = f(p, 2) + '%'; $('tyXo').textContent = sg(x) + '%'; $('tyFo').textContent = f(fp, 2);
+    const rule = q => 4 + fp * (q - 2) + 0.5 * x, i = rule(p), real = i - p;
+    const svg = $('tySvg');
+    const s = frame(svg, { W: 640, H: 280, x0: -1, x1: 10, y0: -4, y1: 18, xt: range(0, 10, 2), yt: range(-4, 18, 4), xf: pct, yf: pct, zeroX: true, xl: 'Inflation', yl: 'Policy interest rate' });
+    const seg = (fn, cls, w, dash) => { const pts = range(-1, 10, 0.05).map(q => [q, fn(q)]).filter(q => q[1] >= -4 && q[1] <= 18); if (pts.length > 1) el('path', { d: path(pts.map(q => [s.X(q[0]), s.Y(q[1])])), fill: 'none', class: cls + (dash ? ' dash' : ''), 'stroke-width': w }, svg); };
+    seg(q => q + 2, 's-ink', 1.4, true);
+    el('text', { x: s.X(8.6), y: s.Y(10.6) - 8, class: 'lbl halo f-ink', 'text-anchor': 'end' }, svg, 'neutral: real rate 2%');
+    seg(rule, 's-amber', 3, false);
+    el('line', { x1: s.X(p), x2: s.X(p), y1: s.Y(p + 2), y2: s.Y(Math.max(-4, Math.min(18, i))), class: real > 2 ? 's-rose' : 's-teal', 'stroke-width': 2.5 }, svg);
+    el('circle', { cx: s.X(p), cy: s.Y(Math.max(-4, Math.min(18, i))), r: 8, class: 'f-amber' }, svg);
+    const stance = Math.abs(real - 2) < 0.05 ? 'neutral' : real > 2 ? 'tight (cools the economy)' : 'loose (stimulates the economy)';
+    $('tyOut').innerHTML = `<span class="k">i</span> = 2 + 2 + ${f(fp, 2)} x (${f(p, 2)} - 2) + 0.5 x (${sg(x)}) = <b>${f(i, 2)}%</b><br>` +
+      `<span class="k">real rate</span> = ${f(i, 2)} - ${f(p, 2)} = <b>${f(real, 2)}%</b>, so policy is ${stance}` +
+      (fp <= 1 ? '<br><span class="k">warning</span>: with φπ ≤ 1, higher inflation lowers the real rate (Taylor principle violated)' : '');
+  }
+  ['tyP', 'tyX', 'tyF'].forEach(id => $(id).addEventListener('input', taylor));
+
+  /* ---------- AR(1) ---------- */
+  let arSeed = 5;
+  function ar() {
+    const rho = +$('arR').value, sd = +$('arS').value; $('arRo').textContent = f(rho, 2); $('arSo').textContent = f(sd, 2);
+    const r = rng(arSeed), z = [0]; const eps = []; for (let t = 1; t <= 80; t++) eps.push(normal(r));
+    for (let t = 1; t <= 80; t++) z.push(rho * z[t - 1] + sd * eps[t - 1]);
+    const m = Math.max(1.2, Math.ceil(Math.max(...z.map(Math.abs)) * 2) / 2);
+    const svg = $('arSvg');
+    const s = frame(svg, { W: 640, H: 260, x0: 0, x1: 80, y0: -m, y1: m, xt: range(0, 80, 10), yt: range(-Math.floor(m), Math.floor(m), Math.floor(m) > 3 ? 2 : 1), yf: t => sg(t, 0), zeroX: true, xl: 'Quarter', yl: 'Shock z' });
+    el('path', { d: path(z.map((v, t) => [s.X(t), s.Y(v)])), fill: 'none', class: 's-violet', 'stroke-width': 2 }, svg);
+    el('path', { d: path(range(0, 80, 1).map(t => [s.X(t), s.Y(Math.min(m, Math.pow(rho, t)))])), fill: 'none', class: 's-amber', 'stroke-width': 2.6 }, svg);
+    const half = rho > 0 ? Math.log(0.5) / Math.log(rho) : 0;
+    $('arOut').innerHTML = `<span class="k">half-life</span> = ln 0.5 / ln ρ = ${rho > 0 ? f(half, 1) + ' quarters' : 'immediate'}<br>` +
+      `<span class="k">typical size of z</span> (long-run standard deviation) = s / √(1 - ρ²) = ${f(sd / Math.sqrt(1 - rho * rho), 2)}`;
+  }
+  ['arR', 'arS'].forEach(id => $(id).addEventListener('input', ar));
+  $('arNew').addEventListener('click', () => { arSeed++; ar(); });
+
+  /* ---------- IRFs ---------- */
+  let irKind = 'mon';
+  function irf() {
+    const P = { fp: +$('irF').value, fx: +$('irX').value, k: +$('irK').value, rho: +$('irR').value };
+    $('irFo').textContent = f(P.fp, 2); $('irXo').textContent = f(P.fx, 3); $('irKo').textContent = f(P.k, 2); $('irRo').textContent = f(P.rho, 2);
+    const sol = solve(irKind, P);
+    const svg = $('irSvg');
+    if (!sol.ok) {
+      svg.innerHTML = ''; svg.setAttribute('viewBox', '0 0 640 120');
+      el('text', { x: 320, y: 64, class: 'axl', 'text-anchor': 'middle', style: 'font-size:15px' }, svg, 'No unique equilibrium: the paths below cannot be pinned down.');
+      $('irWarn').innerHTML = `<div class="warn">With these values κ(φπ - 1) + (1 - β)φx = ${f(P.k * (P.fp - 1) + (1 - BETA) * P.fx, 4)}, which is not positive. Policy does not react strongly enough to inflation, so many different paths are consistent with the model, including self-fulfilling swings in expectations. Raise φπ above 1.</div>`;
+      $('irOut').innerHTML = '';
+      return;
+    }
+    $('irWarn').innerHTML = '';
+    irfChart(svg, sol, 16, {});
+    $('irOut').innerHTML = `<span class="k">impact responses</span>: output gap ${sg(sol.a, 3)}%, inflation ${sg(sol.b, 3)}, nominal rate ${sg(sol.c, 3)}, real rate ${sg(sol.rr, 3)}<br>` +
+      `<span class="k">solution</span>: x<sub>t</sub> = ${f(sol.a, 3)} z<sub>t</sub>, π<sub>t</sub> = ${f(sol.b, 3)} z<sub>t</sub>, and every response decays by ρ = ${f(P.rho, 2)} each quarter`;
+  }
+  segInit('irSeg', k => { irKind = k; irf(); });
+  ['irF', 'irX', 'irK', 'irR'].forEach(id => $(id).addEventListener('input', irf));
+
+  /* ---------- Bayes ---------- */
+  function bayes() {
+    const m0 = +$('byM0').value, s0 = +$('byS0').value, m1 = +$('byM1').value, s1 = +$('byS1').value;
+    $('byM0o').textContent = f(m0, 2); $('byS0o').textContent = f(s0, 2); $('byM1o').textContent = f(m1, 2); $('byS1o').textContent = f(s1, 2);
+    const p0 = 1 / (s0 * s0), p1 = 1 / (s1 * s1), sp = Math.sqrt(1 / (p0 + p1)), mp = (p0 * m0 + p1 * m1) / (p0 + p1), w0 = p0 / (p0 + p1);
+    const dens = (x, m, s) => Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * Math.sqrt(2 * Math.PI));
+    const xs = range(0, 4, 0.01), ymax = Math.max(...xs.map(x => Math.max(dens(x, m0, s0), dens(x, m1, s1), dens(x, mp, sp)))) * 1.08;
+    const svg = $('byFig');
+    const s = frame(svg, { W: 640, H: 260, x0: 0, x1: 4, y0: 0, y1: ymax, xt: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4], yt: [], xl: 'Value of φπ', pad: { l: 20 } });
+    [[m0, s0, 's-violet', 'f-violet-soft', 2], [m1, s1, 's-amber', 'f-amber-soft', 2], [mp, sp, 's-teal', 'f-teal-soft', 3]].forEach(([m, sd, cls, fill, w]) => {
+      const pts = xs.map(x => [s.X(x), s.Y(dens(x, m, sd))]);
+      el('path', { d: path(pts) + `L${s.X(4)},${s.Y(0)}L${s.X(0)},${s.Y(0)}Z`, class: fill, opacity: .45, stroke: 'none' }, svg);
+      el('path', { d: path(pts), fill: 'none', class: cls, 'stroke-width': w }, svg);
+    });
+    el('line', { x1: s.X(1), x2: s.X(1), y1: s.p.t, y2: s.H - s.p.b, class: 's-rose dash', 'stroke-width': 1.4 }, svg);
+    el('text', { x: s.X(1) + 5, y: s.p.t + 12, class: 'lbl f-rose halo' }, svg, 'φπ = 1');
+    $('byOut').innerHTML = `<span class="k">posterior mean</span> = ${f(w0, 2)} x ${f(m0, 2)} + ${f(1 - w0, 2)} x ${f(m1, 2)} = <b>${f(mp, 2)}</b>, <span class="k">posterior sd</span> = <b>${f(sp, 2)}</b><br>` +
+      `<span class="k">weight on the prior</span> = ${Math.round(w0 * 100)}%, on the data = ${Math.round((1 - w0) * 100)}%`;
+  }
+  ['byM0', 'byS0', 'byM1', 'byS1'].forEach(id => $(id).addEventListener('input', bayes));
+
+  /* ---------- quick checks ---------- */
+  document.querySelectorAll('.check').forEach(c => {
+    const ans = c.dataset.answer;
+    c.querySelectorAll('.opts button').forEach(b => b.addEventListener('click', () => {
+      c.querySelectorAll('.opts button').forEach(x => x.classList.remove('right', 'wrong'));
+      const ok = b.dataset.k === ans;
+      b.classList.add(ok ? 'right' : 'wrong');
+      if (!ok) c.querySelector(`.opts [data-k="${ans}"]`).classList.add('right');
+      const fb = c.querySelector('.fb'); fb.hidden = false;
+      fb.querySelector('.verdict').textContent = ok ? 'Correct.' : 'Not quite.';
+    }));
+  });
+
+  /* ---------- nav highlight ---------- */
+  const links = [...document.querySelectorAll('nav.toc a')];
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+    }), { rootMargin: '-30% 0px -60% 0px' });
+    document.querySelectorAll('section.block').forEach(s => io.observe(s));
+  }
+
+  hero(); words(0); cast(); hh(); calvo(); taylor(); ar(); irf(); bayes();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IS-LM and AD-AS, from the beginning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&family=Karla:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' },
+  startup: { typeset: true }
+};
+</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+:root {
+  --paper: #f3f4f0; --dot: #d3d7cd; --ink: #1b2326; --muted: #5a6568;
+  --line: #c8ccc2; --card: #ffffff; --card2: #f8f9f6;
+  --teal: #0f766e; --amber: #b45309; --rose: #be123c; --violet: #6d28d9;
+  --teal-soft: #d3ebe7; --amber-soft: #f5e4cf; --rose-soft: #f6d9df; --violet-soft: #e5dbf7;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Karla", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+    --line: #333d40; --card: #1b2225; --card2: #182023;
+    --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+    --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+  --line: #333d40; --card: #1b2225; --card2: #182023;
+  --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+  --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+}
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; color: var(--ink); background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  font-family: var(--sans); font-size: 18px; line-height: 1.62;
+}
+a { color: var(--teal); }
+:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+
+.wrap { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 56px; max-width: 1120px; margin: 0 auto; padding: 0 24px 96px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 28px); align-self: start; padding-top: 28px; }
+nav.toc p { font-family: var(--serif); font-size: 1.05rem; margin: 0 0 12px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: b; }
+nav.toc li { counter-increment: b; }
+nav.toc a { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: .92rem; line-height: 1.3; }
+nav.toc a::before { content: counter(b); font-family: var(--mono); font-size: .8rem; color: var(--teal); min-width: 1.2em; padding-top: 1px; }
+nav.toc a:hover, nav.toc a.on { background: var(--teal-soft); color: var(--ink); }
+
+main { min-width: 0; }
+.prose { max-width: 720px; }
+
+header.hero { padding: 64px 0 24px; }
+header.hero h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(3rem, 8vw, 5.4rem); line-height: .95; letter-spacing: -.02em; margin: 0 0 18px; font-variation-settings: "opsz" 144; }
+header.hero .lede { font-family: var(--serif); font-size: 1.35rem; line-height: 1.45; max-width: 640px; margin: 0 0 28px; color: var(--ink); }
+.hero-lab { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.hero-say { font-family: var(--serif); font-size: 1.5rem; line-height: 1.35; margin: 0 0 14px; }
+.hero-say b { color: var(--teal); font-weight: 600; }
+.hero-say b.up { color: var(--rose); }
+.hint { color: var(--muted); font-size: .95rem; margin: 6px 0 0; }
+
+section.block { padding-top: 56px; }
+section.block > h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.1; margin: 0 0 8px; letter-spacing: -.01em; }
+section.block > .sub { color: var(--muted); margin: 0 0 18px; font-size: 1.02rem; }
+h3 { font-family: var(--serif); font-weight: 600; font-size: 1.22rem; margin: 30px 0 8px; }
+p { margin: 0 0 14px; }
+.math { overflow-x: auto; padding: 4px 0; margin: 6px 0 14px; }
+mjx-container[display="true"] { margin: .6em 0 !important; }
+
+.lab { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 14px 0 18px; }
+.lab svg { display: block; width: 100%; height: auto; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin-top: 14px; }
+.ctl label { display: flex; justify-content: space-between; gap: 10px; font-size: .92rem; color: var(--muted); }
+.ctl label output { font-family: var(--mono); color: var(--ink); font-size: .88rem; }
+input[type=range] { width: 100%; accent-color: var(--teal); margin: 6px 0 0; }
+.readout { font-family: var(--mono); font-size: .9rem; background: var(--card2); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; margin-top: 14px; overflow-x: auto; line-height: 1.7; }
+.readout .k { color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+button.act { font: 600 .92rem var(--sans); color: var(--ink); background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+button.act:hover { border-color: var(--teal); }
+button.act.primary { background: var(--teal); border-color: var(--teal); color: var(--card); }
+
+table.t { border-collapse: collapse; width: 100%; font-size: .95rem; margin: 10px 0 18px; }
+table.t th, table.t td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-weight: 700; color: var(--muted); font-size: .88rem; }
+table.t td.n { font-family: var(--mono); font-size: .88rem; white-space: nowrap; }
+.tw { overflow-x: auto; }
+
+.example { border-left: 4px solid var(--amber); background: var(--amber-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; }
+.example p:last-child { margin-bottom: 0; }
+.aside { border-left: 4px solid var(--violet); background: var(--violet-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: .97rem; }
+
+.check { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 16px 18px; margin: 14px 0 0; }
+.check .q { font-weight: 600; margin-bottom: 10px; }
+.check .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.check .opts button { font: 1rem var(--sans); text-align: left; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); cursor: pointer; }
+.check .opts button:hover { border-color: var(--teal); }
+.check .opts button.right { background: var(--teal-soft); border-color: var(--teal); }
+.check .opts button.wrong { background: var(--rose-soft); border-color: var(--rose); }
+.check .fb { margin-top: 10px; font-size: .97rem; }
+.check .fb .verdict { font-weight: 700; margin-right: 4px; }
+
+.people { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 520px; }
+.people button { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--teal); background: var(--teal); cursor: pointer; padding: 0; position: relative; }
+.people button[aria-pressed="false"] { background: transparent; border-color: var(--rose); border-style: dashed; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: .9rem; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+.years { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.years .ctl label { flex-direction: column; gap: 0; }
+.cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cards2 .lab { margin: 0; }
+.big { font-family: var(--serif); font-size: 2rem; line-height: 1.1; margin: 10px 0 2px; }
+.big small { font-family: var(--sans); font-size: .95rem; color: var(--muted); }
+
+/* svg */
+.grid { stroke: var(--line); stroke-width: 1; }
+.zero { stroke: var(--muted); stroke-width: 1.2; }
+.tick { fill: var(--muted); font: 11px var(--mono); }
+.axl { fill: var(--muted); font: 12px var(--sans); }
+.lbl { font: 600 12px var(--sans); }
+.s-teal { stroke: var(--teal); } .f-teal { fill: var(--teal); }
+.s-amber { stroke: var(--amber); } .f-amber { fill: var(--amber); }
+.s-rose { stroke: var(--rose); } .f-rose { fill: var(--rose); }
+.s-violet { stroke: var(--violet); } .f-violet { fill: var(--violet); }
+.s-ink { stroke: var(--ink); } .f-ink { fill: var(--ink); }
+.f-teal-soft { fill: var(--teal-soft); } .f-rose-soft { fill: var(--rose-soft); }
+.f-amber-soft { fill: var(--amber-soft); } .f-violet-soft { fill: var(--violet-soft); }
+.f-card { fill: var(--card); }
+.dash { stroke-dasharray: 5 4; }
+.halo { stroke: var(--card); stroke-width: 4px; paint-order: stroke; stroke-linejoin: round; }
+
+footer { margin-top: 72px; color: var(--muted); font-size: .9rem; }
+
+@media (max-width: 880px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 16px 72px; }
+  nav.toc { position: sticky; top: 0; z-index: 5; padding: calc(env(safe-area-inset-top, 0px) + 8px) 0 8px; margin: 0 -16px; background: var(--paper); border-bottom: 1px solid var(--line); }
+  :root { padding-top: 0; }
+  nav.toc p { display: none; }
+  nav.toc ol { display: flex; overflow-x: auto; gap: 4px; padding: 0 12px; }
+  nav.toc a { white-space: nowrap; }
+  .hero-lab { grid-template-columns: minmax(0, 1fr); }
+  header.hero { padding-top: 36px; }
+  .years { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body { font-size: 17px; }
+}
+</style>
+<style>
+.tog { display: flex; align-items: center; gap: 10px; font-size: .95rem; color: var(--ink); margin-top: 12px; cursor: pointer; }
+.tog input { width: 18px; height: 18px; accent-color: var(--teal); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 12px; }
+.seg button { font: 600 .9rem var(--sans); padding: 8px 14px; border: 0; background: var(--card2); color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--teal); color: var(--card); }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Lecture sections">
+  <p>IS-LM and AD-AS</p>
+  <ol>
+    <li><a href="#b1">The goods market</a></li>
+    <li><a href="#b2">The IS curve</a></li>
+    <li><a href="#b3">The LM curve</a></li>
+    <li><a href="#b4">IS-LM and policy</a></li>
+    <li><a href="#b5">Aggregate demand</a></li>
+    <li><a href="#b6">Aggregate supply</a></li>
+    <li><a href="#b7">Shocks and adjustment</a></li>
+    <li><a href="#b8">Links and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>IS-LM and AD-AS</h1>
+  <p class="lede">Two pairs of curves that every macroeconomist learns first. IS-LM shows how spending and interest rates settle in the short run. AD-AS adds prices, and shows how the economy drifts back to normal over time.</p>
+  <div class="lab hero-lab">
+    <div>
+      <p class="hero-say" id="heroSay"></p>
+      <div class="ctl">
+        <label for="heroG">Government spending <output id="heroGo"></output></label>
+        <input type="range" id="heroG" min="200" max="440" step="10" value="380">
+      </div>
+      <p class="hint">A small model economy. The solid lines are the IS and LM curves. Where they cross, both the goods market and the money market are in balance. Move the slider.</p>
+    </div>
+    <svg id="heroSvg" role="img" aria-label="IS-LM diagram"></svg>
+  </div>
+</header>
+
+<!-- 1 -->
+<section class="block prose" id="b1">
+  <h2>The goods market</h2>
+  <p class="sub">Output adjusts until what is produced equals what people want to buy.</p>
+  <h3>The idea</h3>
+  <p>In the short run, firms produce what they can sell. So total output is driven by total demand for goods, which has three parts: what households spend (consumption), what firms spend on machines and buildings (investment), and what the government spends.</p>
+  <p>The key twist is that spending creates income. If the government pays for a new road, the builders earn wages. They spend part of those wages in shops, whose owners spend part of their extra income, and so on. One unit of new spending ends up raising output by more than one unit. This is the multiplier.</p>
+  <h3>The formulas</h3>
+  <p>Demand \(Z\) is consumption plus investment plus government spending. Consumption depends on disposable income, income \(Y\) minus taxes \(T\):</p>
+  <div class="math">\[ Z = C + I + G, \qquad C = c_0 + c_1\,(Y - T). \]</div>
+  <p>Here \(c_0\) is spending that does not depend on income, and \(c_1\) is the marginal propensity to consume: the share of each extra unit of income that is spent (between 0 and 1). Equilibrium means output equals demand, \(Y = Z\). Solving:</p>
+  <div class="math">\[ Y = \frac{1}{1 - c_1}\,\big(c_0 - c_1 T + I + G\big). \]</div>
+  <p>The factor \(1/(1 - c_1)\) is the multiplier.</p>
+  <h3>Try it</h3>
+  <p>This chart is called the Keynesian cross. The amber line is demand at each level of output. The grey diagonal is where output equals demand. Equilibrium is where they cross. Investment is held at 200 for now.</p>
+  <div class="lab">
+    <svg id="kcSvg" role="img" aria-label="Keynesian cross"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="kcC">Propensity to consume \(c_1\) <output id="kcCo"></output></label><input type="range" id="kcC" min="0.3" max="0.9" step="0.05" value="0.6"></div>
+      <div class="ctl"><label for="kcG">Government spending \(G\) <output id="kcGo"></output></label><input type="range" id="kcG" min="150" max="500" step="10" value="320"></div>
+    </div>
+    <div class="readout" id="kcOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(c_1 = 0.6\), the multiplier is \(1/(1 - 0.6) = 2.5\). If government spending rises by 40, output rises by \(2.5 \times 40 = 100\). The rounds of spending are 40, then \(0.6 \times 40 = 24\), then 14.4, and so on, adding up to 100.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">If households spend 80% of each extra unit of income, what is the multiplier?</div>
+    <div class="opts"><button data-k="a">0.8</button><button data-k="b">1.25</button><button data-k="c">5</button><button data-k="d">8</button></div>
+    <div class="fb" hidden><span class="verdict"></span>1 / (1 - 0.8) = 5.</div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="block prose" id="b2">
+  <h2>The IS curve</h2>
+  <p class="sub">Higher interest rates mean less investment, and therefore less output.</p>
+  <h3>The idea</h3>
+  <p>Firms borrow to invest. When the interest rate is high, borrowing is expensive and fewer projects are worth doing, so investment falls. Through the multiplier, output falls by more than investment.</p>
+  <p>For each interest rate there is one level of output at which the goods market balances. Joining these points gives a downward-sloping line called the IS curve (IS stands for Investment equals Saving, another way to say the goods market is in equilibrium).</p>
+  <h3>The formula</h3>
+  <p>Let investment fall with the interest rate \(i\) (in percent): \(I = I_0 - d\,i\). Substituting into the goods market equilibrium:</p>
+  <div class="math">\[ Y = \frac{1}{1 - c_1}\,\big(c_0 - c_1 T + I_0 + G - d\,i\big). \]</div>
+  <p>A change in \(i\) moves the economy along the curve. A change in \(G\), \(T\) or confidence (\(c_0\), \(I_0\)) shifts the whole curve.</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="isSvg" role="img" aria-label="IS curve"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="isI">Interest rate \(i\) <output id="isIo"></output></label><input type="range" id="isI" min="0" max="12" step="0.5" value="5"></div>
+      <div class="ctl"><label for="isG">Government spending \(G\) <output id="isGo"></output></label><input type="range" id="isG" min="200" max="440" step="10" value="320"></div>
+      <div class="ctl"><label for="isT">Taxes \(T\) <output id="isTo"></output></label><input type="range" id="isT" min="100" max="300" step="10" value="200"></div>
+    </div>
+    <div class="readout" id="isOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(c_0 = 200\), \(c_1 = 0.6\), \(T = 200\), \(I_0 = 300\), \(d = 20\) and \(G = 320\), the IS curve is \(Y = (700 - 20\,i)/0.4 = 1750 - 50\,i\). At \(i = 5\%\), output is 1500. Raising the rate to 7% lowers it to 1400.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">Which of these shifts the IS curve to the right?</div>
+    <div class="opts"><button data-k="a">A higher interest rate</button><button data-k="b">A rise in government spending</button><button data-k="c">A tax increase</button><button data-k="d">A fall in consumer confidence</button></div>
+    <div class="fb" hidden><span class="verdict"></span>More government spending raises demand at every interest rate. A higher interest rate only moves along the curve; higher taxes and lower confidence shift it left.</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="block prose" id="b3">
+  <h2>The LM curve</h2>
+  <p class="sub">The money market, and where the interest rate comes from.</p>
+  <h3>The idea</h3>
+  <p>People hold money to pay for things. The more the economy produces and sells, the more money people need for transactions. But holding money has a cost: money in your pocket earns no interest, while a bond does. So when interest rates are high, people hold less money.</p>
+  <p>Suppose the central bank fixes the amount of money. If output rises, people want more money for transactions. With the supply fixed, the interest rate has to rise until people are content holding the money that exists. So higher output goes with a higher interest rate. This upward-sloping line is the LM curve (L for liquidity, the demand for money, and M for the money supply).</p>
+  <h3>The formula</h3>
+  <p>Real money demand (money divided by the price level \(P\)) rises with output and falls with the interest rate. In equilibrium it equals the real money supply \(M/P\):</p>
+  <div class="math">\[ \frac{M}{P} = k\,Y - h\,i \quad\Longrightarrow\quad i = \frac{1}{h}\left(k\,Y - \frac{M}{P}\right). \]</div>
+  <p>More money (\(M\) up) or lower prices (\(P\) down) shift the LM curve down: the same output now goes with a lower interest rate.</p>
+  <h3>Try it</h3>
+  <p>Left: the money market, with demand for money at the chosen output and the fixed supply. Right: the LM curve that results.</p>
+  <div class="lab">
+    <div class="pair">
+      <svg id="mmSvg" role="img" aria-label="Money market"></svg>
+      <svg id="lmSvg" role="img" aria-label="LM curve"></svg>
+    </div>
+    <div class="controls">
+      <div class="ctl"><label for="lmY">Output \(Y\) <output id="lmYo"></output></label><input type="range" id="lmY" min="1100" max="1900" step="20" value="1500"></div>
+      <div class="ctl"><label for="lmM">Money supply \(M\) <output id="lmMo"></output></label><input type="range" id="lmM" min="400" max="650" step="10" value="500"></div>
+    </div>
+    <div class="readout" id="lmOut"></div>
+  </div>
+  <div class="aside">A modern note: most central banks today set an interest rate directly and supply whatever money is demanded at that rate. In that view the LM curve is simply a horizontal line at the chosen rate. Block 4 lets you switch between the two views.</div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(k = 0.5\), \(h = 50\), \(M = 500\) and \(P = 1\), the LM curve is \(i = (0.5\,Y - 500)/50 = 0.01\,Y - 10\). At \(Y = 1500\), \(i = 5\%\). If output rises by 200, money demand rises by 100, and the rate must rise 2 points to 7% to choke off that extra demand.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">The central bank increases the money supply. What happens to the LM curve?</div>
+    <div class="opts"><button data-k="a">It shifts down: lower rates at every output level</button><button data-k="b">It shifts up</button><button data-k="c">It becomes vertical</button><button data-k="d">It does not move</button></div>
+    <div class="fb" hidden><span class="verdict"></span>With more money available, people hold it willingly only at a lower interest rate, for any given level of output.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="block prose" id="b4">
+  <h2>IS-LM and policy</h2>
+  <p class="sub">Both markets in balance at once, and what fiscal and monetary policy do.</p>
+  <h3>The idea</h3>
+  <p>The IS curve lists combinations of output and interest rate where the goods market balances. The LM curve does the same for the money market. Only one point is on both: the short-run equilibrium.</p>
+  <p>Fiscal policy (government spending and taxes) shifts IS. Monetary policy (the money supply or the policy rate) shifts LM. One effect deserves attention: crowding out. When the government spends more, output rises, money demand rises, and if the money supply is fixed the interest rate goes up. That higher rate reduces private investment, so output rises by less than the simple multiplier promised.</p>
+  <h3>The formula</h3>
+  <p>Solving the IS and LM equations together, with \(A = c_0 - c_1 T + I_0 + G\):</p>
+  <div class="math">\[ Y = \frac{A + d\,\dfrac{M}{P h}}{(1 - c_1) + \dfrac{d\,k}{h}}. \]</div>
+  <p>The extra term \(dk/h\) in the denominator is crowding out: it makes the fiscal multiplier smaller than \(1/(1 - c_1)\).</p>
+  <h3>Try it</h3>
+  <p>Dashed lines show the starting point. Change policy and compare.</p>
+  <div class="lab">
+    <svg id="ilSvg" role="img" aria-label="IS-LM policy experiment"></svg>
+    <div class="legend"><span><i style="background:var(--teal)"></i>IS curve</span><span><i style="background:var(--violet)"></i>LM curve</span><span><i style="background:var(--muted)"></i>Starting curves</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="ilG">Government spending \(G\) <output id="ilGo"></output></label><input type="range" id="ilG" min="200" max="440" step="10" value="320"></div>
+      <div class="ctl"><label for="ilT">Taxes \(T\) <output id="ilTo"></output></label><input type="range" id="ilT" min="100" max="300" step="10" value="200"></div>
+      <div class="ctl"><label for="ilM">Money supply \(M\) <output id="ilMo"></output></label><input type="range" id="ilM" min="400" max="650" step="10" value="500"></div>
+    </div>
+    <label class="tog"><input type="checkbox" id="ilFix"> Central bank keeps the interest rate fixed at 5% (horizontal LM)</label>
+    <div class="readout" id="ilOut"></div>
+  </div>
+  <p>Raise \(G\) by 60 in each mode. With a fixed money supply, output rises 100. With the rate held at 5%, it rises the full 150, because the central bank supplies the extra money and nothing is crowded out.</p>
+  <h3>Worked example</h3>
+  <div class="example"><p>Starting at \(Y = 1500\), \(i = 5\%\), government spending rises from 320 to 380. The new equilibrium is \(Y = (760 + 200)/0.6 = 1600\) and \(i = 6\%\). The simple multiplier promised \(2.5 \times 60 = 150\); the higher rate cut investment by 20, which through the multiplier removed 50 of output.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="d">
+    <div class="q">A fiscal expansion has the largest effect on output when...</div>
+    <div class="opts"><button data-k="a">the money supply is fixed and investment is very sensitive to rates</button><button data-k="b">taxes rise at the same time</button><button data-k="c">the central bank raises rates in response</button><button data-k="d">the central bank holds the interest rate unchanged</button></div>
+    <div class="fb" hidden><span class="verdict"></span>If the rate does not rise, investment is not crowded out, and the full multiplier applies.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="block prose" id="b5">
+  <h2>Aggregate demand</h2>
+  <p class="sub">Letting prices change: from IS-LM to the AD curve.</p>
+  <h3>The idea</h3>
+  <p>So far prices were fixed. Now ask: what if the price level \(P\) is higher? The same amount of money buys less, so the real money supply \(M/P\) is smaller. In the money market this pushes the interest rate up, which lowers investment and output.</p>
+  <p>So a higher price level goes with lower demand for output. Plotting, for each price level, the output that IS-LM delivers gives the AD (Aggregate Demand) curve. It slopes down, not because each good gets more expensive relative to others, but because of what prices do to the real money supply and interest rates.</p>
+  <h3>The formula</h3>
+  <p>The AD curve is the IS-LM solution written as a function of \(P\):</p>
+  <div class="math">\[ Y^{AD}(P) = \frac{A + d\,\dfrac{M}{P h}}{(1 - c_1) + \dfrac{d\,k}{h}}. \]</div>
+  <p>A change in \(P\) moves along AD. Fiscal or monetary policy shifts it.</p>
+  <h3>Try it</h3>
+  <p>Change the price level. On top, the LM curve moves. Below, the result traces the AD curve.</p>
+  <div class="lab">
+    <svg id="adTop" role="img" aria-label="IS-LM with the price level"></svg>
+    <svg id="adBot" role="img" aria-label="Aggregate demand curve" style="margin-top:6px"></svg>
+    <div class="controls"><div class="ctl"><label for="adP">Price level \(P\) <output id="adPo"></output></label><input type="range" id="adP" min="0.7" max="1.6" step="0.01" value="1"></div></div>
+    <div class="readout" id="adOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>If \(P\) rises from 1 to 1.25, the real money supply falls from 500 to 400. Output becomes \((700 + 20 \times 400/50)/0.6 = (700 + 160)/0.6 \approx 1433\), down from 1500, and the interest rate rises to about 6.3%.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">Why does the AD curve slope down?</div>
+    <div class="opts"><button data-k="a">Each good becomes more expensive than its substitutes</button><button data-k="b">Higher prices shrink the real money supply, raising interest rates and cutting investment</button><button data-k="c">Firms produce less when prices rise</button><button data-k="d">Taxes rise with prices</button></div>
+    <div class="fb" hidden><span class="verdict"></span>In this model the channel runs through real money balances and the interest rate.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="block prose" id="b6">
+  <h2>Aggregate supply</h2>
+  <p class="sub">How prices respond when output is above or below normal.</p>
+  <h3>The idea</h3>
+  <p>When firms produce more, they hire more and unemployment falls. Workers then have more bargaining power and wages rise. Firms set prices as a markup over their costs, so higher wages mean higher prices. Output above normal therefore goes with prices above what people expected.</p>
+  <p>Expectations matter because wages are usually set in advance, based on the prices workers expect. If everyone expects higher prices, wages are set higher, and the whole curve shifts up.</p>
+  <p>There is one level of output at which prices turn out exactly as expected: natural output \(Y_n\), the output produced when unemployment is at its natural rate. It is the same idea as potential output in the Okun's law lecture.</p>
+  <h3>The formula</h3>
+  <p>A simple version of the AS (Aggregate Supply) relation, with expected price level \(P^e\):</p>
+  <div class="math">\[ P = P^e \left(1 + \mu\,\frac{Y - Y_n}{Y_n}\right). \]</div>
+  <p>When \(Y = Y_n\), \(P = P^e\). Each 1% of output above \(Y_n\) pushes prices about \(\mu\) percent above expectations.</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="asSvg" role="img" aria-label="Aggregate supply curve"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="asE">Expected price level \(P^e\) <output id="asEo"></output></label><input type="range" id="asE" min="0.8" max="1.4" step="0.01" value="1"></div>
+      <div class="ctl"><label for="asU">Slope \(\mu\) <output id="asUo"></output></label><input type="range" id="asU" min="0.3" max="3" step="0.1" value="1"></div>
+      <div class="ctl"><label for="asY">Output \(Y\) <output id="asYo"></output></label><input type="range" id="asY" min="1300" max="1700" step="10" value="1560"></div>
+    </div>
+    <div class="readout" id="asOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(Y_n = 1500\), \(\mu = 1\) and \(P^e = 1\), producing 1560 (4% above natural output) gives \(P = 1 \times (1 + 0.04) = 1.04\): prices end up 4% higher than people expected.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">Workers start expecting higher prices. What happens to the AS curve?</div>
+    <div class="opts"><button data-k="a">It shifts down</button><button data-k="b">It becomes flat</button><button data-k="c">It shifts up</button><button data-k="d">Natural output rises</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Higher expected prices lead to higher wage settlements, so firms charge higher prices at every level of output.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="block prose" id="b7">
+  <h2>Shocks and adjustment</h2>
+  <p class="sub">The short run, the medium run, and the path between them.</p>
+  <h3>The idea</h3>
+  <p>Put AD and AS together. Where they cross, we get output and the price level. Now hit the economy with a shock. In the short run, output can move away from natural output. But if prices turn out different from what people expected, they revise their expectations. Each year the AS curve shifts, until output is back at \(Y_n\) and expectations are right again. That end point is the medium run.</p>
+  <p>The model assumes people expect this year's prices to equal last year's: \(P^e_t = P_{t-1}\). This is the same adaptive expectations idea as in the Phillips curve lecture.</p>
+  <h3>Try it</h3>
+  <p>Choose a shock, then move through the years.</p>
+  <div class="lab">
+    <div class="seg" role="group" aria-label="Choose a shock" id="dySeg" style="margin-top:0">
+      <button aria-pressed="true" data-s="mon">Money supply +20%</button><button aria-pressed="false" data-s="fis">Government spending +60</button><button aria-pressed="false" data-s="oil">Oil price rise</button>
+    </div>
+    <svg id="dySvg" role="img" aria-label="AD-AS diagram over time" style="margin-top:10px"></svg>
+    <div class="legend"><span><i style="background:var(--teal)"></i>AD after the shock</span><span><i style="background:var(--amber)"></i>AS this year</span><span><i style="background:var(--muted)"></i>Before the shock</span><span><i style="background:var(--rose)"></i>Path of the economy</span></div>
+    <div class="pair">
+      <svg id="dyY" role="img" aria-label="Output over time"></svg>
+      <svg id="dyP" role="img" aria-label="Price level over time"></svg>
+    </div>
+    <div class="controls"><div class="ctl"><label for="dyT">Year <output id="dyTo"></output></label><input type="range" id="dyT" min="0" max="20" step="1" value="1"></div></div>
+    <div class="readout" id="dyOut"></div>
+  </div>
+  <h3>What each shock teaches</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Shock</th><th>Short run</th><th>Medium run</th></tr>
+    <tr><td>Money supply up</td><td>Output rises, interest rate falls</td><td>Output and the interest rate return to where they started; only prices are higher, in proportion to money. This is the neutrality of money.</td></tr>
+    <tr><td>Government spending up</td><td>Output rises</td><td>Output returns to normal but the interest rate stays higher, so investment is permanently lower. Government spending has replaced private investment.</td></tr>
+    <tr><td>Oil price rise</td><td>Prices rise and output falls together (stagflation)</td><td>Firms' higher markup lowers natural output itself, so output settles at a lower level and prices stay higher.</td></tr>
+  </table></div>
+  <h3>Worked example</h3>
+  <div class="example"><p>After the money supply rises from 500 to 600, the medium run has \(Y = 1500\) and \(i = 5\%\) again, so from the LM equation \(5 = (750 - 600/P)/50\), which gives \(P = 1.2\): prices rose exactly 20%, like the money supply.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">In the medium run of this model, what does a permanent fiscal expansion change?</div>
+    <div class="opts"><button data-k="a">The interest rate and the split between investment and government spending</button><button data-k="b">Output only</button><button data-k="c">Nothing at all</button><button data-k="d">Natural output</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Output returns to \(Y_n\), but with a higher interest rate, so private investment is lower and government spending higher.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="block prose" id="b8">
+  <h2>Links and limits</h2>
+  <p class="sub">How these curves connect to the other lectures, and where they fall short.</p>
+  <h3>Connections</h3>
+  <div class="tw"><table class="t">
+    <tr><th>This lecture</th><th>Becomes</th><th>Where</th></tr>
+    <tr><td>Output returns to natural output \(Y_n\)</td><td>Potential output and the output gap</td><td>Okun's law lecture</td></tr>
+    <tr><td>AS curve with expected prices</td><td>Expectations-augmented Phillips curve, rewritten in inflation and unemployment</td><td>Phillips curve lecture</td></tr>
+    <tr><td>IS curve</td><td>Dynamic IS curve, derived from households' saving decisions</td><td>DSGE lecture, block 2</td></tr>
+    <tr><td>Horizontal LM with a chosen rate</td><td>Taylor rule</td><td>DSGE lecture, block 4</td></tr>
+  </table></div>
+  <h3>Limits</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Limit</th><th>What it means</th></tr>
+    <tr><td>No explicit future</td><td>Spending depends on current income only. Households and firms do not look ahead, which is exactly what DSGE models add.</td></tr>
+    <tr><td>Adaptive expectations</td><td>People keep making the same forecasting mistake for years. Later models use anchored or rational expectations.</td></tr>
+    <tr><td>The zero lower bound</td><td>Interest rates cannot go much below zero. In a deep recession the central bank cannot cut further and LM becomes flat at zero, a liquidity trap. Then fiscal policy matters more.</td></tr>
+    <tr><td>Closed economy</td><td>No trade or exchange rates. Open-economy versions (Mundell-Fleming) are needed for small open economies, especially with a fixed exchange rate.</td></tr>
+    <tr><td>Linear and static</td><td>Useful for direction and intuition, not for precise numbers.</td></tr>
+  </table></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">In a liquidity trap with the interest rate at zero, which policy can still raise output?</div>
+    <div class="opts"><button data-k="a">Printing more money</button><button data-k="b">Higher government spending</button><button data-k="c">Raising taxes</button><button data-k="d">Raising the interest rate</button></div>
+    <div class="fb" hidden><span class="verdict"></span>With LM flat at zero, more money cannot lower rates further, but shifting IS through fiscal policy still raises output, with no crowding out.</div>
+  </div>
+  <h3>Summary</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Curve</th><th>Equation</th><th>Read it as</th></tr>
+    <tr><td>IS</td><td>\(Y = \frac{1}{1 - c_1}(c_0 - c_1 T + I_0 + G - d\,i)\)</td><td>Higher rates, less output</td></tr>
+    <tr><td>LM</td><td>\(i = \frac{1}{h}(kY - M/P)\)</td><td>More output, higher rates (fixed money supply)</td></tr>
+    <tr><td>AD</td><td>IS-LM solved for each \(P\)</td><td>Higher prices, less demand</td></tr>
+    <tr><td>AS</td><td>\(P = P^e(1 + \mu\,(Y - Y_n)/Y_n)\)</td><td>More output, prices above expectations</td></tr>
+  </table></div>
+</section>
+
+<footer class="prose">
+  <p>Model parameters on this page: \(c_0 = 200\), \(c_1 = 0.6\), \(T = 200\), \(I_0 = 300\), \(d = 20\), \(G = 320\), \(k = 0.5\), \(h = 50\), \(M = 500\), \(Y_n = 1500\), \(\mu = 1\), chosen so the starting point is \(Y = 1500\), \(i = 5\%\), \(P = 1\). The structure follows Blanchard, Macroeconomics. Every chart is computed live in your browser.</p>
+</footer>
+</main>
+</div>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  function el(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  const f = (v, d = 1) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d);
+  const sg = (v, d = 1) => (v > 1e-9 ? '+' : '') + f(v, d);
+
+  // Generic frame: returns scales
+  function frame(svg, o) {
+    svg.innerHTML = '';
+    const W = o.W || 640, H = o.H || 300;
+    const p = Object.assign({ l: 50, r: 18, t: 14, b: 42 }, o.pad || {});
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const X = v => p.l + (v - o.x0) / (o.x1 - o.x0) * (W - p.l - p.r);
+    const Y = v => H - p.b - (v - o.y0) / (o.y1 - o.y0) * (H - p.t - p.b);
+    (o.xt || []).forEach(t => {
+      el('line', { x1: X(t), x2: X(t), y1: p.t, y2: H - p.b, class: 'grid' }, svg);
+      el('text', { x: X(t), y: H - p.b + 16, class: 'tick', 'text-anchor': 'middle' }, svg, (o.xf || String)(t));
+    });
+    (o.yt || []).forEach(t => {
+      el('line', { x1: p.l, x2: W - p.r, y1: Y(t), y2: Y(t), class: 'grid' }, svg);
+      el('text', { x: p.l - 7, y: Y(t) + 4, class: 'tick', 'text-anchor': 'end' }, svg, (o.yf || String)(t));
+    });
+    if (o.zeroX && o.y0 < 0 && o.y1 > 0) el('line', { x1: p.l, x2: W - p.r, y1: Y(0), y2: Y(0), class: 'zero' }, svg);
+    if (o.zeroY && o.x0 < 0 && o.x1 > 0) el('line', { x1: X(0), x2: X(0), y1: p.t, y2: H - p.b, class: 'zero' }, svg);
+    if (o.xl) el('text', { x: (p.l + W - p.r) / 2, y: H - 6, class: 'axl', 'text-anchor': 'middle' }, svg, o.xl);
+    if (o.yl) el('text', { x: 14, y: (p.t + H - p.b) / 2, class: 'axl', 'text-anchor': 'middle', transform: `rotate(-90 14 ${(p.t + H - p.b) / 2})` }, svg, o.yl);
+    return { X, Y, W, H, p };
+  }
+  const path = pts => 'M' + pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join('L');
+  const pct = t => t + '%';
+
+    const range = (a, b, st) => { const r = []; for (let x = a; x <= b + 1e-9; x += st) r.push(x); return r; };
+  const B = { c0: 200, c1: 0.6, T: 200, I0: 300, d: 20, G: 320, k: 0.5, h: 50, M: 500, P: 1, Yn: 1500, mu: 1 };
+  const mk = o => Object.assign({}, B, o || {});
+  const Aut = p => p.c0 - p.c1 * p.T + p.I0 + p.G;
+  const iIS = (Y, p) => (Aut(p) - (1 - p.c1) * Y) / p.d;
+  const iLM = (Y, p) => (p.k * Y - p.M / p.P) / p.h;
+  function eq(p, fix) {
+    if (fix) { const Y = (Aut(p) - p.d * 5) / (1 - p.c1); return { Y, i: 5 }; }
+    const Y = (Aut(p) + p.d * p.M / (p.P * p.h)) / ((1 - p.c1) + p.d * p.k / p.h);
+    return { Y, i: iLM(Y, p) };
+  }
+  // draw a function i = fn(Y) clipped to the frame
+  function curve(svg, s, fn, x0, x1, y0, y1, cls, w, dash) {
+    const pts = range(x0, x1, (x1 - x0) / 200).map(x => [x, fn(x)]).filter(q => q[1] >= y0 && q[1] <= y1);
+    if (pts.length > 1) el('path', { d: path(pts.map(q => [s.X(q[0]), s.Y(q[1])])), fill: 'none', class: cls + (dash ? ' dash' : ''), 'stroke-width': w }, svg);
+  }
+  const islmFrame = (svg, o) => frame(svg, Object.assign({ W: 640, H: 300, x0: 1100, x1: 1900, y0: 0, y1: 12, xt: [1100, 1300, 1500, 1700, 1900], yt: [0, 2, 4, 6, 8, 10, 12], yf: pct, xl: 'Output Y', yl: 'Interest rate i' }, o || {}));
+
+  /* hero */
+  function hero() {
+    const G = +$('heroG').value; $('heroGo').textContent = G;
+    const p = mk({ G }), e = eq(p), e0 = eq(mk());
+    const svg = $('heroSvg');
+    const s = islmFrame(svg, { W: 420, H: 300 });
+    curve(svg, s, Y => iIS(Y, mk()), 1100, 1900, 0, 12, 's-teal', 1.6, true);
+    curve(svg, s, Y => iIS(Y, p), 1100, 1900, 0, 12, 's-teal', 3);
+    curve(svg, s, Y => iLM(Y, p), 1100, 1900, 0, 12, 's-violet', 3);
+    const yl = (Aut(p) - 20 * 11) / 0.4; el('text', { x: s.X(yl) + 8, y: s.Y(11) + 4, class: 'lbl f-teal halo' }, svg, 'IS');
+    el('text', { x: s.X(1840), y: s.Y(iLM(1840, p)) + 18, class: 'lbl f-violet halo' }, svg, 'LM');
+    el('circle', { cx: s.X(e0.Y), cy: s.Y(e0.i), r: 4, class: 'f-ink' }, svg);
+    el('circle', { cx: s.X(e.Y), cy: s.Y(e.i), r: 8, class: 'f-rose' }, svg);
+    const dY = e.Y - e0.Y;
+    $('heroSay').innerHTML = Math.abs(G - 320) < 1e-9
+      ? `At government spending of <b>320</b>, output is <b>1500</b> and the interest rate is <b>5.0%</b>.`
+      : `Government spending of <b>${G}</b> ${dY > 0 ? 'raises' : 'lowers'} output to <b>${f(e.Y, 0)}</b> and moves the interest rate to <b class="up">${f(e.i)}%</b>, ${dY > 0 ? 'which holds private investment back' : 'which encourages private investment'}.`;
+  }
+  $('heroG').addEventListener('input', hero);
+
+  /* Keynesian cross */
+  function kc() {
+    const c1 = +$('kcC').value, G = +$('kcG').value; $('kcCo').textContent = f(c1, 2); $('kcGo').textContent = G;
+    const aut = 200 - c1 * 200 + 200 + G, Ys = aut / (1 - c1), mult = 1 / (1 - c1);
+    const top = Math.max(3000, Math.ceil(Ys * 1.25 / 500) * 500), st = top / 6;
+    const svg = $('kcSvg');
+    const s = frame(svg, { W: 640, H: 320, x0: 0, x1: top, y0: 0, y1: top, xt: range(0, top, st), yt: range(0, top, st), xf: t => f(t, 0), yf: t => f(t, 0), xl: 'Output Y', yl: 'Demand Z', pad: { l: 58 } });
+    el('line', { x1: s.X(0), y1: s.Y(0), x2: s.X(top), y2: s.Y(top), stroke: 'var(--muted)', 'stroke-width': 1.6 }, svg);
+    el('text', { x: s.X(top * 0.92), y: s.Y(top * 0.92) + 18, class: 'lbl halo', fill: 'var(--muted)', 'text-anchor': 'end' }, svg, 'Y = Z');
+    curve(svg, s, Y => aut + c1 * Y, 0, top, 0, top, 's-amber', 3);
+    el('text', { x: s.X(top * 0.05), y: s.Y(aut + c1 * top * 0.05) - 8, class: 'lbl f-amber halo' }, svg, 'demand Z');
+    el('line', { x1: s.X(Ys), x2: s.X(Ys), y1: s.Y(0), y2: s.Y(Ys), class: 's-ink dash', 'stroke-width': 1.2 }, svg);
+    el('circle', { cx: s.X(Ys), cy: s.Y(Ys), r: 8, class: 'f-rose' }, svg);
+    const rounds = [0, 1, 2, 3].map(n => 10 * Math.pow(c1, n));
+    $('kcOut').innerHTML = `<span class="k">equilibrium</span> Y = (200 - ${f(c1, 2)} x 200 + 200 + ${G}) / (1 - ${f(c1, 2)}) = <b>${f(Ys, 0)}</b><br>` +
+      `<span class="k">multiplier</span> = 1 / (1 - ${f(c1, 2)}) = <b>${f(mult, 2)}</b><br>` +
+      `<span class="k">if G rises by 10</span>: rounds ${rounds.map(r => f(r, 2)).join(' + ')} + ... = ${f(10 * mult, 1)}`;
+  }
+  ['kcC', 'kcG'].forEach(id => $(id).addEventListener('input', kc));
+
+  /* IS */
+  function isc() {
+    const i = +$('isI').value, G = +$('isG').value, T = +$('isT').value;
+    $('isIo').textContent = f(i) + '%'; $('isGo').textContent = G; $('isTo').textContent = T;
+    const p = mk({ G, T }), Y = (Aut(p) - p.d * i) / (1 - p.c1), I = p.I0 - p.d * i;
+    const svg = $('isSvg');
+    const s = islmFrame(svg, { x0: 1000, x1: 2200, xt: [1000, 1200, 1400, 1600, 1800, 2000, 2200] });
+    curve(svg, s, y => iIS(y, mk()), 1000, 2200, 0, 12, 's-teal', 1.6, true);
+    curve(svg, s, y => iIS(y, p), 1000, 2200, 0, 12, 's-teal', 3);
+    el('line', { x1: s.X(1000), x2: s.X(Y), y1: s.Y(i), y2: s.Y(i), class: 's-ink dash', 'stroke-width': 1 }, svg);
+    if (Y >= 1000 && Y <= 2200) el('circle', { cx: s.X(Y), cy: s.Y(i), r: 8, class: 'f-rose' }, svg);
+    $('isOut').innerHTML = `<span class="k">investment</span> I = 300 - 20 x ${f(i)} = ${f(I, 0)}<br>` +
+      `<span class="k">output</span> Y = (${f(Aut(p) - p.I0 + I, 0)}) / 0.4 = <b>${f(Y, 0)}</b> &nbsp; <span class="k">each extra point of interest</span> lowers Y by 20 / 0.4 = 50`;
+  }
+  ['isI', 'isG', 'isT'].forEach(id => $(id).addEventListener('input', isc));
+
+  /* LM */
+  function lmc() {
+    const Y = +$('lmY').value, M = +$('lmM').value; $('lmYo').textContent = Y; $('lmMo').textContent = M;
+    const p = mk({ M }), i = iLM(Y, p), ic = Math.max(0, Math.min(12, i));
+    let svg = $('mmSvg');
+    let s = frame(svg, { W: 320, H: 280, x0: 0, x1: 1000, y0: 0, y1: 12, xt: [0, 250, 500, 750, 1000], yt: [0, 2, 4, 6, 8, 10, 12], yf: pct, xl: 'Real money M/P', yl: 'Interest rate', pad: { l: 44, r: 10 } });
+    curve(svg, s, m => (0.5 * Y - m) / 50, 0, 1000, 0, 12, 's-amber', 3);
+    el('text', { x: s.X(80), y: s.Y((0.5 * Y - 80) / 50) - 8, class: 'lbl f-amber halo' }, svg, 'demand');
+    el('line', { x1: s.X(M), x2: s.X(M), y1: s.p.t, y2: s.H - s.p.b, class: 's-violet', 'stroke-width': 3 }, svg);
+    el('text', { x: s.X(M) + 6, y: s.p.t + 12, class: 'lbl f-violet halo' }, svg, 'supply');
+    el('circle', { cx: s.X(M), cy: s.Y(ic), r: 7, class: 'f-rose' }, svg);
+    svg = $('lmSvg');
+    s = islmFrame(svg, { W: 320, H: 280, xt: [1100, 1500, 1900], pad: { l: 44, r: 10 } });
+    curve(svg, s, y => iLM(y, mk()), 1100, 1900, 0, 12, 's-violet', 1.6, true);
+    curve(svg, s, y => iLM(y, p), 1100, 1900, 0, 12, 's-violet', 3);
+    el('circle', { cx: s.X(Y), cy: s.Y(ic), r: 7, class: 'f-rose' }, svg);
+    $('lmOut').innerHTML = `<span class="k">money demand</span> = 0.5 x ${Y} - 50 i; <span class="k">supply</span> = ${M}<br>` +
+      `<span class="k">interest rate</span> i = (0.5 x ${Y} - ${M}) / 50 = <b>${f(i, 2)}%</b>` + (i < 0 ? ' (below zero, which central banks can hardly go in practice)' : '');
+  }
+  ['lmY', 'lmM'].forEach(id => $(id).addEventListener('input', lmc));
+
+  /* IS-LM policy */
+  function ilc() {
+    const G = +$('ilG').value, T = +$('ilT').value, fix = $('ilFix').checked;
+    $('ilM').disabled = fix;
+    const M = +$('ilM').value; $('ilGo').textContent = G; $('ilTo').textContent = T; $('ilMo').textContent = fix ? 'set by the rate' : M;
+    const p = mk({ G, T, M }), e = eq(p, fix), e0 = eq(mk());
+    const svg = $('ilSvg');
+    const s = islmFrame(svg);
+    curve(svg, s, y => iIS(y, mk()), 1100, 1900, 0, 12, 's-ink', 1.4, true);
+    curve(svg, s, y => iLM(y, mk()), 1100, 1900, 0, 12, 's-ink', 1.4, true);
+    curve(svg, s, y => iIS(y, p), 1100, 1900, 0, 12, 's-teal', 3);
+    if (fix) curve(svg, s, () => 5, 1100, 1900, 0, 12, 's-violet', 3);
+    else curve(svg, s, y => iLM(y, p), 1100, 1900, 0, 12, 's-violet', 3);
+    el('circle', { cx: s.X(e0.Y), cy: s.Y(e0.i), r: 4, class: 'f-ink' }, svg);
+    if (e.Y >= 1100 && e.Y <= 1900 && e.i >= 0 && e.i <= 12) el('circle', { cx: s.X(e.Y), cy: s.Y(e.i), r: 8, class: 'f-rose' }, svg);
+    const C = p.c0 + p.c1 * (e.Y - p.T), I = p.I0 - p.d * e.i, pure = (Aut(p) - Aut(mk())) / (1 - p.c1);
+    let txt = `<span class="k">equilibrium</span> Y = <b>${f(e.Y, 0)}</b>, i = <b>${f(e.i, 2)}%</b>; C = ${f(C, 0)}, I = ${f(I, 0)}, G = ${G}<br>`;
+    txt += `<span class="k">change in output</span> = ${sg(e.Y - e0.Y, 0)}; <span class="k">fiscal change with no rate response</span> would give ${sg(pure, 0)}`;
+    if (!fix && Math.abs(pure) > 0.5) { const fo = eq(mk({ G, T }), false).Y - e0.Y; txt += `; with the money supply fixed it gives ${sg(fo, 0)}, so <span class="k">crowding out</span> = ${f(Math.abs(pure - fo), 0)}`; }
+    if (fix) txt += `<br><span class="k">money the central bank must supply</span> = 0.5 x ${f(e.Y, 0)} - 50 x 5 = ${f(0.5 * e.Y - 250, 0)}`;
+    $('ilOut').innerHTML = txt;
+  }
+  ['ilG', 'ilT', 'ilM', 'ilFix'].forEach(id => $(id).addEventListener('input', ilc));
+
+  /* AD */
+  const Yad = (P, p) => eq(Object.assign({}, p, { P })).Y;
+  function adc() {
+    const P = +$('adP').value; $('adPo').textContent = f(P, 2);
+    const p = mk({ P }), e = eq(p);
+    let svg = $('adTop');
+    let s = islmFrame(svg, { H: 240, x0: 1300, x1: 1700, xt: [1300, 1400, 1500, 1600, 1700], pad: { b: 30 }, xl: '' });
+    curve(svg, s, y => iIS(y, p), 1300, 1700, 0, 12, 's-teal', 3);
+    curve(svg, s, y => iLM(y, mk()), 1300, 1700, 0, 12, 's-ink', 1.4, true);
+    curve(svg, s, y => iLM(y, p), 1300, 1700, 0, 12, 's-violet', 3);
+    el('circle', { cx: s.X(e.Y), cy: s.Y(e.i), r: 7, class: 'f-rose' }, svg);
+    el('line', { x1: s.X(e.Y), x2: s.X(e.Y), y1: s.Y(e.i), y2: s.H - s.p.b, class: 's-rose dash', 'stroke-width': 1.2 }, svg);
+    svg = $('adBot');
+    s = frame(svg, { W: 640, H: 240, x0: 1300, x1: 1700, y0: 0.6, y1: 1.7, xt: [1300, 1400, 1500, 1600, 1700], yt: [0.6, 0.8, 1, 1.2, 1.4, 1.6], yf: t => f(t, 1), xl: 'Output Y', yl: 'Price level P' });
+    const pts = range(0.6, 1.7, 0.01).map(q => [Yad(q, mk()), q]).filter(q => q[0] >= 1300 && q[0] <= 1700);
+    el('path', { d: path(pts.map(q => [s.X(q[0]), s.Y(q[1])])), fill: 'none', class: 's-teal', 'stroke-width': 3 }, svg);
+    el('text', { x: s.X(pts[pts.length - 1][0]) + 8, y: s.Y(pts[pts.length - 1][1]) + 4, class: 'lbl f-teal halo' }, svg, 'AD');
+    el('line', { x1: s.X(e.Y), x2: s.X(e.Y), y1: s.p.t, y2: s.Y(P), class: 's-rose dash', 'stroke-width': 1.2 }, svg);
+    el('circle', { cx: s.X(e.Y), cy: s.Y(P), r: 7, class: 'f-rose' }, svg);
+    $('adOut').innerHTML = `<span class="k">real money</span> M/P = 500 / ${f(P, 2)} = ${f(500 / P, 0)}; <span class="k">interest rate</span> = ${f(e.i, 2)}%; <span class="k">investment</span> = ${f(300 - 20 * e.i, 0)}<br>` +
+      `<span class="k">output demanded</span> Y = <b>${f(e.Y, 0)}</b>`;
+  }
+  $('adP').addEventListener('input', adc);
+
+  /* AS */
+  const AS = (Y, Pe, mu, Yn) => Pe * (1 + mu * (Y - Yn) / Yn);
+  function asc() {
+    const Pe = +$('asE').value, mu = +$('asU').value, Y = +$('asY').value;
+    $('asEo').textContent = f(Pe, 2); $('asUo').textContent = f(mu, 1); $('asYo').textContent = Y;
+    const P = AS(Y, Pe, mu, 1500);
+    const svg = $('asSvg');
+    const s = frame(svg, { W: 640, H: 280, x0: 1300, x1: 1700, y0: 0.6, y1: 1.8, xt: [1300, 1400, 1500, 1600, 1700], yt: [0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8], yf: t => f(t, 1), xl: 'Output Y', yl: 'Price level P' });
+    el('line', { x1: s.X(1500), x2: s.X(1500), y1: s.p.t, y2: s.H - s.p.b, stroke: 'var(--muted)', class: 'dash', 'stroke-width': 1.4 }, svg);
+    el('text', { x: s.X(1500) + 6, y: s.p.t + 12, class: 'lbl halo', fill: 'var(--muted)' }, svg, 'natural output Yn');
+    curve(svg, s, y => AS(y, 1, mu, 1500), 1300, 1700, 0.6, 1.8, 's-ink', 1.4, true);
+    curve(svg, s, y => AS(y, Pe, mu, 1500), 1300, 1700, 0.6, 1.8, 's-amber', 3);
+    el('circle', { cx: s.X(1500), cy: s.Y(Pe), r: 4, class: 'f-ink' }, svg);
+    if (P >= 0.6 && P <= 1.8) el('circle', { cx: s.X(Y), cy: s.Y(P), r: 8, class: 'f-rose' }, svg);
+    $('asOut').innerHTML = `<span class="k">P</span> = ${f(Pe, 2)} x (1 + ${f(mu, 1)} x (${Y} - 1500) / 1500) = <b>${f(P, 3)}</b><br>` +
+      `<span class="k">prices are</span> ${f(Math.abs(P / Pe - 1) * 100, 1)}% ${P >= Pe ? 'above' : 'below'} what people expected`;
+  }
+  ['asE', 'asU', 'asY'].forEach(id => $(id).addEventListener('input', asc));
+
+  /* dynamics */
+  const SH = { mon: { p: { M: 600 }, Yn: 1500 }, fis: { p: { G: 380 }, Yn: 1500 }, oil: { p: {}, Yn: 1440 } };
+  let dyKind = 'mon';
+  function path12(kind) {
+    const sh = SH[kind], p = mk(sh.p), out = [{ P: 1, Y: 1500, i: 5, Pe: 1 }];
+    for (let t = 1; t <= 20; t++) {
+      const Pe = out[t - 1].P;
+      let lo = 0.3, hi = 4;
+      for (let n = 0; n < 60; n++) { const mid = (lo + hi) / 2; const g = mid - AS(Yad(mid, p), Pe, 1, sh.Yn); if (g > 0) hi = mid; else lo = mid; }
+      const P = (lo + hi) / 2, e = eq(Object.assign({}, p, { P }));
+      out.push({ P, Y: e.Y, i: e.i, Pe });
+    }
+    return { out, p, Yn: sh.Yn };
+  }
+  function dyn() {
+    const t = +$('dyT').value; $('dyTo').textContent = t === 0 ? '0 (before)' : t;
+    const { out, p, Yn } = path12(dyKind), cur = out[t];
+    let lo = 0.3, hi = 4; for (let n = 0; n < 60; n++) { const m = (lo + hi) / 2; if (Yad(m, p) > Yn) lo = m; else hi = m; }
+    const mr = { P: (lo + hi) / 2 }; mr.i = eq(Object.assign({}, p, { P: mr.P })).i;
+    const svg = $('dySvg');
+    const s = frame(svg, { W: 640, H: 300, x0: 1350, x1: 1700, y0: 0.8, y1: 1.6, xt: [1350, 1400, 1450, 1500, 1550, 1600, 1650, 1700], yt: [0.8, 1, 1.2, 1.4, 1.6], yf: t => f(t, 1), xl: 'Output Y', yl: 'Price level P' });
+    const adPts = (pp, cls, w, dash) => {
+      const pts = range(0.6, 1.8, 0.005).map(q => [Yad(q, pp), q]).filter(q => q[0] >= 1350 && q[0] <= 1700 && q[1] >= 0.8 && q[1] <= 1.6);
+      if (pts.length > 1) el('path', { d: path(pts.map(q => [s.X(q[0]), s.Y(q[1])])), fill: 'none', class: cls + (dash ? ' dash' : ''), 'stroke-width': w }, svg);
+    };
+    adPts(mk(), 's-ink', 1.4, true);
+    curve(svg, s, y => AS(y, 1, 1, 1500), 1350, 1700, 0.8, 1.6, 's-ink', 1.4, true);
+    el('line', { x1: s.X(Yn), x2: s.X(Yn), y1: s.p.t, y2: s.H - s.p.b, stroke: 'var(--muted)', 'stroke-width': 1.2, class: 'dash' }, svg);
+    el('text', { x: s.X(Yn) + 5, y: s.p.t + 12, class: 'lbl halo', fill: 'var(--muted)' }, svg, Yn === 1500 ? 'Yn' : 'new Yn');
+    if (t > 0) {
+      adPts(p, 's-teal', 3);
+      curve(svg, s, y => AS(y, cur.Pe, 1, Yn), 1350, 1700, 0.8, 1.6, 's-amber', 3);
+    }
+    const pth = out.slice(0, t + 1);
+    if (pth.length > 1) el('path', { d: path(pth.map(q => [s.X(q.Y), s.Y(q.P)])), fill: 'none', class: 's-rose', 'stroke-width': 1.6 }, svg);
+    pth.forEach((q, j) => el('circle', { cx: s.X(q.Y), cy: s.Y(q.P), r: j === t ? 8 : 3.5, class: 'f-rose' }, svg));
+    const small = (id, key, lo, hi, yt, yf, lab) => {
+      const sv = $(id);
+      const ss = frame(sv, { W: 320, H: 200, x0: 0, x1: 20, y0: lo, y1: hi, xt: [0, 5, 10, 15, 20], yt, yf, xl: 'Year', yl: lab, pad: { l: 48, r: 10 } });
+      el('path', { d: path(out.map((q, j) => [ss.X(j), ss.Y(q[key])])), fill: 'none', stroke: 'var(--line)', 'stroke-width': 2 }, sv);
+      el('path', { d: path(pth.map((q, j) => [ss.X(j), ss.Y(q[key])])), fill: 'none', class: 's-rose', 'stroke-width': 2.6 }, sv);
+      el('circle', { cx: ss.X(t), cy: ss.Y(cur[key]), r: 5, class: 'f-rose' }, sv);
+    };
+    small('dyY', 'Y', 1400, 1600, [1400, 1450, 1500, 1550, 1600], v => f(v, 0), 'Output');
+    small('dyP', 'P', 0.9, 1.5, [0.9, 1.1, 1.3, 1.5], v => f(v, 1), 'Price level');
+    $('dyOut').innerHTML = `<span class="k">year ${t}</span>: expected P = ${f(cur.Pe, 3)}, actual P = <b>${f(cur.P, 3)}</b>, output = <b>${f(cur.Y, 0)}</b>, interest rate = ${f(cur.i, 2)}%, investment = ${f(300 - 20 * cur.i, 0)}<br>` +
+      `<span class="k">medium run</span> (where the path ends up): P = ${f(mr.P, 3)}, Y = ${f(Yn, 0)}, i = ${f(mr.i, 2)}%`;
+  }
+  $('dyT').addEventListener('input', dyn);
+  $('dySeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    $('dySeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    dyKind = b.dataset.s; dyn();
+  }));
+
+  /* ---------- quick checks ---------- */
+  document.querySelectorAll('.check').forEach(c => {
+    const ans = c.dataset.answer;
+    c.querySelectorAll('.opts button').forEach(b => b.addEventListener('click', () => {
+      c.querySelectorAll('.opts button').forEach(x => x.classList.remove('right', 'wrong'));
+      const ok = b.dataset.k === ans;
+      b.classList.add(ok ? 'right' : 'wrong');
+      if (!ok) c.querySelector(`.opts [data-k="${ans}"]`).classList.add('right');
+      const fb = c.querySelector('.fb'); fb.hidden = false;
+      fb.querySelector('.verdict').textContent = ok ? 'Correct.' : 'Not quite.';
+    }));
+  });
+
+  /* ---------- nav highlight ---------- */
+  const links = [...document.querySelectorAll('nav.toc a')];
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+    }), { rootMargin: '-30% 0px -60% 0px' });
+    document.querySelectorAll('section.block').forEach(s => io.observe(s));
+  }
+
+  hero(); kc(); isc(); lmc(); ilc(); adc(); asc(); dyn();
+})();
+</script>
+</body>
+</html>

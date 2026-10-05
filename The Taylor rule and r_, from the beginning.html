@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Taylor rule and r*, from the beginning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&family=Karla:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' },
+  startup: { typeset: true }
+};
+</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+:root {
+  --paper: #f3f4f0; --dot: #d3d7cd; --ink: #1b2326; --muted: #5a6568;
+  --line: #c8ccc2; --card: #ffffff; --card2: #f8f9f6;
+  --teal: #0f766e; --amber: #b45309; --rose: #be123c; --violet: #6d28d9;
+  --teal-soft: #d3ebe7; --amber-soft: #f5e4cf; --rose-soft: #f6d9df; --violet-soft: #e5dbf7;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Karla", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+    --line: #333d40; --card: #1b2225; --card2: #182023;
+    --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+    --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+  --line: #333d40; --card: #1b2225; --card2: #182023;
+  --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+  --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+}
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; color: var(--ink); background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  font-family: var(--sans); font-size: 18px; line-height: 1.62;
+}
+a { color: var(--teal); }
+:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+
+.wrap { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 56px; max-width: 1120px; margin: 0 auto; padding: 0 24px 96px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 28px); align-self: start; padding-top: 28px; }
+nav.toc p { font-family: var(--serif); font-size: 1.05rem; margin: 0 0 12px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: b; }
+nav.toc li { counter-increment: b; }
+nav.toc a { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: .92rem; line-height: 1.3; }
+nav.toc a::before { content: counter(b); font-family: var(--mono); font-size: .8rem; color: var(--teal); min-width: 1.2em; padding-top: 1px; }
+nav.toc a:hover, nav.toc a.on { background: var(--teal-soft); color: var(--ink); }
+
+main { min-width: 0; }
+.prose { max-width: 720px; }
+
+header.hero { padding: 64px 0 24px; }
+header.hero h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(3rem, 8vw, 5.4rem); line-height: .95; letter-spacing: -.02em; margin: 0 0 18px; font-variation-settings: "opsz" 144; }
+header.hero .lede { font-family: var(--serif); font-size: 1.35rem; line-height: 1.45; max-width: 640px; margin: 0 0 28px; color: var(--ink); }
+.hero-lab { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.hero-say { font-family: var(--serif); font-size: 1.5rem; line-height: 1.35; margin: 0 0 14px; }
+.hero-say b { color: var(--teal); font-weight: 600; }
+.hero-say b.up { color: var(--rose); }
+.hint { color: var(--muted); font-size: .95rem; margin: 6px 0 0; }
+
+section.block { padding-top: 56px; }
+section.block > h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.1; margin: 0 0 8px; letter-spacing: -.01em; }
+section.block > .sub { color: var(--muted); margin: 0 0 18px; font-size: 1.02rem; }
+h3 { font-family: var(--serif); font-weight: 600; font-size: 1.22rem; margin: 30px 0 8px; }
+p { margin: 0 0 14px; }
+.math { overflow-x: auto; padding: 4px 0; margin: 6px 0 14px; }
+mjx-container[display="true"] { margin: .6em 0 !important; }
+
+.lab { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 14px 0 18px; }
+.lab svg { display: block; width: 100%; height: auto; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin-top: 14px; }
+.ctl label { display: flex; justify-content: space-between; gap: 10px; font-size: .92rem; color: var(--muted); }
+.ctl label output { font-family: var(--mono); color: var(--ink); font-size: .88rem; }
+input[type=range] { width: 100%; accent-color: var(--teal); margin: 6px 0 0; }
+.readout { font-family: var(--mono); font-size: .9rem; background: var(--card2); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; margin-top: 14px; overflow-x: auto; line-height: 1.7; }
+.readout .k { color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+button.act { font: 600 .92rem var(--sans); color: var(--ink); background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+button.act:hover { border-color: var(--teal); }
+button.act.primary { background: var(--teal); border-color: var(--teal); color: var(--card); }
+
+table.t { border-collapse: collapse; width: 100%; font-size: .95rem; margin: 10px 0 18px; }
+table.t th, table.t td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-weight: 700; color: var(--muted); font-size: .88rem; }
+table.t td.n { font-family: var(--mono); font-size: .88rem; white-space: nowrap; }
+.tw { overflow-x: auto; }
+
+.example { border-left: 4px solid var(--amber); background: var(--amber-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; }
+.example p:last-child { margin-bottom: 0; }
+.aside { border-left: 4px solid var(--violet); background: var(--violet-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: .97rem; }
+
+.check { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 16px 18px; margin: 14px 0 0; }
+.check .q { font-weight: 600; margin-bottom: 10px; }
+.check .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.check .opts button { font: 1rem var(--sans); text-align: left; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); cursor: pointer; }
+.check .opts button:hover { border-color: var(--teal); }
+.check .opts button.right { background: var(--teal-soft); border-color: var(--teal); }
+.check .opts button.wrong { background: var(--rose-soft); border-color: var(--rose); }
+.check .fb { margin-top: 10px; font-size: .97rem; }
+.check .fb .verdict { font-weight: 700; margin-right: 4px; }
+
+.people { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 520px; }
+.people button { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--teal); background: var(--teal); cursor: pointer; padding: 0; position: relative; }
+.people button[aria-pressed="false"] { background: transparent; border-color: var(--rose); border-style: dashed; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: .9rem; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+.years { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.years .ctl label { flex-direction: column; gap: 0; }
+.cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cards2 .lab { margin: 0; }
+.big { font-family: var(--serif); font-size: 2rem; line-height: 1.1; margin: 10px 0 2px; }
+.big small { font-family: var(--sans); font-size: .95rem; color: var(--muted); }
+
+/* svg */
+.grid { stroke: var(--line); stroke-width: 1; }
+.zero { stroke: var(--muted); stroke-width: 1.2; }
+.tick { fill: var(--muted); font: 11px var(--mono); }
+.axl { fill: var(--muted); font: 12px var(--sans); }
+.lbl { font: 600 12px var(--sans); }
+.s-teal { stroke: var(--teal); } .f-teal { fill: var(--teal); }
+.s-amber { stroke: var(--amber); } .f-amber { fill: var(--amber); }
+.s-rose { stroke: var(--rose); } .f-rose { fill: var(--rose); }
+.s-violet { stroke: var(--violet); } .f-violet { fill: var(--violet); }
+.s-ink { stroke: var(--ink); } .f-ink { fill: var(--ink); }
+.f-teal-soft { fill: var(--teal-soft); } .f-rose-soft { fill: var(--rose-soft); }
+.f-amber-soft { fill: var(--amber-soft); } .f-violet-soft { fill: var(--violet-soft); }
+.f-card { fill: var(--card); }
+.dash { stroke-dasharray: 5 4; }
+.halo { stroke: var(--card); stroke-width: 4px; paint-order: stroke; stroke-linejoin: round; }
+
+footer { margin-top: 72px; color: var(--muted); font-size: .9rem; }
+
+@media (max-width: 880px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 16px 72px; }
+  nav.toc { position: sticky; top: 0; z-index: 5; padding: calc(env(safe-area-inset-top, 0px) + 8px) 0 8px; margin: 0 -16px; background: var(--paper); border-bottom: 1px solid var(--line); }
+  :root { padding-top: 0; }
+  nav.toc p { display: none; }
+  nav.toc ol { display: flex; overflow-x: auto; gap: 4px; padding: 0 12px; }
+  nav.toc a { white-space: nowrap; }
+  .hero-lab { grid-template-columns: minmax(0, 1fr); }
+  header.hero { padding-top: 36px; }
+  .years { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body { font-size: 17px; }
+}
+</style>
+<style>
+.tog { display: flex; align-items: center; gap: 10px; font-size: .95rem; color: var(--ink); margin-top: 12px; cursor: pointer; }
+.tog input { width: 18px; height: 18px; accent-color: var(--teal); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 12px; }
+.seg button { font: 600 .9rem var(--sans); padding: 8px 14px; border: 0; background: var(--card2); color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--teal); color: var(--card); }
+.warn { border-left: 4px solid var(--rose); background: var(--rose-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; margin-top: 12px; font-size: .95rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Lecture sections">
+  <p>Taylor rule and r*</p>
+  <ol>
+    <li><a href="#b1">Nominal and real rates</a></li>
+    <li><a href="#b2">The neutral rate r*</a></li>
+    <li><a href="#b3">The Taylor rule</a></li>
+    <li><a href="#b4">The Taylor principle</a></li>
+    <li><a href="#b5">Variants in practice</a></li>
+    <li><a href="#b6">Estimating r*</a></li>
+    <li><a href="#b7">Why r* fell</a></li>
+    <li><a href="#b8">Fixed exchange rates</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>The Taylor rule and r*</h1>
+  <p class="lede">How should a central bank set its interest rate? In 1993 John Taylor proposed a one-line answer that described the US Federal Reserve surprisingly well. At its heart sits a number nobody can observe: the neutral interest rate, r*.</p>
+  <div class="lab hero-lab">
+    <div>
+      <p class="hero-say" id="heroSay"></p>
+      <div class="ctl"><label for="heroP">Inflation <output id="heroPo"></output></label><input type="range" id="heroP" min="-1" max="10" step="0.25" value="5"></div>
+      <div class="ctl" style="margin-top:10px"><label for="heroX">Output gap <output id="heroXo"></output></label><input type="range" id="heroX" min="-6" max="4" step="0.25" value="1"></div>
+      <p class="hint">Taylor's original rule, with a 2% inflation target and a 2% neutral real rate.</p>
+    </div>
+    <svg id="heroSvg" role="img" aria-label="Taylor rule interest rate built from its components"></svg>
+  </div>
+</header>
+
+<!-- 1 -->
+<section class="block prose" id="b1">
+  <h2>Nominal and real rates</h2>
+  <p class="sub">The interest rate that matters for decisions is the one after inflation.</p>
+  <h3>The idea</h3>
+  <p>Suppose a bank pays 5% on a deposit. If prices also rise 5% over the year, your savings buy exactly what they bought before: you gained nothing in real terms. The rate the bank quotes is the nominal interest rate. What it is worth after inflation is the real interest rate.</p>
+  <p>Households and firms decide whether to borrow, spend or invest based on the real rate. A loan at 8% is expensive when inflation is 1%, and cheap when inflation is 7%. So a central bank that wants to cool the economy has to raise the real rate, not just the nominal one.</p>
+  <h3>The formula</h3>
+  <p>With nominal rate \(i\) and expected inflation \(\pi^e\), the real rate \(r\) is approximately (the Fisher equation, after Irving Fisher):</p>
+  <div class="math">\[ r = i - \pi^e. \]</div>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="fiSvg" role="img" aria-label="Nominal rate split into expected inflation and real rate"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="fiI">Nominal interest rate \(i\) <output id="fiIo"></output></label><input type="range" id="fiI" min="0" max="12" step="0.25" value="5"></div>
+      <div class="ctl"><label for="fiP">Expected inflation \(\pi^e\) <output id="fiPo"></output></label><input type="range" id="fiP" min="-1" max="10" step="0.25" value="3"></div>
+    </div>
+    <div class="readout" id="fiOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>A loan costs 6% a year and people expect 4% inflation. The real cost of borrowing is \(6 - 4 = 2\%\). If expected inflation falls to 1% while the loan rate stays at 6%, the real cost jumps to 5%, even though the quoted rate did not change.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">The policy rate is 3% and expected inflation is 5%. What is the real rate?</div>
+    <div class="opts"><button data-k="a">8%</button><button data-k="b">2%</button><button data-k="c">-2%</button><button data-k="d">0.6%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>3 - 5 = -2%. A negative real rate means borrowers effectively repay less than they borrowed in purchasing power.</div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="block prose" id="b2">
+  <h2>The neutral rate r*</h2>
+  <p class="sub">The real interest rate that neither speeds the economy up nor slows it down.</p>
+  <h3>The idea</h3>
+  <p>Think of the real interest rate as the position of a car's accelerator. Press too hard (rates too low) and the economy overheats: output rises above potential and inflation climbs. Lift off too much (rates too high) and it slows: output falls below potential. Somewhere in between is the position that keeps the car at a steady cruising speed. That is the neutral real rate, written r* and also called the natural rate of interest.</p>
+  <p>Monetary policy is "tight" when the real rate is above r* and "loose" when it is below. A 4% real rate could be tight in one decade and loose in another, depending on where r* is.</p>
+  <h3>The formula</h3>
+  <p>A simple demand relation, like the IS curve from the IS-LM lecture, written for the output gap \(x\) (percent gap between output and potential):</p>
+  <div class="math">\[ x = -a\,(r - r^*). \]</div>
+  <p>When \(r = r^*\), the gap is zero. Each point of real rate above r* pushes output \(a\) percent below potential.</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="nrSvg" role="img" aria-label="Output gap as a function of the real rate"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="nrR">Real interest rate \(r\) <output id="nrRo"></output></label><input type="range" id="nrR" min="-3" max="6" step="0.25" value="3"></div>
+      <div class="ctl"><label for="nrS">Neutral rate \(r^*\) <output id="nrSo"></output></label><input type="range" id="nrS" min="-1" max="4" step="0.25" value="1"></div>
+      <div class="ctl"><label for="nrA">Sensitivity \(a\) <output id="nrAo"></output></label><input type="range" id="nrA" min="0.2" max="1.5" step="0.05" value="0.5"></div>
+    </div>
+    <div class="readout" id="nrOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>The real rate is 3% and \(a = 0.5\). If r* is 1%, policy is tight by 2 points and the gap is \(-0.5 \times 2 = -1\%\). If r* is actually 3%, the same policy is exactly neutral. Getting r* wrong means misjudging the stance.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">The real rate is 1% and r* is 2.5%. What is the policy stance?</div>
+    <div class="opts"><button data-k="a">Tight</button><button data-k="b">Loose</button><button data-k="c">Neutral</button><button data-k="d">Cannot tell without inflation</button></div>
+    <div class="fb" hidden><span class="verdict"></span>The real rate is below the neutral rate, so policy stimulates the economy.</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="block prose" id="b3">
+  <h2>The Taylor rule</h2>
+  <p class="sub">A recipe: start at neutral, then lean against inflation and the output gap.</p>
+  <h3>The idea</h3>
+  <p>Taylor's rule builds the policy rate in steps. Start from the neutral nominal rate: r* plus current inflation, which keeps the real rate at neutral. Then add a bit more when inflation is above target, to cool things down. And add a bit more when output is above potential, or subtract when it is below.</p>
+  <p>Taylor did not claim the Federal Reserve used this formula. He showed that from 1987 to 1992 its decisions followed it closely, which made the rule a common benchmark for judging whether policy is too tight or too loose.</p>
+  <h3>The formula</h3>
+  <div class="math">\[ i = r^* + \pi + 0.5\,(\pi - \pi^*) + 0.5\,x, \]</div>
+  <p>with inflation target \(\pi^*\). In Taylor's version \(r^* = 2\%\) and \(\pi^* = 2\%\). Collecting the inflation terms shows the response to inflation is 1.5, more than one for one, which matters in block 4:</p>
+  <div class="math">\[ i = (r^* - 0.5\,\pi^*) + 1.5\,\pi + 0.5\,x. \]</div>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="trSvg" role="img" aria-label="Taylor rule components"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="trP">Inflation \(\pi\) <output id="trPo"></output></label><input type="range" id="trP" min="-1" max="10" step="0.25" value="3"></div>
+      <div class="ctl"><label for="trX">Output gap \(x\) <output id="trXo"></output></label><input type="range" id="trX" min="-6" max="4" step="0.25" value="-1"></div>
+      <div class="ctl"><label for="trS">Neutral rate \(r^*\) <output id="trSo"></output></label><input type="range" id="trS" min="-1" max="4" step="0.25" value="2"></div>
+      <div class="ctl"><label for="trT">Inflation target \(\pi^*\) <output id="trTo"></output></label><input type="range" id="trT" min="0" max="4" step="0.5" value="2"></div>
+    </div>
+    <div class="readout" id="trOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>Inflation is 3% and the output gap is -1%. Then \(i = 2 + 3 + 0.5 \times 1 + 0.5 \times (-1) = 5\%\). The two gaps offset each other, so the rule sets the real rate at its neutral 2%.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="d">
+    <div class="q">With Taylor's numbers, inflation is 6% and the output gap is +2%. What rate does the rule give?</div>
+    <div class="opts"><button data-k="a">6%</button><button data-k="b">8%</button><button data-k="c">9%</button><button data-k="d">11%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>2 + 6 + 0.5 x 4 + 0.5 x 2 = 11%.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="block prose" id="b4">
+  <h2>The Taylor principle</h2>
+  <p class="sub">Why the central bank must move the rate by more than inflation.</p>
+  <h3>The idea</h3>
+  <p>Suppose inflation rises 1 point and the central bank raises its rate by only 0.5. The real rate has fallen by 0.5, so policy has become looser just when inflation is rising. That pushes demand up, inflation rises further, and the process feeds on itself. To stabilise inflation, the nominal rate must rise by more than inflation, so that the real rate rises. This is the Taylor principle.</p>
+  <p>Many economists read the 1970s this way: central banks raised rates, but by less than inflation, so real rates stayed low or negative and inflation kept climbing.</p>
+  <h3>The formula</h3>
+  <p>A small model economy, quarter by quarter, with \(r^* = 2\%\) and \(\pi^* = 2\%\):</p>
+  <div class="math">\[ \begin{aligned} x_t &= 0.5\,x_{t-1} - 0.5\,(r_{t-1} - r^*) &&\text{demand}\\ \pi_t &= \pi_{t-1} + 0.3\,x_t + u_t &&\text{inflation (adaptive Phillips curve)}\\ i_t &= r^* + \pi^* + \phi_\pi(\pi_t - \pi^*) + 0.5\,x_t, \quad r_t = i_t - \pi_t &&\text{policy} \end{aligned} \]</div>
+  <p>A cost shock \(u\) pushes inflation up by 1 point in quarter 1. The Taylor principle in this rule means \(\phi_\pi > 1\).</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="tpSvg" role="img" aria-label="Inflation, interest rate and output gap after a cost shock"></svg>
+    <div class="legend"><span><i style="background:var(--rose)"></i>Inflation</span><span><i style="background:var(--amber)"></i>Policy rate</span><span><i style="background:var(--teal)"></i>Output gap</span></div>
+    <div class="controls"><div class="ctl"><label for="tpF">Response to inflation \(\phi_\pi\) <output id="tpFo"></output></label><input type="range" id="tpF" min="0.5" max="3" step="0.05" value="1.5"></div></div>
+    <div id="tpWarn"></div>
+    <div class="readout" id="tpOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With \(\phi_\pi = 1.5\), a 1-point rise in inflation raises the policy rate by 1.5 points, so the real rate rises 0.5. Demand cools and inflation returns to target. With \(\phi_\pi = 0.8\), the real rate falls 0.2, and inflation drifts away.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">Which coefficient on inflation satisfies the Taylor principle?</div>
+    <div class="opts"><button data-k="a">1.5</button><button data-k="b">1.0</button><button data-k="c">0.5</button><button data-k="d">0</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Only a coefficient above 1 raises the real rate when inflation rises.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="block prose" id="b5">
+  <h2>Variants in practice</h2>
+  <p class="sub">Smoothing, a stronger response to slack, and the floor at zero.</p>
+  <h3>The idea</h3>
+  <p>Real central banks do not jump to wherever a formula points. They move in small steps, usually 0.25 points, to avoid surprising markets and to wait for data, which are noisy and get revised. This is captured by interest rate smoothing: each quarter the rate moves only part of the way towards the rule.</p>
+  <p>Two other common changes: a larger response to the output gap (often 1.0 instead of 0.5, sometimes called the balanced-approach rule), and a floor near zero, because rates can hardly go much below zero (the effective lower bound).</p>
+  <h3>The formula</h3>
+  <div class="math">\[ i_t = \rho\,i_{t-1} + (1 - \rho)\,i^{\text{rule}}_t, \qquad i_t \ge 0, \]</div>
+  <p>where \(\rho\) between 0 and 1 measures inertia. Estimates on quarterly data often find values around 0.8.</p>
+  <h3>Try it</h3>
+  <p>A stylised episode over six years: a recession, then an inflation surge, then a slowdown.</p>
+  <div class="lab">
+    <svg id="vaSvg" role="img" aria-label="Rule prescriptions over a stylised episode"></svg>
+    <div class="legend"><span><i style="background:var(--rose)"></i>Inflation</span><span><i style="background:var(--violet)"></i>Output gap</span><span><i style="background:var(--muted)"></i>Rule, no floor</span><span><i style="background:var(--teal)"></i>Rate actually set</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="vaR">Smoothing \(\rho\) <output id="vaRo"></output></label><input type="range" id="vaR" min="0" max="0.95" step="0.05" value="0.7"></div>
+      <div class="ctl"><label for="vaX">Response to output gap <output id="vaXo"></output></label><input type="range" id="vaX" min="0" max="1.5" step="0.05" value="0.5"></div>
+    </div>
+    <div class="readout" id="vaOut"></div>
+  </div>
+  <p>Notice two things. During the recession the rule asks for a negative rate that cannot be delivered. During the surge, heavy smoothing leaves the rate well behind the rule for many quarters, which is what critics said about several central banks in 2021 and 2022.</p>
+  <h3>Worked example</h3>
+  <div class="example"><p>Last quarter's rate was 2%, the rule now says 6%, and \(\rho = 0.75\). The rate is set at \(0.75 \times 2 + 0.25 \times 6 = 3\%\), closing a quarter of the gap.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">The rule prescribes -3% in a deep recession. What does the floor mean for policy?</div>
+    <div class="opts"><button data-k="a">Policy is exactly as the rule wants</button><button data-k="b">Policy is tighter than needed, but only by 0.25 points</button><button data-k="c">Policy is 3 points tighter than the rule wants, so other tools are needed</button><button data-k="d">Rates are set to -3%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>With the rate stuck at 0 instead of -3%, policy is too tight. That is why central banks used asset purchases and forward guidance after 2008 and in 2020.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="block prose" id="b6">
+  <h2>Estimating r*</h2>
+  <p class="sub">A number nobody observes, inferred from what the economy does.</p>
+  <h3>The idea</h3>
+  <p>We never see r* directly. But we can reason backwards: if the economy is running below potential while the real rate is, say, 1%, then 1% must be above neutral, so r* is lower. Each quarter's output gap gives a rough clue about where r* is. One clue is very noisy, but many clues over time can be averaged.</p>
+  <p>The question is how to average. If r* barely moves, you should average over many years. If it moves a lot, recent clues deserve more weight. The Kalman filter makes this choice in a principled way, based on how noisy the clues are compared with how fast r* changes. The best-known estimates, by Laubach and Williams, use a Kalman filter on a model like the one in block 2. The next lecture in your path covers the Kalman filter in detail.</p>
+  <h3>The formulas</h3>
+  <p>Rearranging \(x_t = -a\,(r_{t-1} - r^*) + \varepsilon_t\) gives one noisy reading of r* each quarter:</p>
+  <div class="math">\[ z_t = r_{t-1} + \frac{x_t}{a} = r^* + \frac{\varepsilon_t}{a}. \]</div>
+  <p>Treat r* as slowly drifting and update the estimate a little towards each new reading:</p>
+  <div class="math">\[ \hat r^*_t = \hat r^*_{t-1} + K\,(z_t - \hat r^*_{t-1}). \]</div>
+  <p>The weight \(K\) (the Kalman gain) is large when r* moves a lot relative to the noise, and small when it barely moves. Its value follows from the signal-to-noise ratio: how much r* changes each quarter compared with how noisy each reading is.</p>
+  <h3>Try it</h3>
+  <p>The true r* (simulated, hidden from the estimator) drifts down over 30 years. Choose the signal-to-noise ratio the estimator assumes.</p>
+  <div class="lab">
+    <svg id="kfSvg" role="img" aria-label="True r*, noisy readings and filtered estimate"></svg>
+    <div class="legend"><span><i style="background:var(--ink)"></i>True r* (hidden)</span><span><i style="background:var(--line)"></i>Quarterly readings</span><span><i style="background:var(--teal)"></i>Filtered estimate</span></div>
+    <div class="controls"><div class="ctl"><label for="kfQ">Assumed signal-to-noise ratio <output id="kfQo"></output></label><input type="range" id="kfQ" min="-4" max="0" step="0.1" value="-2.2"></div></div>
+    <div class="btns"><button class="act" id="kfNew">New simulation</button></div>
+    <div class="readout" id="kfOut"></div>
+  </div>
+  <p>Too low a ratio and the estimate lags far behind the true r*. Too high and it chases the noise. The error is smallest in between. Real estimates face the same trade-off, which is why published r* estimates come with very wide uncertainty bands, often several percentage points.</p>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">An analyst believes r* almost never changes. What Kalman gain will the filter use?</div>
+    <div class="opts"><button data-k="a">Close to 1: follow each reading</button><button data-k="b">Close to 0: average over a long history</button><button data-k="c">Exactly 0.5</button><button data-k="d">Negative</button></div>
+    <div class="fb" hidden><span class="verdict"></span>If r* barely moves, each new noisy reading should change the estimate very little.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="block prose" id="b7">
+  <h2>Why r* fell</h2>
+  <p class="sub">Growth, ageing and saving, and what a low r* means for policy.</p>
+  <h3>The idea</h3>
+  <p>The neutral rate is where the supply of savings meets the demand for investment when the economy is at potential. Anything that raises desired saving or lowers desired investment pushes r* down. Estimates for most advanced economies fell substantially between the 1990s and the late 2010s. The main explanations:</p>
+  <div class="tw"><table class="t">
+    <tr><th>Driver</th><th>Why it lowers r*</th></tr>
+    <tr><td>Slower productivity growth</td><td>Fewer profitable investment projects, and households expect slower income growth, so they borrow less.</td></tr>
+    <tr><td>Ageing populations</td><td>People save more for longer retirements, and slower labour force growth needs less new capital.</td></tr>
+    <tr><td>Global saving</td><td>High saving in some economies flows into world bond markets and pushes rates down everywhere.</td></tr>
+    <tr><td>Demand for safe assets</td><td>Investors pay a premium for government bonds, lowering their yields relative to riskier returns.</td></tr>
+  </table></div>
+  <p>Whether r* has risen again since 2022 is an open debate.</p>
+  <h3>The formula</h3>
+  <p>The link to the Solow lecture comes from households' saving decisions (the Euler equation in the DSGE lecture). On a balanced growth path, roughly:</p>
+  <div class="math">\[ r^* \approx \rho_d + \frac{1}{\text{EIS}}\,g, \]</div>
+  <p>where \(\rho_d\) is households' rate of time preference (impatience), \(g\) is growth of output per person, and the EIS (Elasticity of Intertemporal Substitution) measures how willing households are to shift spending over time. Slower growth means a lower r*.</p>
+  <h3>Try it</h3>
+  <p>Set the drivers to see r*, and how much room the central bank has to cut rates before hitting zero.</p>
+  <div class="lab">
+    <svg id="dlSvg" role="img" aria-label="Neutral rate and room to cut"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="dlG">Growth of output per person \(g\) <output id="dlGo"></output></label><input type="range" id="dlG" min="0" max="4" step="0.1" value="1"></div>
+      <div class="ctl"><label for="dlR">Time preference \(\rho_d\) <output id="dlRo"></output></label><input type="range" id="dlR" min="-1" max="3" step="0.1" value="0"></div>
+      <div class="ctl"><label for="dlE">EIS <output id="dlEo"></output></label><input type="range" id="dlE" min="0.3" max="2" step="0.1" value="1"></div>
+      <div class="ctl"><label for="dlT">Inflation target <output id="dlTo"></output></label><input type="range" id="dlT" min="0" max="4" step="0.5" value="2"></div>
+    </div>
+    <div class="readout" id="dlOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>With r* at 0.5% and a 2% target, the neutral nominal rate is 2.5%. In past US recessions the Federal Reserve typically cut rates by around 5 points, so a 2.5% starting point leaves only half the usual room. This is one reason some economists have proposed higher inflation targets.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">Productivity growth slows permanently. In this framework, what happens to r*?</div>
+    <div class="opts"><button data-k="a">It rises</button><button data-k="b">It is unaffected</button><button data-k="c">It falls</button><button data-k="d">It becomes equal to inflation</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Lower g reduces the growth term, and with it the neutral rate.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="block prose" id="b8">
+  <h2>Fixed exchange rates</h2>
+  <p class="sub">When the policy rate is imported: the case of a currency peg.</p>
+  <h3>The idea</h3>
+  <p>Everything so far assumed the central bank chooses its rate. A country that fixes its exchange rate to another currency gives up that choice. If its rates were lower than those of the anchor country, money would flow out in search of higher returns and put pressure on the peg. So in practice, it keeps its rates close to the anchor's.</p>
+  <p>The UAE dirham has been pegged to the US dollar since the late 1990s, and the Central Bank of the UAE moves its key policy rate in line with the US Federal Reserve. Similar arrangements hold in most Gulf economies. Interest rates are then set for US conditions, which may not match local ones. A Taylor rule computed on local data does not tell you what the rate will be, but it does tell you whether the imported rate is tight or loose for the local economy.</p>
+  <h3>Try it</h3>
+  <p>Set local conditions and the anchor country's policy rate. The local Taylor rule shows what a fully independent central bank would choose.</p>
+  <div class="lab">
+    <svg id="pgSvg" role="img" aria-label="Local Taylor rule rate compared with the imported rate"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="pgP">Local inflation <output id="pgPo"></output></label><input type="range" id="pgP" min="-2" max="8" step="0.25" value="1.5"></div>
+      <div class="ctl"><label for="pgX">Local output gap <output id="pgXo"></output></label><input type="range" id="pgX" min="-6" max="4" step="0.25" value="-1.5"></div>
+      <div class="ctl"><label for="pgS">Local neutral rate r* <output id="pgSo"></output></label><input type="range" id="pgS" min="-1" max="4" step="0.25" value="1"></div>
+      <div class="ctl"><label for="pgU">Anchor country policy rate <output id="pgUo"></output></label><input type="range" id="pgU" min="0" max="8" step="0.25" value="5"></div>
+    </div>
+    <div class="readout" id="pgOut"></div>
+  </div>
+  <p>When the imported rate is too tight or too loose, the remaining tools are fiscal policy (government spending and taxes) and macroprudential measures such as limits on lending, which the IS-LM lecture's fixed-rate case already hinted at.</p>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">A pegged economy has a negative output gap and low inflation, while the anchor country raises rates. What happens to the local policy stance?</div>
+    <div class="opts"><button data-k="a">It becomes tighter than local conditions call for</button><button data-k="b">It becomes looser</button><button data-k="c">The local central bank cuts rates to offset it</button><button data-k="d">Nothing, local rates are independent</button></div>
+    <div class="fb" hidden><span class="verdict"></span>The peg forces local rates up with the anchor's, just when the local economy needs lower rates.</div>
+  </div>
+  <h3>Summary</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Concept</th><th>Equation</th><th>Message</th></tr>
+    <tr><td>Real rate</td><td>\(r = i - \pi^e\)</td><td>Decisions depend on the rate after inflation</td></tr>
+    <tr><td>Neutral rate</td><td>\(x = -a(r - r^*)\)</td><td>Stance is the real rate minus r*</td></tr>
+    <tr><td>Taylor rule</td><td>\(i = r^* + \pi + 0.5(\pi - \pi^*) + 0.5x\)</td><td>Start at neutral, lean against both gaps</td></tr>
+    <tr><td>Taylor principle</td><td>Inflation coefficient above 1</td><td>Real rate must rise when inflation rises</td></tr>
+    <tr><td>Smoothing</td><td>\(i_t = \rho i_{t-1} + (1 - \rho) i^{\text{rule}}_t\)</td><td>Gradual moves, at the cost of lagging</td></tr>
+    <tr><td>Estimating r*</td><td>\(\hat r^*_t = \hat r^*_{t-1} + K(z_t - \hat r^*_{t-1})\)</td><td>Noisy clues averaged by a Kalman filter</td></tr>
+    <tr><td>Drivers of r*</td><td>\(r^* \approx \rho_d + g/\text{EIS}\)</td><td>Slower growth and more saving lower r*</td></tr>
+  </table></div>
+</section>
+
+<footer class="prose">
+  <p>References: Taylor, J. (1993), Carnegie-Rochester Conference Series on Public Policy; Laubach, T. and Williams, J. (2003), Review of Economics and Statistics; Holston, K., Laubach, T. and Williams, J. (2017), Journal of International Economics. Data in blocks 4 to 6 are simulated. Every chart is computed live in your browser.</p>
+</footer>
+</main>
+</div>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  function el(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  const f = (v, d = 1) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d);
+  const sg = (v, d = 1) => (v > 1e-9 ? '+' : '') + f(v, d);
+
+  // Generic frame: returns scales
+  function frame(svg, o) {
+    svg.innerHTML = '';
+    const W = o.W || 640, H = o.H || 300;
+    const p = Object.assign({ l: 50, r: 18, t: 14, b: 42 }, o.pad || {});
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const X = v => p.l + (v - o.x0) / (o.x1 - o.x0) * (W - p.l - p.r);
+    const Y = v => H - p.b - (v - o.y0) / (o.y1 - o.y0) * (H - p.t - p.b);
+    (o.xt || []).forEach(t => {
+      el('line', { x1: X(t), x2: X(t), y1: p.t, y2: H - p.b, class: 'grid' }, svg);
+      el('text', { x: X(t), y: H - p.b + 16, class: 'tick', 'text-anchor': 'middle' }, svg, (o.xf || String)(t));
+    });
+    (o.yt || []).forEach(t => {
+      el('line', { x1: p.l, x2: W - p.r, y1: Y(t), y2: Y(t), class: 'grid' }, svg);
+      el('text', { x: p.l - 7, y: Y(t) + 4, class: 'tick', 'text-anchor': 'end' }, svg, (o.yf || String)(t));
+    });
+    if (o.zeroX && o.y0 < 0 && o.y1 > 0) el('line', { x1: p.l, x2: W - p.r, y1: Y(0), y2: Y(0), class: 'zero' }, svg);
+    if (o.zeroY && o.x0 < 0 && o.x1 > 0) el('line', { x1: X(0), x2: X(0), y1: p.t, y2: H - p.b, class: 'zero' }, svg);
+    if (o.xl) el('text', { x: (p.l + W - p.r) / 2, y: H - 6, class: 'axl', 'text-anchor': 'middle' }, svg, o.xl);
+    if (o.yl) el('text', { x: 14, y: (p.t + H - p.b) / 2, class: 'axl', 'text-anchor': 'middle', transform: `rotate(-90 14 ${(p.t + H - p.b) / 2})` }, svg, o.yl);
+    return { X, Y, W, H, p };
+  }
+  const path = pts => 'M' + pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join('L');
+  const pct = t => t + '%';
+
+    const range = (a, b, st) => { const r = []; for (let x = a; x <= b + 1e-9; x += st) r.push(x); return r; };
+  function rng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const normal = r => { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); };
+  const taylor = (p, x, rs = 2, pt = 2, fx = 0.5) => rs + p + 0.5 * (p - pt) + fx * x;
+
+  // waterfall of components ending in a total bar
+  function waterfall(svg, comps, total, W, H, totalLabel) {
+    let run = 0; const levels = [0];
+    comps.forEach(c => { run += c[1]; levels.push(run); });
+    const lo = Math.min(0, ...levels, total) - 1, hi = Math.max(...levels, total) + 1.5;
+    const y0 = Math.floor(lo), y1 = Math.ceil(hi), st = (y1 - y0) > 12 ? 4 : 2;
+    const s = frame(svg, { W, H, x0: 0, x1: comps.length + 1, y0, y1, xt: [], yt: range(Math.ceil(y0 / st) * st, y1, st), yf: pct, zeroX: true, yl: 'Percentage points', pad: { b: 46 } });
+    const bw = Math.min(60, (W - 80) / (comps.length + 1) * 0.6);
+    let r = 0;
+    comps.forEach(([name, v, cls], j) => {
+      const a = r, b = r + v; r = b;
+      const top = s.Y(Math.max(a, b)), bot = s.Y(Math.min(a, b));
+      el('rect', { x: s.X(j + 0.5) - bw / 2, y: top, width: bw, height: Math.max(1.5, bot - top), rx: 3, class: cls }, svg);
+      el('text', { x: s.X(j + 0.5), y: top - 6, class: 'tick halo', 'text-anchor': 'middle' }, svg, sg(v, 2));
+      el('text', { x: s.X(j + 0.5), y: s.H - s.p.b + 16, class: 'axl', 'text-anchor': 'middle' }, svg, name);
+      if (j < comps.length) el('line', { x1: s.X(j + 0.5) + bw / 2, x2: s.X(j + 1.5) - bw / 2, y1: s.Y(b), y2: s.Y(b), stroke: 'var(--muted)', 'stroke-width': 1, class: 'dash' }, svg);
+    });
+    const j = comps.length, top = s.Y(Math.max(0, total)), bot = s.Y(Math.min(0, total));
+    el('rect', { x: s.X(j + 0.5) - bw / 2, y: top, width: bw, height: Math.max(1.5, bot - top), rx: 3, class: 'f-rose' }, svg);
+    el('text', { x: s.X(j + 0.5), y: top - 6, class: 'lbl f-ink halo', 'text-anchor': 'middle' }, svg, f(total, 2) + '%');
+    el('text', { x: s.X(j + 0.5), y: s.H - s.p.b + 16, class: 'axl', 'text-anchor': 'middle', style: 'font-weight:700' }, svg, totalLabel);
+  }
+  const comps = (p, x, rs, pt) => [['r*', rs, 'f-violet'], ['π', p, 'f-amber'], ['½(π − π*)', 0.5 * (p - pt), 'f-amber-soft'], ['½ x', 0.5 * x, 'f-teal']];
+
+  /* hero */
+  function hero() {
+    const p = +$('heroP').value, x = +$('heroX').value; $('heroPo').textContent = f(p, 2) + '%'; $('heroXo').textContent = sg(x, 2) + '%';
+    const i = taylor(p, x), real = i - p;
+    waterfall($('heroSvg'), comps(p, x, 2, 2), i, 420, 300, 'rate');
+    $('heroSay').innerHTML = `With inflation at <b>${f(p, 2)}%</b> and the output gap at <b>${sg(x, 2)}%</b>, the rule sets the policy rate at <b class="up">${f(i, 2)}%</b>, a real rate of ${f(real, 2)}%${real > 2.005 ? ', tighter than neutral' : real < 1.995 ? ', looser than neutral' : ', exactly neutral'}.`;
+  }
+  ['heroP', 'heroX'].forEach(id => $(id).addEventListener('input', hero));
+
+  /* Fisher */
+  function fi() {
+    const i = +$('fiI').value, p = +$('fiP').value, r = i - p; $('fiIo').textContent = f(i, 2) + '%'; $('fiPo').textContent = f(p, 2) + '%';
+    const svg = $('fiSvg');
+    const lo = Math.min(-2, Math.floor(Math.min(p, r, 0)) - 1), hi = Math.max(12, Math.ceil(Math.max(i, p)) + 1);
+    const s = frame(svg, { W: 640, H: 200, x0: lo, x1: hi, y0: 0, y1: 2, xt: range(lo, hi, 2), xf: pct, zeroY: true, xl: 'Percent per year', pad: { l: 130, t: 6 } });
+    const bar = (yc, a, b, cls) => { const x0 = s.X(Math.min(a, b)), x1 = s.X(Math.max(a, b)); el('rect', { x: x0, y: yc - 15, width: Math.max(1.5, x1 - x0), height: 30, rx: 4, class: cls }, svg); };
+    el('text', { x: s.p.l - 10, y: s.Y(1.5) + 5, class: 'lbl f-ink', 'text-anchor': 'end' }, svg, 'Nominal rate');
+    bar(s.Y(1.5), 0, i, 'f-ink');
+    el('text', { x: s.p.l - 10, y: s.Y(0.5) + 5, class: 'lbl f-ink', 'text-anchor': 'end' }, svg, 'Split');
+    bar(s.Y(0.5), 0, p, 'f-amber'); bar(s.Y(0.5), p, p + r, r >= 0 ? 'f-teal' : 'f-rose');
+    el('text', { x: s.X(p / 2), y: s.Y(0.5) + 30, class: 'tick', 'text-anchor': 'middle' }, svg, 'inflation');
+    el('text', { x: s.X(p + r / 2), y: s.Y(0.5) + 30, class: 'tick', 'text-anchor': 'middle' }, svg, 'real');
+    $('fiOut').innerHTML = `<span class="k">real rate</span> r = ${f(i, 2)} - ${f(p, 2)} = <b>${f(r, 2)}%</b>` + (r < 0 ? ' (negative: savers lose purchasing power, borrowers gain)' : '');
+  }
+  ['fiI', 'fiP'].forEach(id => $(id).addEventListener('input', fi));
+
+  /* neutral rate */
+  function nr() {
+    const r = +$('nrR').value, rs = +$('nrS').value, a = +$('nrA').value;
+    $('nrRo').textContent = f(r, 2) + '%'; $('nrSo').textContent = f(rs, 2) + '%'; $('nrAo').textContent = f(a, 2);
+    const x = -a * (r - rs);
+    const svg = $('nrSvg');
+    const s = frame(svg, { W: 640, H: 280, x0: -3, x1: 6, y0: -6, y1: 6, xt: range(-3, 6, 1), yt: range(-6, 6, 2), xf: pct, yf: t => sg(t, 0) + '%', zeroX: true, xl: 'Real interest rate r', yl: 'Output gap x' });
+    const pts = range(-3, 6, 0.05).map(q => [q, -a * (q - rs)]).filter(q => q[1] >= -6 && q[1] <= 6);
+    el('path', { d: path(pts.map(q => [s.X(q[0]), s.Y(q[1])])), fill: 'none', class: 's-teal', 'stroke-width': 3 }, svg);
+    el('line', { x1: s.X(rs), x2: s.X(rs), y1: s.p.t, y2: s.H - s.p.b, class: 's-violet dash', 'stroke-width': 1.6 }, svg);
+    el('text', { x: s.X(rs) + 6, y: s.p.t + 12, class: 'lbl f-violet halo' }, svg, 'r*');
+    el('circle', { cx: s.X(r), cy: s.Y(Math.max(-6, Math.min(6, x))), r: 8, class: x < 0 ? 'f-rose' : 'f-teal' }, svg);
+    const st = Math.abs(r - rs) < 0.01 ? 'neutral' : r > rs ? 'tight' : 'loose';
+    $('nrOut').innerHTML = `<span class="k">stance</span> = r - r* = ${sg(r - rs, 2)} points, so policy is <b>${st}</b><br><span class="k">output gap</span> = -${f(a, 2)} x (${sg(r - rs, 2)}) = <b>${sg(x, 2)}%</b>`;
+  }
+  ['nrR', 'nrS', 'nrA'].forEach(id => $(id).addEventListener('input', nr));
+
+  /* Taylor rule */
+  function tr() {
+    const p = +$('trP').value, x = +$('trX').value, rs = +$('trS').value, pt = +$('trT').value;
+    $('trPo').textContent = f(p, 2) + '%'; $('trXo').textContent = sg(x, 2) + '%'; $('trSo').textContent = f(rs, 2) + '%'; $('trTo').textContent = f(pt, 1) + '%';
+    const i = taylor(p, x, rs, pt);
+    waterfall($('trSvg'), comps(p, x, rs, pt), i, 640, 300, 'policy rate');
+    $('trOut').innerHTML = `<span class="k">i</span> = ${f(rs, 2)} + ${f(p, 2)} + 0.5 x (${sg(p - pt, 2)}) + 0.5 x (${sg(x, 2)}) = <b>${f(i, 2)}%</b><br>` +
+      `<span class="k">real rate</span> = ${f(i - p, 2)}%, versus neutral ${f(rs, 2)}%` + (i < 0 ? '<br><span class="k">note</span>: a negative prescription cannot be delivered in practice (block 5)' : '');
+  }
+  ['trP', 'trX', 'trS', 'trT'].forEach(id => $(id).addEventListener('input', tr));
+
+  /* Taylor principle simulation */
+  function tp() {
+    const fp = +$('tpF').value; $('tpFo').textContent = f(fp, 2);
+    const T = 40, x = [0], p = [2], i = [4], r = [2];
+    let blew = false;
+    for (let t = 1; t <= T; t++) {
+      const xt = 0.5 * x[t - 1] - 0.5 * (r[t - 1] - 2);
+      const pt = p[t - 1] + 0.3 * xt + (t === 1 ? 1 : 0);
+      const it = 2 + 2 + fp * (pt - 2) + 0.5 * xt;
+      x.push(xt); p.push(pt); i.push(it); r.push(it - pt);
+      if (Math.abs(pt) > 40) { blew = true; }
+    }
+    const lim = 12;
+    const svg = $('tpSvg');
+    const s = frame(svg, { W: 640, H: 300, x0: 0, x1: T, y0: -lim / 2, y1: lim, xt: range(0, T, 8), yt: range(-6, 12, 2), yf: pct, zeroX: true, xl: 'Quarters after the cost shock', yl: 'Percent' });
+    const draw = (arr, cls) => { const pts = arr.map((v, t) => [t, v]).filter(q => q[1] >= -lim / 2 && q[1] <= lim); if (pts.length > 1) el('path', { d: path(pts.map(q => [s.X(q[0]), s.Y(q[1])])), fill: 'none', class: cls, 'stroke-width': 2.6 }, svg); };
+    el('line', { x1: s.X(0), x2: s.X(T), y1: s.Y(2), y2: s.Y(2), stroke: 'var(--muted)', class: 'dash', 'stroke-width': 1 }, svg);
+    draw(x, 's-teal'); draw(i, 's-amber'); draw(p, 's-rose');
+    const unstable = fp <= 1 || Math.abs(p[T] - 2) > Math.abs(p[1] - 2);
+    $('tpWarn').innerHTML = unstable ? `<div class="warn">With φπ = ${f(fp, 2)}, a rise in inflation ${fp < 1 ? 'lowers' : 'does not raise'} the real interest rate, so nothing pulls inflation back to target${fp < 1 ? ' and it keeps drifting away' : ''}.</div>` : '';
+    $('tpOut').innerHTML = `<span class="k">quarter 1</span>: inflation ${f(p[1], 2)}%, policy rate ${f(i[1], 2)}%, real rate ${f(r[1], 2)}% (${Math.abs(r[1] - 2) < 0.005 ? 'equal to' : r[1] > 2 ? 'above' : 'below'} r* = 2%)<br>` +
+      `<span class="k">quarter ${T}</span>: inflation ${blew ? 'off the chart' : f(p[T], 2) + '%'}, output gap ${blew ? 'off the chart' : sg(x[T], 2) + '%'}`;
+  }
+  $('tpF').addEventListener('input', tp);
+
+  /* variants */
+  const interp = (kp, t) => { for (let j = 0; j < kp.length - 1; j++) { const [a, va] = kp[j], [b, vb] = kp[j + 1]; if (t >= a && t <= b) return va + (vb - va) * (t - a) / (b - a); } return kp[kp.length - 1][1]; };
+  const INF = [[0, 2], [3, 0.5], [7, 1.5], [13, 7], [18, 5], [23, 3]], GAP = [[0, 0], [3, -6], [7, -1], [12, 1.5], [18, 0], [23, -0.8]];
+  function va() {
+    const rho = +$('vaR').value, fx = +$('vaX').value; $('vaRo').textContent = f(rho, 2); $('vaXo').textContent = f(fx, 2);
+    const T = 23, P = range(0, T, 1).map(t => interp(INF, t)), X = range(0, T, 1).map(t => interp(GAP, t));
+    const rule = P.map((p, t) => taylor(p, X[t], 2, 2, fx));
+    const act = [Math.max(0, rule[0])];
+    for (let t = 1; t <= T; t++) act.push(Math.max(0, rho * act[t - 1] + (1 - rho) * rule[t]));
+    const lo = Math.min(-6, Math.floor(Math.min(...rule, ...X))), hi = Math.max(12, Math.ceil(Math.max(...rule)) + 1);
+    const svg = $('vaSvg');
+    const s = frame(svg, { W: 640, H: 300, x0: 0, x1: T, y0: lo, y1: hi, xt: range(0, T, 4), yt: range(Math.ceil(lo / 2) * 2, hi, 2), yf: pct, zeroX: true, xl: 'Quarter', yl: 'Percent' });
+    const draw = (arr, cls, w, dash, extra) => el('path', Object.assign({ d: path(arr.map((v, t) => [s.X(t), s.Y(v)])), fill: 'none', class: cls + (dash ? ' dash' : ''), 'stroke-width': w }, extra || {}), svg);
+    draw(X, 's-violet', 2, false, { opacity: .8 }); draw(P, 's-rose', 2.4);
+    draw(rule, '', 2, true, { stroke: 'var(--muted)' }); draw(act, 's-teal', 3);
+    let maxLag = 0, lagT = 0; act.forEach((a, t) => { const g = Math.max(0, rule[t]) - a; if (g > maxLag) { maxLag = g; lagT = t; } });
+    const minRule = Math.min(...rule);
+    $('vaOut').innerHTML = `<span class="k">lowest rule prescription</span> = ${f(minRule, 2)}%${minRule < 0 ? ' (cannot be delivered: the floor binds)' : ''}<br>` +
+      `<span class="k">largest shortfall behind the rule</span> = ${f(maxLag, 2)} points, in quarter ${lagT}; <span class="k">peak rate set</span> = ${f(Math.max(...act), 2)}% versus rule peak ${f(Math.max(...rule), 2)}%`;
+  }
+  ['vaR', 'vaX'].forEach(id => $(id).addEventListener('input', va));
+
+  /* Kalman estimate of r* */
+  let kfSeed = 21;
+  function kf() {
+    const ls = +$('kfQ').value, q = Math.pow(10, ls); $('kfQo').textContent = q < 0.001 ? f(q, 5) : q < 0.01 ? f(q, 4) : f(q, 3);
+    const r0 = rng(kfSeed), T = 120, tru = [2.5], z = [];
+    for (let t = 1; t < T; t++) tru.push(tru[t - 1] - 0.017 + 0.05 * normal(r0));
+    for (let t = 0; t < T; t++) z.push(tru[t] + 1.0 * normal(r0));
+    const est = []; let m = z[0], P = 1, K = 0;
+    for (let t = 0; t < T; t++) { const Pp = P + q; K = Pp / (Pp + 1); m = m + K * (z[t] - m); P = (1 - K) * Pp; est.push(m); }
+    const rmse = Math.sqrt(est.slice(20).reduce((s, e, j) => s + (e - tru[j + 20]) ** 2, 0) / (T - 20));
+    const svg = $('kfSvg');
+    const s = frame(svg, { W: 640, H: 300, x0: 0, x1: T - 1, y0: -2, y1: 6, xt: range(0, 120, 20), xf: t => 'year ' + (t / 4), yt: range(-2, 6, 1), yf: pct, zeroX: true, xl: 'Time', yl: 'Real rate', pad: { r: 34 } });
+    z.forEach((v, t) => { if (v >= -2 && v <= 6) el('circle', { cx: s.X(t), cy: s.Y(v), r: 2.6, fill: 'var(--muted)', opacity: .45 }, svg); });
+    el('path', { d: path(tru.map((v, t) => [s.X(t), s.Y(v)])), fill: 'none', class: 's-ink', 'stroke-width': 2.4 }, svg);
+    el('path', { d: path(est.map((v, t) => [s.X(t), s.Y(Math.max(-2, Math.min(6, v)))])), fill: 'none', class: 's-teal', 'stroke-width': 3 }, svg);
+    $('kfOut').innerHTML = `<span class="k">Kalman gain</span> K = <b>${f(K, 3)}</b>: each new reading moves the estimate ${f(K * 100, 1)}% of the way towards it<br>` +
+      `<span class="k">average error</span> (root mean squared, after year 5) = <b>${f(rmse, 2)}</b> points; the true signal-to-noise ratio here is about 0.003`;
+  }
+  $('kfQ').addEventListener('input', kf);
+  $('kfNew').addEventListener('click', () => { kfSeed++; kf(); });
+
+  /* drivers */
+  function dl() {
+    const g = +$('dlG').value, rd = +$('dlR').value, eis = +$('dlE').value, pt = +$('dlT').value;
+    $('dlGo').textContent = f(g, 1) + '%'; $('dlRo').textContent = f(rd, 1) + '%'; $('dlEo').textContent = f(eis, 1); $('dlTo').textContent = f(pt, 1) + '%';
+    const rs = rd + g / eis, nn = rs + pt;
+    const svg = $('dlSvg');
+    const hi = Math.max(8, Math.ceil(nn) + 1), lo = Math.min(-2, Math.floor(Math.min(rs, nn)) - 1);
+    const s = frame(svg, { W: 640, H: 260, x0: 0, x1: 3, y0: lo, y1: hi, xt: [], yt: range(Math.ceil(lo / 2) * 2, hi, 2), yf: pct, zeroX: true, yl: 'Percent' });
+    const bar = (xc, a, b, cls) => { const t = s.Y(Math.max(a, b)), bt = s.Y(Math.min(a, b)); el('rect', { x: s.X(xc) - 50, y: t, width: 100, height: Math.max(1.5, bt - t), rx: 4, class: cls }, svg); };
+    bar(0.8, 0, rs, 'f-violet'); bar(0.8, rs, nn, 'f-amber');
+    el('text', { x: s.X(0.8), y: s.H - s.p.b + 18, class: 'axl', 'text-anchor': 'middle' }, svg, 'neutral nominal rate');
+    el('text', { x: s.X(0.8) + 58, y: s.Y(rs / 2) + 4, class: 'tick halo' }, svg, 'r* ' + f(rs, 2) + '%');
+    el('text', { x: s.X(0.8) + 58, y: s.Y((rs + nn) / 2) + 4, class: 'tick halo' }, svg, 'target ' + f(pt, 1) + '%');
+    bar(2.2, 0, 5, 'f-rose');
+    el('text', { x: s.X(2.2), y: s.H - s.p.b + 18, class: 'axl', 'text-anchor': 'middle' }, svg, 'typical recession cut');
+    el('line', { x1: s.X(0.3), x2: s.X(2.7), y1: s.Y(nn), y2: s.Y(nn), class: 's-ink dash', 'stroke-width': 1 }, svg);
+    const room = Math.max(0, nn);
+    $('dlOut').innerHTML = `<span class="k">r*</span> = ${f(rd, 1)} + ${f(g, 1)} / ${f(eis, 1)} = <b>${f(rs, 2)}%</b>; <span class="k">neutral nominal rate</span> = ${f(rs, 2)} + ${f(pt, 1)} = <b>${f(nn, 2)}%</b><br>` +
+      `<span class="k">room to cut before zero</span> = ${f(room, 2)} points, ${room >= 5 ? 'enough for a typical recession' : `about ${f(room / 5 * 100, 0)}% of a typical 5-point cut`}`;
+  }
+  ['dlG', 'dlR', 'dlE', 'dlT'].forEach(id => $(id).addEventListener('input', dl));
+
+  /* peg */
+  function pg() {
+    const p = +$('pgP').value, x = +$('pgX').value, rs = +$('pgS').value, u = +$('pgU').value;
+    $('pgPo').textContent = f(p, 2) + '%'; $('pgXo').textContent = sg(x, 2) + '%'; $('pgSo').textContent = f(rs, 2) + '%'; $('pgUo').textContent = f(u, 2) + '%';
+    const loc = taylor(p, x, rs, 2), gap = u - loc;
+    const svg = $('pgSvg');
+    const hi = Math.max(10, Math.ceil(Math.max(loc, u)) + 1), lo = Math.min(-2, Math.floor(loc) - 1);
+    const s = frame(svg, { W: 640, H: 260, x0: 0, x1: 3, y0: lo, y1: hi, xt: [], yt: range(Math.ceil(lo / 2) * 2, hi, 2), yf: pct, zeroX: true, yl: 'Policy rate' });
+    const bar = (xc, v, cls, lab) => { const t = s.Y(Math.max(0, v)), bt = s.Y(Math.min(0, v)); el('rect', { x: s.X(xc) - 55, y: t, width: 110, height: Math.max(1.5, bt - t), rx: 4, class: cls }, svg); el('text', { x: s.X(xc), y: t - 7, class: 'lbl f-ink halo', 'text-anchor': 'middle' }, svg, f(v, 2) + '%'); el('text', { x: s.X(xc), y: s.H - s.p.b + 18, class: 'axl', 'text-anchor': 'middle' }, svg, lab); };
+    bar(0.8, loc, 'f-teal', 'local Taylor rule'); bar(2.2, u, 'f-amber', 'imported rate (peg)');
+    const st = Math.abs(gap) < 0.25 ? 'roughly right for local conditions' : gap > 0 ? `${f(gap, 2)} points tighter than local conditions call for` : `${f(-gap, 2)} points looser than local conditions call for`;
+    $('pgOut').innerHTML = `<span class="k">local rule</span> = ${f(rs, 2)} + ${f(p, 2)} + 0.5 x (${sg(p - 2, 2)}) + 0.5 x (${sg(x, 2)}) = ${f(loc, 2)}%<br>` +
+      `<span class="k">imported policy</span> is <b>${st}</b>; local real rate = ${f(u - p, 2)}% against a local r* of ${f(rs, 2)}%`;
+  }
+  ['pgP', 'pgX', 'pgS', 'pgU'].forEach(id => $(id).addEventListener('input', pg));
+
+  /* ---------- quick checks ---------- */
+  document.querySelectorAll('.check').forEach(c => {
+    const ans = c.dataset.answer;
+    c.querySelectorAll('.opts button').forEach(b => b.addEventListener('click', () => {
+      c.querySelectorAll('.opts button').forEach(x => x.classList.remove('right', 'wrong'));
+      const ok = b.dataset.k === ans;
+      b.classList.add(ok ? 'right' : 'wrong');
+      if (!ok) c.querySelector(`.opts [data-k="${ans}"]`).classList.add('right');
+      const fb = c.querySelector('.fb'); fb.hidden = false;
+      fb.querySelector('.verdict').textContent = ok ? 'Correct.' : 'Not quite.';
+    }));
+  });
+
+  /* ---------- nav highlight ---------- */
+  const links = [...document.querySelectorAll('nav.toc a')];
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+    }), { rootMargin: '-30% 0px -60% 0px' });
+    document.querySelectorAll('section.block').forEach(s => io.observe(s));
+  }
+
+  hero(); fi(); nr(); tr(); tp(); va(); kf(); dl(); pg();
+})();
+</script>
+</body>
+</html>

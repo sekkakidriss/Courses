@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Information Retrieval & RAG — Interactive Lecture</title>
+<style>
+:root{
+  --bg:#f6f3ee;--paper:#fffdf9;--ink:#252321;--muted:#746f68;
+  --line:#ddd6cd;--rose:#a64b62;--rose2:#f1dce2;--green:#557a68;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1180px,calc(100% - 32px));margin:auto}
+.masthead{padding:48px 0 34px;border-bottom:1px solid var(--line)}
+.mast-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:30px;align-items:center}
+.backlink{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.eyebrow,.beat,.slab{font-family:var(--mono);text-transform:uppercase;letter-spacing:.09em;font-size:11px;color:var(--rose);font-weight:700}
+h1{font-size:clamp(48px,8vw,92px);line-height:.88;margin:14px 0 22px;letter-spacing:-.065em}
+h2{font-size:30px;line-height:1.05;margin:6px 0 10px;letter-spacing:-.025em}
+h3{margin:5px 0 7px;font-size:20px}
+.mast-lede,.sec-head p{color:var(--muted);max-width:720px}
+.hero-card,.card{background:var(--paper);border:1px solid var(--line);border-radius:15px}
+.hero-card{padding:20px}
+.hero-flow{min-height:270px;display:grid;place-items:center}
+.shell{display:grid;grid-template-columns:190px 1fr;gap:28px;padding:30px 0 70px}
+.rail{position:sticky;top:16px;height:max-content}
+.rail ol{list-style:none;padding:0;margin:0}
+.rail li{margin:3px 0}
+.rail a{display:block;border-left:2px solid transparent;padding:8px 11px;color:var(--muted);font-size:13px}
+.rail a:hover,.rail a.on{color:var(--ink);border-left-color:var(--rose);background:#eee8e1}
+section{scroll-margin-top:20px;margin-bottom:64px}
+.sec-head{margin-bottom:18px}
+.card{padding:20px;margin:14px 0}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.split3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#faf7f2}
+button,.btn,select{font:inherit;border:1px solid var(--line);background:#fffaf5;color:var(--ink);border-radius:8px;padding:8px 11px;cursor:pointer}
+.seg button{border:0;border-radius:0;background:transparent}
+button:hover{background:#f0e9e1}
+button.on{background:var(--ink);color:white}
+.tinybtn{font-size:12px;padding:6px 9px}
+.stage{min-height:220px;background:#faf7f2;border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;align-items:center;justify-content:center}
+.formal{margin-top:15px;background:#f4eee7;border-left:3px solid var(--rose);padding:14px;border-radius:7px}
+code{font-family:var(--mono);background:#eee8e1;border-radius:4px;padding:2px 4px}
+.formula{font-family:var(--mono);font-size:20px;padding:14px 0}
+.hint{font-size:12px;color:var(--muted)}
+.metric{font-family:var(--mono);font-size:25px;font-weight:700}
+.metric small{font-size:11px;color:var(--muted);font-weight:400}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:9px;text-align:left;vertical-align:top}
+th{font-family:var(--mono);font-size:11px;text-transform:uppercase;color:var(--muted)}
+.rank{display:grid;grid-template-columns:35px 1fr 75px;gap:8px;align-items:center;margin:7px 0}
+.bar{height:10px;background:#e6dfd7;border-radius:8px;overflow:hidden}
+.fill{height:100%;background:var(--rose);border-radius:8px}
+.chip{display:inline-block;border:1px solid var(--line);padding:4px 7px;border-radius:999px;font-family:var(--mono);font-size:11px;margin:2px}
+.quiz-q{font-size:18px;font-weight:650}
+.choice{display:block;width:100%;text-align:left;margin:7px 0}
+.choice.correct{border-color:var(--green);background:#e7f0eb}
+.choice.wrong{border-color:#a64b62;background:var(--rose2)}
+#toast{min-height:25px;margin-top:8px;color:var(--muted);font-size:13px}
+.node{fill:#fffdf9;stroke:#252321;stroke-width:2}
+.edge{stroke:#8c857d;stroke-width:2}
+.label{font:12px var(--mono);fill:#252321;text-anchor:middle}
+.retrieval-box{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+.arrow{text-align:center;font-size:22px;color:var(--rose)}
+.bigword{font-size:25px;font-weight:750}
+@media(max-width:900px){.mast-grid,.shell,.split,.split3,.gallery{grid-template-columns:1fr}.rail{position:static}.masthead{padding-top:28px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+<div class="wrap">
+<a class="backlink" href="#intro">← Lecture library</a>
+<div class="mast-grid">
+<div>
+<div class="eyebrow">Interactive lecture · information retrieval</div>
+<h1>Retrieval<br>& RAG</h1>
+<p class="mast-lede">How does a machine decide which information matters? Start with words, move to probabilities and vectors, then add entities, graphs, reranking and generation.</p>
+</div>
+<div class="hero-card">
+<div class="hero-flow">
+<svg viewBox="0 0 560 250" width="100%" aria-label="Retrieval pipeline">
+<text x="280" y="25" class="label" style="font-weight:bold">THE RETRIEVAL PROBLEM</text>
+<rect x="18" y="70" width="105" height="52" rx="10" fill="#f1dce2" stroke="#a64b62"/>
+<text x="70" y="101" class="label">QUERY q</text>
+<text x="140" y="101" class="label">→</text>
+<rect x="160" y="55" width="105" height="82" rx="10" fill="#fff" stroke="#ddd6cd"/>
+<text x="212" y="85" class="label">BM25</text><text x="212" y="105" class="label">DENSE</text><text x="212" y="125" class="label">GRAPH</text>
+<text x="282" y="101" class="label">→</text>
+<rect x="300" y="70" width="105" height="52" rx="10" fill="#fff" stroke="#ddd6cd"/>
+<text x="352" y="101" class="label">RERANK</text>
+<text x="422" y="101" class="label">→</text>
+<rect x="438" y="70" width="105" height="52" rx="10" fill="#f1dce2" stroke="#a64b62"/>
+<text x="490" y="101" class="label">LLM / RAG</text>
+<text x="280" y="180" class="label">retrieve candidates → rank evidence → generate answer</text>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</header>
+
+<div class="wrap shell">
+<nav class="rail"><ol>
+<li><a href="#intro" class="on">Part 01 · Problem</a></li>
+<li><a href="#tfidf">Part 02 · TF-IDF</a></li>
+<li><a href="#bm25">Part 03 · BM25</a></li>
+<li><a href="#dense">Part 04 · Dense</a></li>
+<li><a href="#hybrid">Part 05 · Hybrid</a></li>
+<li><a href="#entity">Part 06 · Entity</a></li>
+<li><a href="#graph">Part 07 · Graph</a></li>
+<li><a href="#rerank">Part 08 · Reranking</a></li>
+<li><a href="#rag">Part 09 · RAG</a></li>
+<li><a href="#eval">Part 10 · Evaluation</a></li>
+<li><a href="#quiz">Part 11 · Quiz</a></li>
+</ol></nav>
+
+<main>
+
+<section id="intro">
+<div class="sec-head"><div class="eyebrow">Part 01</div><h2>The retrieval problem</h2>
+<p>A collection can contain millions of documents. Retrieval is the process of selecting the documents most useful for a query.</p></div>
+<div class="card">
+<div class="split">
+<div>
+<div class="bigword">Query → relevant documents</div>
+<p>Given a query <code>q</code> and collection <code>D</code>, compute a score that allows documents to be ranked.</p>
+<div class="formula">d<sup>*</sup> = arg max<sub>d∈D</sub> score(q,d)</div>
+<p>The central question is what <strong>score</strong> means. Different retrieval methods define it differently.</p>
+</div>
+<div>
+<div class="retrieval-box"><b>Three views of relevance</b><br>
+<span class="chip">Words</span> exact or related terms<br>
+<span class="chip">Vectors</span> semantic proximity<br>
+<span class="chip">Structure</span> entities and relationships
+</div>
+<div class="formal"><b>Important distinction</b><br>TF-IDF, BM25 and dense retrieval are retrieval methods. <strong>RAG is an architecture</strong> that can use one or several of them.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="tfidf">
+<div class="sec-head"><div class="eyebrow">Part 02</div><h2>TF-IDF: importance of a word</h2>
+<p>TF-IDF ranks documents using how often a term occurs and how rare that term is across the collection.</p></div>
+<div class="card">
+<div class="split">
+<div>
+<div class="beat">Formal definition</div>
+<p>Term frequency:</p><div class="formula">TF(t,d) = f<sub>t,d</sub> / Σ<sub>t′</sub> f<sub>t′,d</sub></div>
+<p>Inverse document frequency:</p><div class="formula">IDF(t) = log(N / df(t))</div>
+<div class="formula">TF-IDF(t,d) = TF(t,d) × IDF(t)</div>
+</div>
+<div>
+<div class="beat">Interactive example</div>
+<label>Term frequency <input id="tf" type="range" min="1" max="10" value="4"></label>
+<p>Documents containing the term: <input id="df" type="range" min="1" max="10" value="3"> <span id="dfv">3</span></p>
+<p>Total documents: <b>10</b></p>
+<div class="metric" id="tfscore">—</div>
+<div class="hint">Here TF is normalized by a fixed document length of 10.</div>
+</div>
+</div>
+<div class="formal"><b>Limitation:</b> TF-IDF is lexical. A document saying “joblessness” may not match a query using “unemployment” unless the terms overlap.</div>
+</div>
+</section>
+
+<section id="bm25">
+<div class="sec-head"><div class="eyebrow">Part 03</div><h2>BM25: stronger lexical retrieval</h2>
+<p>BM25 keeps term matching but adds saturation and document-length normalization.</p></div>
+<div class="card">
+<div class="split">
+<div>
+<div class="formula">
+BM25(q,d) = Σ<sub>t∈q</sub> IDF(t)
+· [ f(t,d)(k₁+1) / ( f(t,d)+k₁(1−b+b|d|/avgdl) ) ]
+</div>
+<p><code>k₁</code> controls term-frequency saturation. <code>b</code> controls document-length normalization.</p>
+</div>
+<div>
+<label>Term frequency <input id="bmf" type="range" min="0" max="20" value="5"> <span id="bmfv">5</span></label><br>
+<label>Document length <input id="bml" type="range" min="20" max="200" value="100"> <span id="bmlv">100</span></label><br>
+<label>k₁ <input id="k1" type="range" min="0" max="30" value="12"> <span id="k1v">1.2</span></label><br>
+<label>b <input id="bb" type="range" min="0" max="10" value="7"> <span id="bbv">0.7</span></label>
+<div class="metric" id="bmscore">—</div>
+</div>
+</div>
+<div class="formal"><b>Why BM25?</b> Repeating a term 100 times should not make a document 100× more relevant. BM25 introduces diminishing returns and accounts for unusually long documents.</div>
+</div>
+</section>
+
+<section id="dense">
+<div class="sec-head"><div class="eyebrow">Part 04</div><h2>Dense retrieval: search by meaning</h2>
+<p>Text is mapped into vectors. Similar meanings should occupy nearby regions of the embedding space.</p></div>
+<div class="card">
+<div class="split">
+<div>
+<div class="beat">Representation</div>
+<div class="formula">q → q⃗ ∈ ℝ<sup>d</sup></div>
+<div class="formula">d → d⃗ ∈ ℝ<sup>d</sup></div>
+<p>Cosine similarity:</p>
+<div class="formula">sim(q,d) = (q⃗ · d⃗)/(‖q⃗‖‖d⃗‖)</div>
+</div>
+<div class="stage">
+<svg viewBox="0 0 430 210" width="100%">
+<line x1="35" y1="175" x2="400" y2="175" class="edge"/><line x1="65" y1="190" x2="65" y2="25" class="edge"/>
+<text x="390" y="198" class="label">dimension 1</text><text x="90" y="32" class="label">dimension 2</text>
+<circle cx="285" cy="75" r="12" class="node"/><text x="285" y="55" class="label">coffee drying</text>
+<circle cx="310" cy="95" r="12" class="node"/><text x="310" y="125" class="label">bean dehydration</text>
+<circle cx="150" cy="145" r="12" class="node"/><text x="150" y="165" class="label">football</text>
+<circle cx="275" cy="82" r="7" fill="#a64b62"/><text x="250" y="25" class="label">query</text>
+</svg>
+</div>
+</div>
+<div class="formal"><b>Key idea:</b> dense retrieval can match “unemployment” with “joblessness” because the model represents meaning rather than only exact strings.</div>
+</div>
+</section>
+
+<section id="hybrid">
+<div class="sec-head"><div class="eyebrow">Part 05</div><h2>Hybrid retrieval: combine signals</h2>
+<p>Lexical and semantic retrieval have complementary strengths. A hybrid score combines them.</p></div>
+<div class="card">
+<div class="row">
+<label>BM25 weight α</label><input id="alpha" type="range" min="0" max="100" value="50"><b id="alphav">0.50</b>
+</div>
+<div class="formula">S<sub>hybrid</sub>(q,d) = α S<sub>BM25</sub>(q,d) + (1−α) S<sub>dense</sub>(q,d)</div>
+<div id="hybridRanks"></div>
+<div class="formal">At <code>α=1</code> the system is purely lexical. At <code>α=0</code> it is purely dense. In practice, score normalization may be required before combining scores from different systems.</div>
+</div>
+</section>
+
+<section id="entity">
+<div class="sec-head"><div class="eyebrow">Part 06</div><h2>Entity retrieval</h2>
+<p>Instead of treating a question as only a bag of words, identify the entities it refers to and retrieve information attached to those entities.</p></div>
+<div class="card">
+<div class="split">
+<div>
+<div class="beat">Example</div>
+<p><b>Query:</b> “What activities belong to ISIC 62?”</p>
+<div class="formal">Detected entity: <code>ISIC 62</code><br>Entity type: <code>industry classification</code></div>
+</div>
+<div>
+<div class="beat">Entity-centered retrieval</div>
+<div class="formula">q → entities → linked records/documents</div>
+<p>Useful when identifiers, names, codes or structured concepts are more reliable than general semantic similarity.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="graph">
+<div class="sec-head"><div class="eyebrow">Part 07</div><h2>Graph retrieval: use relationships</h2>
+<p>Graph retrieval follows explicit relationships between entities. The retrieved context can therefore depend on paths, neighborhoods and multi-hop connections.</p></div>
+<div class="card">
+<div class="split">
+<div class="stage">
+<svg viewBox="0 0 430 220" width="100%">
+<line x1="215" y1="60" x2="105" y2="145" class="edge"/><line x1="215" y1="60" x2="325" y2="145" class="edge"/>
+<line x1="105" y1="145" x2="60" y2="195" class="edge"/><line x1="105" y1="145" x2="155" y2="195" class="edge"/>
+<line x1="325" y1="145" x2="275" y2="195" class="edge"/><line x1="325" y1="145" x2="370" y2="195" class="edge"/>
+<circle cx="215" cy="60" r="22" class="node"/><text x="215" y="65" class="label">62</text>
+<circle cx="105" cy="145" r="20" class="node"/><text x="105" y="150" class="label">621</text>
+<circle cx="325" cy="145" r="20" class="node"/><text x="325" y="150" class="label">622</text>
+<circle cx="60" cy="195" r="18" class="node"/><text x="60" y="200" class="label">6211</text>
+<circle cx="155" cy="195" r="18" class="node"/><text x="155" y="200" class="label">6212</text>
+<circle cx="275" cy="195" r="18" class="node"/><text x="275" y="200" class="label">6221</text>
+<circle cx="370" cy="195" r="18" class="node"/><text x="370" y="200" class="label">6222</text>
+</svg>
+</div>
+<div>
+<div class="formula">N<sub>k</sub>(v) = {u : dist(u,v) ≤ k}</div>
+<p><b>1-hop:</b> direct neighbors.</p><p><b>2-hop:</b> neighbors of neighbors.</p><p><b>Multi-hop:</b> follow a path satisfying relationship constraints.</p>
+<div class="formal"><b>Difference from dense retrieval:</b><br>Dense retrieval asks “which vectors are close?” Graph retrieval asks “which entities are connected in a meaningful structure?”</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="rerank">
+<div class="sec-head"><div class="eyebrow">Part 08</div><h2>Reranking: retrieve first, judge again</h2>
+<p>A fast retriever can produce a candidate set. A more expensive model can then compare the query and each candidate more carefully.</p></div>
+<div class="card">
+<div class="split">
+<div>
+<div class="bigword">1000 → 50 → 5</div>
+<p>Candidate retrieval reduces the search space. Reranking improves the ordering of the most promising candidates.</p>
+<div class="formula">R(q,d) = f<sub>θ</sub>(q,d)</div>
+</div>
+<div>
+<div class="rank"><b>1</b><div><b>D17</b><div class="bar"><div class="fill" style="width:94%"></div></div></div><span>0.94</span></div>
+<div class="rank"><b>2</b><div><b>D08</b><div class="bar"><div class="fill" style="width:82%"></div></div></div><span>0.82</span></div>
+<div class="rank"><b>3</b><div><b>D43</b><div class="bar"><div class="fill" style="width:68%"></div></div></div><span>0.68</span></div>
+</div>
+</div>
+<div class="formal"><b>Retriever vs reranker:</b> the retriever optimizes speed and candidate recall; the reranker spends more computation to improve relevance ordering.</div>
+</div>
+</section>
+
+<section id="rag">
+<div class="sec-head"><div class="eyebrow">Part 09</div><h2>RAG: retrieval-augmented generation</h2>
+<p>RAG connects retrieval to a language model. Retrieval supplies evidence; generation uses that evidence to formulate an answer.</p></div>
+<div class="card">
+<div class="split3">
+<div class="retrieval-box"><b>1 · Retrieve</b><p><code>D<sub>k</sub> = Retrieve(q,D)</code></p><span class="hint">BM25 / dense / graph / hybrid</span></div>
+<div class="retrieval-box"><b>2 · Rerank</b><p><code>C = Rerank(q,D<sub>k</sub>)</code></p><span class="hint">select best evidence</span></div>
+<div class="retrieval-box"><b>3 · Generate</b><p><code>A = LLM(q,C)</code></p><span class="hint">answer from context</span></div>
+</div>
+<div class="formal"><b>Core distinction:</b> RAG is not equivalent to vector search. A RAG system can contain lexical retrieval, dense retrieval, entity search, graph traversal, reranking and an LLM.</div>
+</div>
+</section>
+
+<section id="eval">
+<div class="sec-head"><div class="eyebrow">Part 10</div><h2>Evaluation: did retrieval actually work?</h2>
+<p>Retrieval quality should be measured separately from the quality of the generated answer.</p></div>
+<div class="card">
+<div class="row">
+<div class="metric"><span id="recall">0.60</span><small> Recall@5</small></div>
+<div class="metric"><span id="precision">0.60</span><small> Precision@5</small></div>
+<div class="metric"><span id="mrr">0.33</span><small> MRR</small></div>
+<div class="metric"><span id="ndcg">0.61</span><small> nDCG@5</small></div>
+</div>
+<div class="formal">
+<p><b>Recall@K</b></p><div class="formula">Recall@K = relevant retrieved / total relevant</div>
+<p><b>Precision@K</b></p><div class="formula">Precision@K = relevant retrieved / K</div>
+<p><b>MRR</b></p><div class="formula">MRR = (1/|Q|) Σ<sub>q∈Q</sub> 1/rank<sub>q</sub></div>
+<p><b>nDCG</b> rewards putting highly relevant documents near the top of the ranking.</p>
+</div>
+</div>
+</section>
+
+<section id="quiz">
+<div class="sec-head"><div class="eyebrow">Part 11</div><h2>Check your understanding</h2><p>Choose an answer. The explanation appears immediately.</p></div>
+<div class="card" id="quiz-card"></div>
+</section>
+
+</main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+
+function updateTF(){
+ const tf=+$('tf').value, df=+$('df').value, N=10;
+ $('dfv').textContent=df;
+ const TF=(tf/10), IDF=Math.log(N/df), s=TF*IDF;
+ $('tfscore').innerHTML=s.toFixed(3)+' <small>TF-IDF</small>';
+}
+['tf','df'].forEach(x=>$(x).addEventListener('input',updateTF)); updateTF();
+
+function updateBM(){
+ const f=+$('bmf').value,L=+$('bml').value,k1=+$('k1').value/10,b=+$('bb').value/10;
+ $('bmfv').textContent=f;$('bmlv').textContent=L;$('k1v').textContent=k1.toFixed(1);$('bbv').textContent=b.toFixed(1);
+ const N=100,df=10,avg=100;
+ const idf=Math.log((N-df+0.5)/(df+0.5)+1);
+ const score=idf*((f*(k1+1))/(f+k1*(1-b+b*L/avg)));
+ $('bmscore').innerHTML=score.toFixed(3)+' <small>BM25</small>';
+}
+['bmf','bml','k1','bb'].forEach(x=>$(x).addEventListener('input',updateBM));updateBM();
+
+const docs=[
+ {id:'D1',b:.95,d:.55},{id:'D2',b:.62,d:.92},{id:'D3',b:.78,d:.78},{id:'D4',b:.35,d:.87},{id:'D5',b:.58,d:.42}
+];
+function renderHybrid(){
+ const a=+$('alpha').value/100;$('alphav').textContent=a.toFixed(2);
+ const r=docs.map(x=>({...x,s:a*x.b+(1-a)*x.d})).sort((x,y)=>y.s-x.s);
+ $('hybridRanks').innerHTML=r.map((x,i)=>`<div class="rank"><b>${i+1}</b><div><b>${x.id}</b><div class="bar"><div class="fill" style="width:${x.s*100}%"></div></div></div><span>${x.s.toFixed(3)}</span></div>`).join('');
+}
+$('alpha').addEventListener('input',renderHybrid);renderHybrid();
+
+const questions=[
+ {q:'Which method is fundamentally lexical?',o:['BM25','Dense retrieval','Graph traversal','RAG'],a:0,e:'BM25 relies on term matching and term statistics.'},
+ {q:'What does dense retrieval compare?',o:['Embedding representations','Only exact words','SQL rows','Graph degrees'],a:0,e:'Dense retrieval commonly compares vector representations using cosine similarity or dot product.'},
+ {q:'What is RAG?',o:['A complete retrieval + generation architecture','Another name for BM25','A graph algorithm','Only an embedding model'],a:0,e:'RAG combines retrieval with a language model that generates an answer from retrieved context.'},
+ {q:'What is the main role of a reranker?',o:['Improve ordering of retrieved candidates','Create embeddings only','Replace the database','Generate the final answer'],a:0,e:'A reranker scores query-document pairs more carefully after candidate retrieval.'},
+ {q:'What does Recall@K measure?',o:['How much of the relevant set was retrieved','How many words are in a document','The language model size','The average document length'],a:0,e:'Recall@K measures the fraction of relevant items that appear among the top K results.'}
+];
+let qi=0;
+function drawQuiz(){
+ const x=questions[qi];
+ $('quiz-card').innerHTML=`<div class="quiz-q">${qi+1}/${questions.length} · ${x.q}</div>
+ ${x.o.map((v,i)=>`<button class="choice" data-i="${i}">${String.fromCharCode(65+i)}. ${v}</button>`).join('')}
+ <div id="toast"></div><button id="next" class="tinybtn" style="display:none">Next question</button>`;
+ document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{
+   const i=+b.dataset.i;
+   document.querySelectorAll('.choice').forEach(z=>z.disabled=true);
+   b.classList.add(i===x.a?'correct':'wrong');
+   if(i!==x.a) document.querySelectorAll('.choice')[x.a].classList.add('correct');
+   $('toast').textContent=(i===x.a?'Correct. ':'Not quite. ')+x.e;
+   $('next').style.display='inline-block';
+ });
+ $('next').onclick=()=>{qi=(qi+1)%questions.length;drawQuiz()};
+}
+drawQuiz();
+
+const sections=[...document.querySelectorAll('main section')], links=[...document.querySelectorAll('.rail a')];
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id))}}),{rootMargin:'-20% 0px -65% 0px'});
+sections.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

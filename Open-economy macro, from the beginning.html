@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Open-economy macro, from the beginning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&family=Karla:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+  svg: { fontCache: 'global' },
+  startup: { typeset: true }
+};
+</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+<style>
+:root {
+  --paper: #f3f4f0; --dot: #d3d7cd; --ink: #1b2326; --muted: #5a6568;
+  --line: #c8ccc2; --card: #ffffff; --card2: #f8f9f6;
+  --teal: #0f766e; --amber: #b45309; --rose: #be123c; --violet: #6d28d9;
+  --teal-soft: #d3ebe7; --amber-soft: #f5e4cf; --rose-soft: #f6d9df; --violet-soft: #e5dbf7;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Karla", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+    --line: #333d40; --card: #1b2225; --card2: #182023;
+    --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+    --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14191b; --dot: #262e31; --ink: #e5e8e3; --muted: #9aa5a7;
+  --line: #333d40; --card: #1b2225; --card2: #182023;
+  --teal: #2dd4bf; --amber: #fbbf24; --rose: #fb7185; --violet: #a78bfa;
+  --teal-soft: #123a36; --amber-soft: #3d2e10; --rose-soft: #40182180; --violet-soft: #2a2145;
+}
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; color: var(--ink); background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1.1px, transparent 1.1px);
+  background-size: 22px 22px;
+  font-family: var(--sans); font-size: 18px; line-height: 1.62;
+}
+a { color: var(--teal); }
+:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; border-radius: 4px; }
+
+.wrap { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 56px; max-width: 1120px; margin: 0 auto; padding: 0 24px 96px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 28px); align-self: start; padding-top: 28px; }
+nav.toc p { font-family: var(--serif); font-size: 1.05rem; margin: 0 0 12px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: b; }
+nav.toc li { counter-increment: b; }
+nav.toc a { display: flex; gap: 10px; padding: 6px 8px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: .92rem; line-height: 1.3; }
+nav.toc a::before { content: counter(b); font-family: var(--mono); font-size: .8rem; color: var(--teal); min-width: 1.2em; padding-top: 1px; }
+nav.toc a:hover, nav.toc a.on { background: var(--teal-soft); color: var(--ink); }
+
+main { min-width: 0; }
+.prose { max-width: 720px; }
+
+header.hero { padding: 64px 0 24px; }
+header.hero h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(3rem, 8vw, 5.4rem); line-height: .95; letter-spacing: -.02em; margin: 0 0 18px; font-variation-settings: "opsz" 144; }
+header.hero .lede { font-family: var(--serif); font-size: 1.35rem; line-height: 1.45; max-width: 640px; margin: 0 0 28px; color: var(--ink); }
+.hero-lab { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.hero-say { font-family: var(--serif); font-size: 1.5rem; line-height: 1.35; margin: 0 0 14px; }
+.hero-say b { color: var(--teal); font-weight: 600; }
+.hero-say b.up { color: var(--rose); }
+.hint { color: var(--muted); font-size: .95rem; margin: 6px 0 0; }
+
+section.block { padding-top: 56px; }
+section.block > h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.1; margin: 0 0 8px; letter-spacing: -.01em; }
+section.block > .sub { color: var(--muted); margin: 0 0 18px; font-size: 1.02rem; }
+h3 { font-family: var(--serif); font-weight: 600; font-size: 1.22rem; margin: 30px 0 8px; }
+p { margin: 0 0 14px; }
+.math { overflow-x: auto; padding: 4px 0; margin: 6px 0 14px; }
+mjx-container[display="true"] { margin: .6em 0 !important; }
+
+.lab { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 14px 0 18px; }
+.lab svg { display: block; width: 100%; height: auto; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; margin-top: 14px; }
+.ctl label { display: flex; justify-content: space-between; gap: 10px; font-size: .92rem; color: var(--muted); }
+.ctl label output { font-family: var(--mono); color: var(--ink); font-size: .88rem; }
+input[type=range] { width: 100%; accent-color: var(--teal); margin: 6px 0 0; }
+.readout { font-family: var(--mono); font-size: .9rem; background: var(--card2); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 14px; margin-top: 14px; overflow-x: auto; line-height: 1.7; }
+.readout .k { color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+button.act { font: 600 .92rem var(--sans); color: var(--ink); background: var(--card2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+button.act:hover { border-color: var(--teal); }
+button.act.primary { background: var(--teal); border-color: var(--teal); color: var(--card); }
+
+table.t { border-collapse: collapse; width: 100%; font-size: .95rem; margin: 10px 0 18px; }
+table.t th, table.t td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.t th { font-weight: 700; color: var(--muted); font-size: .88rem; }
+table.t td.n { font-family: var(--mono); font-size: .88rem; white-space: nowrap; }
+.tw { overflow-x: auto; }
+
+.example { border-left: 4px solid var(--amber); background: var(--amber-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; }
+.example p:last-child { margin-bottom: 0; }
+.aside { border-left: 4px solid var(--violet); background: var(--violet-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0 16px; font-size: .97rem; }
+
+.check { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 16px 18px; margin: 14px 0 0; }
+.check .q { font-weight: 600; margin-bottom: 10px; }
+.check .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.check .opts button { font: 1rem var(--sans); text-align: left; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); cursor: pointer; }
+.check .opts button:hover { border-color: var(--teal); }
+.check .opts button.right { background: var(--teal-soft); border-color: var(--teal); }
+.check .opts button.wrong { background: var(--rose-soft); border-color: var(--rose); }
+.check .fb { margin-top: 10px; font-size: .97rem; }
+.check .fb .verdict { font-weight: 700; margin-right: 4px; }
+
+.people { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; max-width: 520px; }
+.people button { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--teal); background: var(--teal); cursor: pointer; padding: 0; position: relative; }
+.people button[aria-pressed="false"] { background: transparent; border-color: var(--rose); border-style: dashed; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: .9rem; color: var(--muted); margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+.years { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.years .ctl label { flex-direction: column; gap: 0; }
+.cards2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cards2 .lab { margin: 0; }
+.big { font-family: var(--serif); font-size: 2rem; line-height: 1.1; margin: 10px 0 2px; }
+.big small { font-family: var(--sans); font-size: .95rem; color: var(--muted); }
+
+/* svg */
+.grid { stroke: var(--line); stroke-width: 1; }
+.zero { stroke: var(--muted); stroke-width: 1.2; }
+.tick { fill: var(--muted); font: 11px var(--mono); }
+.axl { fill: var(--muted); font: 12px var(--sans); }
+.lbl { font: 600 12px var(--sans); }
+.s-teal { stroke: var(--teal); } .f-teal { fill: var(--teal); }
+.s-amber { stroke: var(--amber); } .f-amber { fill: var(--amber); }
+.s-rose { stroke: var(--rose); } .f-rose { fill: var(--rose); }
+.s-violet { stroke: var(--violet); } .f-violet { fill: var(--violet); }
+.s-ink { stroke: var(--ink); } .f-ink { fill: var(--ink); }
+.f-teal-soft { fill: var(--teal-soft); } .f-rose-soft { fill: var(--rose-soft); }
+.f-amber-soft { fill: var(--amber-soft); } .f-violet-soft { fill: var(--violet-soft); }
+.f-card { fill: var(--card); }
+.dash { stroke-dasharray: 5 4; }
+.halo { stroke: var(--card); stroke-width: 4px; paint-order: stroke; stroke-linejoin: round; }
+
+footer { margin-top: 72px; color: var(--muted); font-size: .9rem; }
+
+@media (max-width: 880px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 16px 72px; }
+  nav.toc { position: sticky; top: 0; z-index: 5; padding: calc(env(safe-area-inset-top, 0px) + 8px) 0 8px; margin: 0 -16px; background: var(--paper); border-bottom: 1px solid var(--line); }
+  :root { padding-top: 0; }
+  nav.toc p { display: none; }
+  nav.toc ol { display: flex; overflow-x: auto; gap: 4px; padding: 0 12px; }
+  nav.toc a { white-space: nowrap; }
+  .hero-lab { grid-template-columns: minmax(0, 1fr); }
+  header.hero { padding-top: 36px; }
+  .years { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body { font-size: 17px; }
+}
+</style>
+<style>
+.tog { display: flex; align-items: center; gap: 10px; font-size: .95rem; color: var(--ink); margin-top: 12px; cursor: pointer; }
+.tog input { width: 18px; height: 18px; accent-color: var(--teal); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 12px; }
+.seg button { font: 600 .9rem var(--sans); padding: 8px 14px; border: 0; background: var(--card2); color: var(--muted); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--teal); color: var(--card); }
+.tri { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.tri label { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--card2); cursor: pointer; font-size: .95rem; }
+.tri label.on { border-color: var(--teal); background: var(--teal-soft); }
+.tri input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--teal); }
+.tri b { display: block; font-family: var(--serif); font-size: 1.1rem; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Lecture sections">
+  <p>Open-economy macro</p>
+  <ol>
+    <li><a href="#b1">Exchange rates</a></li>
+    <li><a href="#b2">The balance of payments</a></li>
+    <li><a href="#b3">Prices and trade</a></li>
+    <li><a href="#b4">Interest parity</a></li>
+    <li><a href="#b5">Mundell-Fleming</a></li>
+    <li><a href="#b6">The trilemma</a></li>
+    <li><a href="#b7">Pegs under pressure</a></li>
+    <li><a href="#b8">Pegs in practice</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>Open-economy macro</h1>
+  <p class="lede">Real economies trade goods and move money across borders. That changes how policy works, and it depends heavily on one choice: let the exchange rate float, or fix it.</p>
+  <div class="lab hero-lab">
+    <div>
+      <p class="hero-say" id="heroSay"></p>
+      <div class="ctl"><label for="heroG">Rise in government spending <output id="heroGo"></output></label><input type="range" id="heroG" min="0" max="100" step="10" value="60"></div>
+      <p class="hint">The same small open economy under two exchange rate regimes. The model is built in block 5.</p>
+    </div>
+    <svg id="heroSvg" role="img" aria-label="Output response under floating and fixed exchange rates"></svg>
+  </div>
+</header>
+
+<!-- 1 -->
+<section class="block prose" id="b1">
+  <h2>Exchange rates</h2>
+  <p class="sub">The price of one currency in terms of another, and what goods really cost abroad.</p>
+  <h3>The idea</h3>
+  <p>The nominal exchange rate tells you how many units of local currency one unit of foreign currency costs. The UAE dirham, for example, has been fixed at 3.6725 dirhams per US dollar since 1997. In this lecture we quote rates as local currency per foreign currency, so a higher number means the local currency is weaker. A rise is a depreciation; a fall is an appreciation.</p>
+  <p>For trade, what matters is not the nominal rate alone but how expensive goods are at home compared with abroad. That comparison is the real exchange rate. If local prices rise faster than foreign prices while the nominal rate stays fixed, local goods become relatively more expensive: a real appreciation.</p>
+  <h3>The formula</h3>
+  <p>With nominal rate \(E\) (local per foreign), local price level \(P\) and foreign price level \(P^*\):</p>
+  <div class="math">\[ \varepsilon = \frac{E\,P^*}{P}. \]</div>
+  <p>The real exchange rate \(\varepsilon\) is the price of foreign goods in terms of local goods. A higher \(\varepsilon\) means foreign goods are relatively expensive, so local goods are competitive.</p>
+  <h3>Try it</h3>
+  <p>The same basket of goods priced in each country.</p>
+  <div class="lab">
+    <svg id="erSvg" role="img" aria-label="Basket cost at home and abroad in local currency"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="erE">Nominal rate \(E\) (local per foreign) <output id="erEo"></output></label><input type="range" id="erE" min="2.5" max="5" step="0.05" value="3.65"></div>
+      <div class="ctl"><label for="erP">Basket price at home \(P\) (local) <output id="erPo"></output></label><input type="range" id="erP" min="250" max="500" step="5" value="365"></div>
+      <div class="ctl"><label for="erF">Basket price abroad \(P^*\) (foreign) <output id="erFo"></output></label><input type="range" id="erF" min="60" max="140" step="1" value="100"></div>
+    </div>
+    <div class="readout" id="erOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>A basket costs 100 dollars in the US and 400 dirhams in the UAE, with \(E = 3.6725\). In dirhams, the US basket costs 367.25. So \(\varepsilon = 367.25 / 400 \approx 0.92\): the US basket is about 8% cheaper, and local goods are relatively expensive.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">The nominal rate is fixed, local inflation is 4% and foreign inflation is 2%. What happens to the real exchange rate over a year?</div>
+    <div class="opts"><button data-k="a">It rises about 2%</button><button data-k="b">It falls about 2% (real appreciation)</button><button data-k="c">It stays the same</button><button data-k="d">It falls 6%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Local goods get 2% more expensive relative to foreign goods, so \(\varepsilon\) falls by about 2%.</div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="block prose" id="b2">
+  <h2>The balance of payments</h2>
+  <p class="sub">A country that spends more than it produces must borrow the difference from abroad.</p>
+  <h3>The idea</h3>
+  <p>In an open economy, demand for local output includes what foreigners buy (exports) and excludes what locals buy from abroad (imports). The difference is net exports.</p>
+  <p>There is a deep accounting link behind this. If a country's saving is larger than its domestic investment, the extra savings go abroad: it lends to the rest of the world and runs a current account surplus. If it invests more than it saves, it must borrow from abroad and runs a deficit. The current account is net exports plus net income from abroad; for simplicity we treat it as net exports here.</p>
+  <h3>The formulas</h3>
+  <div class="math">\[ Y = C + I + G + NX, \qquad NX = X - M. \]</div>
+  <p>Rearranging, with private saving \(S_p = Y - T - C\) and public saving \(T - G\):</p>
+  <div class="math">\[ \underbrace{S_p + (T - G)}_{\text{national saving}} - I = NX. \]</div>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="bpSvg" role="img" aria-label="Saving, investment and net exports"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="bpS">Private saving (% of GDP) <output id="bpSo"></output></label><input type="range" id="bpS" min="5" max="40" step="1" value="20"></div>
+      <div class="ctl"><label for="bpB">Government budget balance T - G (% of GDP) <output id="bpBo"></output></label><input type="range" id="bpB" min="-10" max="15" step="0.5" value="-2"></div>
+      <div class="ctl"><label for="bpI">Investment (% of GDP) <output id="bpIo"></output></label><input type="range" id="bpI" min="10" max="40" step="1" value="22"></div>
+    </div>
+    <div class="readout" id="bpOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>Private saving is 20% of GDP, the government runs a deficit of 2% of GDP, and investment is 22%. National saving is \(20 - 2 = 18\%\), so net exports are \(18 - 22 = -4\%\) of GDP: the country borrows 4% of GDP from abroad each year. Oil exporters with large budget surpluses often show the opposite pattern: big current account surpluses.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">The government cuts its deficit by 3% of GDP, and private saving and investment do not change. What happens to the current account?</div>
+    <div class="opts"><button data-k="a">It worsens by 3% of GDP</button><button data-k="b">It does not change</button><button data-k="c">It improves by 3% of GDP</button><button data-k="d">It improves by 6% of GDP</button></div>
+    <div class="fb" hidden><span class="verdict"></span>National saving rises by 3 points with investment unchanged, so net exports rise by 3 points.</div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="block prose" id="b3">
+  <h2>Prices and trade</h2>
+  <p class="sub">A weaker currency helps exports, but often only after a delay.</p>
+  <h3>The idea</h3>
+  <p>A real depreciation makes local goods cheaper for foreigners and foreign goods more expensive for locals. Over time, exports rise and import volumes fall. But the price change is immediate while the quantity changes are slow: contracts are already signed and habits take time to shift. So right after a depreciation, the country pays more for roughly the same imports, and net exports first get worse before they get better. Plotted over time, the path looks like the letter J: the J-curve.</p>
+  <p>Whether net exports improve in the end depends on how strongly volumes respond. The Marshall-Lerner condition says a depreciation improves the trade balance (starting from balanced trade) if the sensitivities of export and import volumes to the real exchange rate add up to more than 1.</p>
+  <h3>The formula</h3>
+  <p>Measured in local goods, net exports are</p>
+  <div class="math">\[ NX = X(\varepsilon) - \varepsilon\,M_{\text{vol}}(\varepsilon), \]</div>
+  <p>where a higher \(\varepsilon\) raises exports and lowers import volume, but also raises the price of each unit imported. The Marshall-Lerner condition is \(\eta_X + \eta_M > 1\), with \(\eta\) the volume sensitivities (elasticities).</p>
+  <h3>Try it</h3>
+  <p>The currency depreciates 10% in real terms in quarter 1. Exports and imports start at 100 each. Volumes adjust gradually over about two years.</p>
+  <div class="lab">
+    <svg id="jcSvg" role="img" aria-label="Net exports after a depreciation"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="jcX">Export sensitivity \(\eta_X\) <output id="jcXo"></output></label><input type="range" id="jcX" min="0" max="1.5" step="0.05" value="0.8"></div>
+      <div class="ctl"><label for="jcM">Import sensitivity \(\eta_M\) <output id="jcMo"></output></label><input type="range" id="jcM" min="0" max="1.5" step="0.05" value="0.6"></div>
+    </div>
+    <div class="readout" id="jcOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>Right after a 10% depreciation, import volumes are unchanged at 100 but each unit costs 10% more, so the import bill is 110 while exports are still 100: net exports fall to -10. With \(\eta_X = 0.8\) and \(\eta_M = 0.6\), in the long run exports reach 108 and import volume falls to 94, costing \(1.1 \times 94 = 103.4\). Net exports end at about +4.6.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="d">
+    <div class="q">With \(\eta_X = 0.3\) and \(\eta_M = 0.4\), what does a depreciation do to net exports in the long run?</div>
+    <div class="opts"><button data-k="a">Improves them a lot</button><button data-k="b">Improves them a little</button><button data-k="c">Nothing</button><button data-k="d">Worsens them</button></div>
+    <div class="fb" hidden><span class="verdict"></span>0.3 + 0.4 = 0.7 is below 1, so the Marshall-Lerner condition fails: the higher import price outweighs the volume changes.</div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="block prose" id="b4">
+  <h2>Interest parity</h2>
+  <p class="sub">With free capital flows, returns must line up across countries.</p>
+  <h3>The idea</h3>
+  <p>An investor can hold a bond at home or abroad. If the foreign bond pays more, money flows abroad, unless the investor expects the foreign currency to weaken by enough to wipe out the extra interest. In equilibrium, with capital moving freely, the expected returns must be equal. This is uncovered interest parity.</p>
+  <p>The consequence for a fixed exchange rate is direct. If the peg is fully credible, nobody expects the currency to move, so the local interest rate must equal the foreign one. If it were lower, money would leave; if higher, money would pour in. Any gap that remains reflects a risk premium: compensation for the chance that the peg might break.</p>
+  <h3>The formula</h3>
+  <div class="math">\[ i = i^* + \frac{E^e - E}{E} + \text{risk premium}, \]</div>
+  <p>where \((E^e - E)/E\) is the expected depreciation of the local currency.</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="ipSvg" role="img" aria-label="Expected returns at home and abroad"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="ipI">Local interest rate \(i\) <output id="ipIo"></output></label><input type="range" id="ipI" min="0" max="12" step="0.25" value="5"></div>
+      <div class="ctl"><label for="ipF">Foreign interest rate \(i^*\) <output id="ipFo"></output></label><input type="range" id="ipF" min="0" max="10" step="0.25" value="5"></div>
+      <div class="ctl"><label for="ipD">Expected depreciation of local currency <output id="ipDo"></output></label><input type="range" id="ipD" min="-5" max="10" step="0.25" value="0"></div>
+    </div>
+    <div class="readout" id="ipOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>The foreign rate is 5%. If markets start to fear a 3% devaluation of a pegged currency, local bonds must pay at least 8% to keep money at home. Defending a peg under suspicion can therefore require very high interest rates, which hurts the local economy.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">Under a fully credible peg with free capital flows, the anchor country raises its rate from 4% to 5%. What must the local rate do?</div>
+    <div class="opts"><button data-k="a">Rise to about 5%</button><button data-k="b">Stay at 4%</button><button data-k="c">Fall</button><button data-k="d">Rise to 9%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>With no expected depreciation, parity requires the local rate to follow the anchor's.</div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="block prose" id="b5">
+  <h2>Mundell-Fleming</h2>
+  <p class="sub">IS-LM for a small open economy, and why the regime decides which policy works.</p>
+  <h3>The idea</h3>
+  <p>Robert Mundell and Marcus Fleming extended IS-LM to an open economy in the early 1960s. Take a small country with free capital flows. By interest parity, its interest rate is tied to the world rate \(i^*\). Net exports join the IS curve and depend on the real exchange rate.</p>
+  <p>Under a floating rate, a fiscal expansion tends to push the local rate up, which attracts capital, which strengthens the currency, which cuts net exports. The appreciation undoes the fiscal stimulus. A monetary expansion, on the other hand, tends to lower the rate, weakens the currency and boosts net exports: monetary policy is powerful.</p>
+  <p>Under a fixed rate, it flips. The central bank must keep the exchange rate where it is, so it supplies or withdraws money as needed: monetary policy is no longer its own. But fiscal policy is very effective, because the central bank accommodates it to hold the peg, and nothing is crowded out.</p>
+  <h3>The formulas</h3>
+  <p>Using the IS-LM lecture's numbers, with net exports \(NX = b\,(\varepsilon - 1)\):</p>
+  <div class="math">\[ \begin{aligned} Y &= \tfrac{1}{1 - c_1}\left(c_0 - c_1 T + I_0 - d\,i + G + b(\varepsilon - 1)\right) &&\text{IS}\\ \tfrac{M}{P} &= k\,Y - h\,i &&\text{LM}\\ i &= i^* &&\text{interest parity} \end{aligned} \]</div>
+  <p>Floating: \(M\) is chosen by the central bank, so LM fixes \(Y\), and \(\varepsilon\) adjusts to make IS hold. Fixed: \(\varepsilon\) is fixed, so IS fixes \(Y\), and \(M\) adjusts to make LM hold.</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <div class="seg" role="group" aria-label="Exchange rate regime" id="mfSeg" style="margin-top:0">
+      <button aria-pressed="true" data-s="float">Floating rate</button><button aria-pressed="false" data-s="fixed">Fixed rate</button>
+    </div>
+    <svg id="mfSvg" role="img" aria-label="Mundell-Fleming diagram" style="margin-top:10px"></svg>
+    <div class="legend"><span><i style="background:var(--teal)"></i>IS</span><span><i style="background:var(--violet)"></i>LM</span><span><i style="background:var(--amber)"></i>World rate \(i^*\)</span><span><i style="background:var(--muted)"></i>Starting curves</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="mfG">Government spending \(G\) <output id="mfGo"></output></label><input type="range" id="mfG" min="260" max="420" step="10" value="320"></div>
+      <div class="ctl"><label for="mfM">Money supply \(M\) <output id="mfMo"></output></label><input type="range" id="mfM" min="420" max="620" step="10" value="500"></div>
+      <div class="ctl"><label for="mfI">World interest rate \(i^*\) <output id="mfIo"></output></label><input type="range" id="mfI" min="2" max="8" step="0.25" value="5"></div>
+    </div>
+    <div class="readout" id="mfOut"></div>
+  </div>
+  <h3>Worked example</h3>
+  <div class="example"><p>Government spending rises by 60. Floating: output stays at 1500, because the money supply and the world rate pin it down; the currency appreciates until net exports fall by 60. Fixed: output rises to 1650, the full IS-LM multiplier of 2.5, and the central bank expands the money supply from 500 to 575 to hold the peg.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="b">
+    <div class="q">A small open economy with a fixed exchange rate and free capital flows wants to fight a recession. Which tool works?</div>
+    <div class="opts"><button data-k="a">Expanding the money supply</button><button data-k="b">Raising government spending</button><button data-k="c">Raising interest rates</button><button data-k="d">Neither</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Under a peg, monetary expansion leaks out as capital outflows, but fiscal expansion raises output with no crowding out.</div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="block prose" id="b6">
+  <h2>The trilemma</h2>
+  <p class="sub">Three desirable goals, but a country can only have two.</p>
+  <h3>The idea</h3>
+  <p>Block 5 points to a general rule, often called the impossible trinity or trilemma. A country would like a stable exchange rate, free movement of capital, and an independent monetary policy aimed at its own economy. It cannot have all three. Interest parity explains why: with free capital and a fixed rate, the local interest rate must equal the anchor's, so it cannot be set for local conditions.</p>
+  <h3>Try it</h3>
+  <p>Pick any two goals. The third is then out of reach.</p>
+  <div class="lab">
+    <div class="tri" id="tri">
+      <label><input type="checkbox" data-g="fix" checked><span><b>Fixed exchange rate</b>stable value against an anchor currency</span></label>
+      <label><input type="checkbox" data-g="cap" checked><span><b>Free capital flows</b>money moves in and out without controls</span></label>
+      <label><input type="checkbox" data-g="mon"><span><b>Independent monetary policy</b>interest rates set for local conditions</span></label>
+    </div>
+    <div class="readout" id="triOut" style="font-family:var(--sans);font-size:.98rem"></div>
+  </div>
+  <h3>Regimes in the real world</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Regime</th><th>How it works</th><th>Examples</th></tr>
+    <tr><td>Currency union</td><td>Several countries share one currency and one central bank.</td><td>The euro area</td></tr>
+    <tr><td>Currency board</td><td>Local currency fully backed by foreign reserves, by law.</td><td>Hong Kong</td></tr>
+    <tr><td>Conventional peg</td><td>Central bank commits to a fixed rate and defends it with reserves and interest rates.</td><td>UAE, Saudi Arabia, most Gulf economies</td></tr>
+    <tr><td>Managed float</td><td>The rate moves with markets, but the central bank intervenes to smooth it.</td><td>Many emerging economies</td></tr>
+    <tr><td>Free float</td><td>Markets set the rate; monetary policy targets inflation.</td><td>United States, Canada, United Kingdom</td></tr>
+  </table></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="c">
+    <div class="q">Canada lets its dollar float and allows free capital flows. What does that give it?</div>
+    <div class="opts"><button data-k="a">A stable exchange rate</button><button data-k="b">Nothing</button><button data-k="c">Its own monetary policy</button><button data-k="d">All three goals</button></div>
+    <div class="fb" hidden><span class="verdict"></span>Giving up the fixed rate frees the Bank of Canada to set rates for Canadian conditions.</div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="block prose" id="b7">
+  <h2>Pegs under pressure</h2>
+  <p class="sub">Why pegs sometimes break suddenly, before reserves actually run out.</p>
+  <h3>The idea</h3>
+  <p>To defend a peg, a central bank sells foreign currency from its reserves whenever people want to swap local currency for foreign. If the government keeps creating local money, for example to finance a budget deficit, people keep swapping it for foreign currency, and reserves drain.</p>
+  <p>Paul Krugman's 1979 model showed something surprising: the peg does not die quietly when reserves reach zero. Investors see the end coming. At some point, buying all remaining reserves at the peg rate becomes a sure profit, and a speculative attack wipes them out in one go. The timing is the moment when the shadow exchange rate, the rate that would hold if the currency floated, reaches the peg.</p>
+  <h3>The formulas</h3>
+  <p>A simplified version, in logs. Domestic credit \(D_t\) grows by \(\mu\) per period; reserves are what is left of the money supply, \(R_t = \bar e - D_t\) under the peg \(\bar e\). If the currency floated, it would depreciate at rate \(\mu\), which lowers money demand, so the shadow rate is</p>
+  <div class="math">\[ \tilde e_t = D_t + \alpha\,\mu, \]</div>
+  <p>where \(\alpha\) measures how much money demand falls when depreciation is expected. The attack happens when \(\tilde e_t = \bar e\), that is when reserves fall to \(\alpha\mu\), not to zero.</p>
+  <h3>Try it</h3>
+  <div class="lab">
+    <svg id="spSvg" role="img" aria-label="Reserves and shadow exchange rate before a speculative attack"></svg>
+    <div class="legend"><span><i style="background:var(--teal)"></i>Reserves</span><span><i style="background:var(--rose)"></i>Shadow exchange rate</span><span><i style="background:var(--amber)"></i>Peg</span></div>
+    <div class="controls">
+      <div class="ctl"><label for="spM">Credit growth \(\mu\) per year <output id="spMo"></output></label><input type="range" id="spM" min="0" max="20" step="0.5" value="8"></div>
+      <div class="ctl"><label for="spA">Sensitivity of money demand \(\alpha\) <output id="spAo"></output></label><input type="range" id="spA" min="0" max="4" step="0.1" value="1.5"></div>
+      <div class="ctl"><label for="spR">Starting reserves (% of money supply) <output id="spRo"></output></label><input type="range" id="spR" min="10" max="100" step="5" value="60"></div>
+    </div>
+    <div class="readout" id="spOut"></div>
+  </div>
+  <p>Set credit growth to zero: reserves never fall and the peg survives indefinitely. This is why pegs backed by large reserves and disciplined budgets, like those of most Gulf economies, have lasted for decades.</p>
+  <h3>Worked example</h3>
+  <div class="example"><p>Reserves start at 60% of the money supply and credit grows 8 points a year, with \(\alpha = 1.5\). Reserves would reach zero after 7.5 years, but the attack comes when they fall to \(1.5 \times 8 = 12\%\): after \((60 - 12)/8 = 6\) years.</p></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="d">
+    <div class="q">In this model, when does the speculative attack occur?</div>
+    <div class="opts"><button data-k="a">When reserves reach zero</button><button data-k="b">At a random time</button><button data-k="c">As soon as credit starts growing</button><button data-k="d">When the shadow floating rate reaches the peg</button></div>
+    <div class="fb" hidden><span class="verdict"></span>At that point the attack costs speculators nothing and earns a profit afterwards, so it happens before reserves would run out on their own.</div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="block prose" id="b8">
+  <h2>Pegs in practice</h2>
+  <p class="sub">What a dollar peg means for an economy like the UAE's.</p>
+  <h3>The idea</h3>
+  <p>A peg to the US dollar brings real benefits: a stable price for trade and investment contracts, and a credible anchor that keeps inflation close to US inflation over time. For oil exporters, oil is priced in dollars, which makes a dollar peg a natural choice.</p>
+  <p>It also brings constraints, which connect every earlier lecture. Interest rates follow the US Federal Reserve, not local conditions (the Taylor rule lecture). Adjustment to shocks happens through prices instead of the exchange rate: if local inflation runs above US inflation, the real exchange rate appreciates slowly and competitiveness erodes. And fiscal policy becomes the main tool for stabilising the economy, as Mundell-Fleming predicts.</p>
+  <h3>Try it</h3>
+  <p>With the nominal rate fixed, the real exchange rate moves only through inflation differences.</p>
+  <div class="lab">
+    <svg id="rxSvg" role="img" aria-label="Real exchange rate under a peg"></svg>
+    <div class="controls">
+      <div class="ctl"><label for="rxL">Local inflation per year <output id="rxLo"></output></label><input type="range" id="rxL" min="-2" max="8" step="0.25" value="3"></div>
+      <div class="ctl"><label for="rxU">Anchor country inflation per year <output id="rxUo"></output></label><input type="range" id="rxU" min="-1" max="6" step="0.25" value="2"></div>
+      <div class="ctl"><label for="rxN">Years <output id="rxNo"></output></label><input type="range" id="rxN" min="5" max="30" step="1" value="15"></div>
+    </div>
+    <div class="readout" id="rxOut"></div>
+  </div>
+  <h3>Main points to remember</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Feature of a dollar peg</th><th>Consequence</th></tr>
+    <tr><td>Imported monetary policy</td><td>Rates can be too loose in a local boom and too tight in a local slump.</td></tr>
+    <tr><td>Adjustment through prices</td><td>A real appreciation or depreciation happens slowly, through inflation differences.</td></tr>
+    <tr><td>Fiscal policy as the main lever</td><td>Government spending and investment carry most of the stabilisation burden.</td></tr>
+    <tr><td>Credibility rests on reserves</td><td>Large reserves and sovereign wealth make speculative attacks unattractive.</td></tr>
+    <tr><td>Oil price swings</td><td>Booms bring revenue inflows and stronger demand at the same time as rates set for another economy.</td></tr>
+  </table></div>
+  <h3>Check yourself</h3>
+  <div class="check" data-answer="a">
+    <div class="q">Under a peg, local inflation runs 1.5 points above US inflation for 10 years. What happens to competitiveness?</div>
+    <div class="opts"><button data-k="a">It falls: about a 14% real appreciation</button><button data-k="b">It rises by 15%</button><button data-k="c">Nothing, the nominal rate is fixed</button><button data-k="d">It falls by exactly 1.5%</button></div>
+    <div class="fb" hidden><span class="verdict"></span>The real exchange rate falls by roughly 1.5% a year, compounding to about 14% over 10 years.</div>
+  </div>
+  <h3>Summary</h3>
+  <div class="tw"><table class="t">
+    <tr><th>Concept</th><th>Equation</th><th>Message</th></tr>
+    <tr><td>Real exchange rate</td><td>\(\varepsilon = EP^*/P\)</td><td>Competitiveness depends on prices and the nominal rate</td></tr>
+    <tr><td>External balance</td><td>\(S - I = NX\)</td><td>Saving more than investing means lending abroad</td></tr>
+    <tr><td>Marshall-Lerner</td><td>\(\eta_X + \eta_M > 1\)</td><td>Depreciation helps in the long run, after a J-curve</td></tr>
+    <tr><td>Interest parity</td><td>\(i = i^* + \text{expected depreciation}\)</td><td>Credible pegs import foreign interest rates</td></tr>
+    <tr><td>Mundell-Fleming</td><td>IS-LM with \(i = i^*\)</td><td>Floating: monetary policy works. Fixed: fiscal policy works.</td></tr>
+    <tr><td>Trilemma</td><td>Pick two of three</td><td>Fixed rate plus free capital means no independent monetary policy</td></tr>
+  </table></div>
+</section>
+
+<footer class="prose">
+  <p>References: Mundell, R. (1963), Canadian Journal of Economics and Political Science; Fleming, J. M. (1962), IMF (International Monetary Fund) Staff Papers; Krugman, P. (1979), Journal of Money, Credit and Banking; Obstfeld, M. and Rogoff, K., Foundations of International Macroeconomics. Model numbers in blocks 5 and 7 are illustrative. Every chart is computed live in your browser.</p>
+</footer>
+</main>
+</div>
+
+<script>
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  function el(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  const f = (v, d = 1) => (Math.abs(v) < 1e-9 ? 0 : v).toFixed(d);
+  const sg = (v, d = 1) => (v > 1e-9 ? '+' : '') + f(v, d);
+
+  // Generic frame: returns scales
+  function frame(svg, o) {
+    svg.innerHTML = '';
+    const W = o.W || 640, H = o.H || 300;
+    const p = Object.assign({ l: 50, r: 18, t: 14, b: 42 }, o.pad || {});
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const X = v => p.l + (v - o.x0) / (o.x1 - o.x0) * (W - p.l - p.r);
+    const Y = v => H - p.b - (v - o.y0) / (o.y1 - o.y0) * (H - p.t - p.b);
+    (o.xt || []).forEach(t => {
+      el('line', { x1: X(t), x2: X(t), y1: p.t, y2: H - p.b, class: 'grid' }, svg);
+      el('text', { x: X(t), y: H - p.b + 16, class: 'tick', 'text-anchor': 'middle' }, svg, (o.xf || String)(t));
+    });
+    (o.yt || []).forEach(t => {
+      el('line', { x1: p.l, x2: W - p.r, y1: Y(t), y2: Y(t), class: 'grid' }, svg);
+      el('text', { x: p.l - 7, y: Y(t) + 4, class: 'tick', 'text-anchor': 'end' }, svg, (o.yf || String)(t));
+    });
+    if (o.zeroX && o.y0 < 0 && o.y1 > 0) el('line', { x1: p.l, x2: W - p.r, y1: Y(0), y2: Y(0), class: 'zero' }, svg);
+    if (o.zeroY && o.x0 < 0 && o.x1 > 0) el('line', { x1: X(0), x2: X(0), y1: p.t, y2: H - p.b, class: 'zero' }, svg);
+    if (o.xl) el('text', { x: (p.l + W - p.r) / 2, y: H - 6, class: 'axl', 'text-anchor': 'middle' }, svg, o.xl);
+    if (o.yl) el('text', { x: 14, y: (p.t + H - p.b) / 2, class: 'axl', 'text-anchor': 'middle', transform: `rotate(-90 14 ${(p.t + H - p.b) / 2})` }, svg, o.yl);
+    return { X, Y, W, H, p };
+  }
+  const path = pts => 'M' + pts.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).join('L');
+  const pct = t => t + '%';
+
+    const range = (a, b, st) => { const r = []; for (let x = a; x <= b + 1e-9; x += st) r.push(x); return r; };
+  function bars(svg, items, W, H, yl, yfmt) {
+    const vals = items.map(b => b[1]);
+    const lo0 = Math.min(0, ...vals), hi0 = Math.max(0, ...vals);
+    const span = Math.max(1, hi0 - lo0), raw = span / 5, pw = Math.pow(10, Math.floor(Math.log10(raw))), st = [1, 2, 2.5, 5, 10].map(m => m * pw).find(v => v >= raw);
+    const lo = Math.floor(lo0 / st) * st - (lo0 < 0 ? st : 0), hi = Math.ceil(hi0 / st) * st + st;
+    const s = frame(svg, { W, H, x0: 0, x1: items.length, y0: lo, y1: hi, xt: [], yt: range(lo, hi, st), yf: yfmt || (t => String(t)), zeroX: true, yl, pad: { b: 44 } });
+    const bw = Math.min(90, (W - 80) / items.length * 0.6);
+    items.forEach(([name, v, cls, lab], j) => {
+      const t = s.Y(Math.max(0, v)), b = s.Y(Math.min(0, v));
+      el('rect', { x: s.X(j + 0.5) - bw / 2, y: t, width: bw, height: Math.max(1.5, b - t), rx: 4, class: cls }, svg);
+      el('text', { x: s.X(j + 0.5), y: v >= 0 ? t - 7 : b + 15, class: 'lbl f-ink halo', 'text-anchor': 'middle' }, svg, lab !== undefined ? lab : f(v, 1));
+      el('text', { x: s.X(j + 0.5), y: s.H - s.p.b + 17, class: 'axl', 'text-anchor': 'middle' }, svg, name);
+    });
+    return s;
+  }
+
+  /* Mundell-Fleming model */
+  const Aut = G => 200 - 0.6 * 200 + 300 + G;
+  function mf(regime, G, M, is) {
+    if (regime === 'float') { const Y = (M + 50 * is) / 0.5; const eps = 1 + (0.4 * Y - Aut(G) + 20 * is) / 300; return { Y, eps, M }; }
+    const Y = (Aut(G) - 20 * is) / 0.4; return { Y, eps: 1, M: 0.5 * Y - 50 * is };
+  }
+
+  /* hero */
+  function hero() {
+    const dG = +$('heroG').value; $('heroGo').textContent = '+' + dG;
+    const fl = mf('float', 320 + dG, 500, 5), fx = mf('fixed', 320 + dG, 500, 5);
+    bars($('heroSvg'), [['starting point', 1500, 'f-violet-soft', '1500'], ['floating rate', fl.Y, 'f-teal', f(fl.Y, 0)], ['fixed rate', fx.Y, 'f-amber', f(fx.Y, 0)]], 420, 300, 'Output', t => String(t));
+    $('heroSay').innerHTML = dG === 0 ? 'With no change in spending, output stays at <b>1500</b> under both regimes.' :
+      `Raising government spending by <b>${dG}</b> leaves output at <b>${f(fl.Y, 0)}</b> under a floating rate, because the currency strengthens, but lifts it to <b class="up">${f(fx.Y, 0)}</b> under a fixed rate.`;
+  }
+  $('heroG').addEventListener('input', hero);
+
+  /* exchange rates */
+  function er() {
+    const E = +$('erE').value, P = +$('erP').value, Ps = +$('erF').value;
+    $('erEo').textContent = f(E, 2); $('erPo').textContent = P; $('erFo').textContent = Ps;
+    const eps = E * Ps / P;
+    bars($('erSvg'), [['home basket', P, 'f-teal', f(P, 0)], ['foreign basket, in local currency', E * Ps, 'f-amber', f(E * Ps, 1)]], 640, 240, 'Local currency');
+    $('erOut').innerHTML = `<span class="k">foreign basket in local currency</span> = ${f(E, 2)} x ${Ps} = ${f(E * Ps, 1)}<br>` +
+      `<span class="k">real exchange rate</span> ε = ${f(E * Ps, 1)} / ${P} = <b>${f(eps, 3)}</b>: ` + (Math.abs(eps - 1) < 0.005 ? 'the same basket costs the same in both places' : eps > 1 ? `foreign goods are ${f((eps - 1) * 100, 1)}% more expensive, so local goods are competitive` : `foreign goods are ${f((1 - eps) * 100, 1)}% cheaper, so local goods are relatively expensive`);
+  }
+  ['erE', 'erP', 'erF'].forEach(id => $(id).addEventListener('input', er));
+
+  /* balance of payments */
+  function bp() {
+    const Sp = +$('bpS').value, B = +$('bpB').value, I = +$('bpI').value;
+    $('bpSo').textContent = Sp + '%'; $('bpBo').textContent = sg(B) + '%'; $('bpIo').textContent = I + '%';
+    const S = Sp + B, nx = S - I;
+    bars($('bpSvg'), [['private saving', Sp, 'f-violet'], ['public saving', B, 'f-violet-soft'], ['national saving', S, 'f-teal'], ['investment', I, 'f-amber'], ['net exports', nx, nx >= 0 ? 'f-teal' : 'f-rose']], 640, 260, '% of GDP', t => t + '%');
+    $('bpOut').innerHTML = `<span class="k">national saving</span> = ${Sp} + (${sg(B)}) = ${f(S, 1)}% of GDP; <span class="k">net exports</span> = ${f(S, 1)} - ${I} = <b>${sg(nx)}% of GDP</b><br>` +
+      (nx > 0 ? 'The country lends abroad: a current account surplus.' : nx < 0 ? 'The country borrows from abroad: a current account deficit.' : 'Saving equals investment: balanced current account.');
+  }
+  ['bpS', 'bpB', 'bpI'].forEach(id => $(id).addEventListener('input', bp));
+
+  /* J-curve */
+  function jc() {
+    const ex = +$('jcX').value, em = +$('jcM').value; $('jcXo').textContent = f(ex, 2); $('jcMo').textContent = f(em, 2);
+    const ts = range(-2, 16, 1), adj = t => t < 1 ? 0 : 1 - Math.exp(-(t - 1) / 3);
+    const nx = ts.map(t => { if (t < 1) return 0; const X = 100 * (1 + ex * 0.1 * adj(t)), Mv = 100 * (1 - em * 0.1 * adj(t)); return X - 1.1 * Mv; });
+    const lr = 100 * (1 + ex * 0.1) - 110 * (1 - em * 0.1);
+    const svg = $('jcSvg');
+    const s = frame(svg, { W: 640, H: 280, x0: -2, x1: 16, y0: -12, y1: 16, xt: range(0, 16, 4), yt: range(-12, 16, 4), yf: t => sg(t, 0), zeroX: true, zeroY: true, xl: 'Quarters (depreciation in quarter 1)', yl: 'Net exports' });
+    el('line', { x1: s.X(-2), x2: s.X(16), y1: s.Y(lr), y2: s.Y(lr), stroke: 'var(--muted)', class: 'dash', 'stroke-width': 1.2 }, svg);
+    el('text', { x: s.X(15.8), y: s.Y(lr) - 7, class: 'lbl halo', fill: 'var(--muted)', 'text-anchor': 'end' }, svg, 'long run ' + sg(lr, 1));
+    el('path', { d: path(ts.map((t, j) => [s.X(t), s.Y(nx[j])])), fill: 'none', class: 's-teal', 'stroke-width': 3 }, svg);
+    ts.forEach((t, j) => el('circle', { cx: s.X(t), cy: s.Y(nx[j]), r: 3.5, class: nx[j] < 0 ? 'f-rose' : 'f-teal' }, svg));
+    const cross = ts.find((t, j) => t >= 1 && nx[j] >= 0);
+    $('jcOut').innerHTML = `<span class="k">quarter 1</span>: net exports ${sg(nx[3], 1)}; <span class="k">long run</span>: ${sg(lr, 1)}<br>` +
+      `<span class="k">Marshall-Lerner</span>: ${f(ex, 2)} + ${f(em, 2)} = ${f(ex + em, 2)} ${ex + em > 1 ? '> 1, so the depreciation improves the trade balance' : '≤ 1, so the depreciation worsens it for good'}` +
+      (ex + em > 1 && cross !== undefined ? `; net exports turn positive in quarter ${cross}` : '');
+  }
+  ['jcX', 'jcM'].forEach(id => $(id).addEventListener('input', jc));
+
+  /* interest parity */
+  function ip() {
+    const i = +$('ipI').value, is = +$('ipF').value, d = +$('ipD').value;
+    $('ipIo').textContent = f(i, 2) + '%'; $('ipFo').textContent = f(is, 2) + '%'; $('ipDo').textContent = sg(d, 2) + '%';
+    const abroad = is + d, gap = i - abroad;
+    bars($('ipSvg'), [['local bond', i, 'f-teal', f(i, 2) + '%'], ['foreign bond, in local currency', abroad, 'f-amber', f(abroad, 2) + '%']], 640, 240, 'Expected return', t => t + '%');
+    $('ipOut').innerHTML = `<span class="k">return abroad</span> = ${f(is, 2)} + ${sg(d, 2)} = ${f(abroad, 2)}%; <span class="k">gap</span> = ${sg(gap, 2)} points<br>` +
+      (Math.abs(gap) < 0.01 ? 'Parity holds: no reason for money to move.' : gap > 0 ? '<b>Capital flows in</b>: local bonds pay more. Under a float the currency strengthens; under a peg reserves pile up.' : '<b>Capital flows out</b>: foreign bonds pay more. Under a float the currency weakens; under a peg the central bank loses reserves.');
+  }
+  ['ipI', 'ipF', 'ipD'].forEach(id => $(id).addEventListener('input', ip));
+
+  /* Mundell-Fleming diagram */
+  let mfReg = 'float';
+  function mfDraw() {
+    const G = +$('mfG').value, is = +$('mfI').value;
+    $('mfM').disabled = mfReg === 'fixed';
+    const r = mf(mfReg, G, +$('mfM').value, is), b0 = mf(mfReg, 320, 500, 5);
+    $('mfGo').textContent = G; $('mfMo').textContent = mfReg === 'fixed' ? f(r.M, 0) + ' (set by the peg)' : r.M; $('mfIo').textContent = f(is, 2) + '%';
+    const svg = $('mfSvg');
+    const s = frame(svg, { W: 640, H: 300, x0: 1100, x1: 1900, y0: 0, y1: 12, xt: [1100, 1300, 1500, 1700, 1900], yt: range(0, 12, 2), yf: pct, xl: 'Output Y', yl: 'Interest rate i' });
+    const line = (fn, cls, w, dash) => { const pts = range(1100, 1900, 4).map(y => [y, fn(y)]).filter(q => q[1] >= 0 && q[1] <= 12); if (pts.length > 1) el('path', { d: path(pts.map(q => [s.X(q[0]), s.Y(q[1])])), fill: 'none', class: cls + (dash ? ' dash' : ''), 'stroke-width': w }, svg); };
+    const isI = (Y, G, eps) => (Aut(G) + 300 * (eps - 1) - 0.4 * Y) / 20, lmI = (Y, M) => (0.5 * Y - M) / 50;
+    line(Y => isI(Y, 320, 1), 's-ink', 1.3, true); line(Y => lmI(Y, 500), 's-ink', 1.3, true);
+    el('line', { x1: s.X(1100), x2: s.X(1900), y1: s.Y(is), y2: s.Y(is), class: 's-amber', 'stroke-width': 2.5 }, svg);
+    line(Y => isI(Y, G, r.eps), 's-teal', 3); line(Y => lmI(Y, r.M), 's-violet', 3);
+    el('circle', { cx: s.X(1500), cy: s.Y(5), r: 4, class: 'f-ink' }, svg);
+    if (r.Y >= 1100 && r.Y <= 1900) el('circle', { cx: s.X(r.Y), cy: s.Y(is), r: 8, class: 'f-rose' }, svg);
+    const nx = 300 * (r.eps - 1);
+    const epsTxt = Math.abs(r.eps - 1) < 0.0005 ? 'unchanged' : r.eps > 1 ? `${f((r.eps - 1) * 100, 1)}% depreciation` : `${f((1 - r.eps) * 100, 1)}% appreciation`;
+    $('mfOut').innerHTML = `<span class="k">output</span> Y = <b>${f(r.Y, 0)}</b> (${sg(r.Y - 1500, 0)}); <span class="k">interest rate</span> = ${f(is, 2)}%<br>` +
+      `<span class="k">real exchange rate</span> ε = ${f(r.eps, 3)} (${epsTxt}); <span class="k">net exports</span> = ${sg(nx, 0)}; <span class="k">money supply</span> = ${f(r.M, 0)}` +
+      (mfReg === 'fixed' ? ' (adjusted by the central bank to hold the peg)' : '');
+  }
+  ['mfG', 'mfM', 'mfI'].forEach(id => $(id).addEventListener('input', mfDraw));
+  $('mfSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    $('mfSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    mfReg = b.dataset.s; mfDraw();
+  }));
+
+  /* trilemma */
+  const TRI = {
+    'cap,fix': ['Independent monetary policy is given up.', 'Interest rates must follow the anchor country, as interest parity requires.', 'UAE and the other Gulf economies, Hong Kong, Denmark.'],
+    'fix,mon': ['Free capital flows are given up.', 'Capital controls stop money leaving when local rates differ from the anchor\'s.', 'Most countries under the Bretton Woods system (1944 to 1971); China for much of the 2000s.'],
+    'cap,mon': ['A fixed exchange rate is given up.', 'The currency floats, and the central bank targets inflation instead.', 'United States, Canada, United Kingdom, the euro area as a whole.']
+  };
+  let triOrder = ['fix', 'cap'];
+  function tri(e) {
+    const boxes = [...$('tri').querySelectorAll('input')];
+    if (e) {
+      const g = e.target.dataset.g;
+      triOrder = triOrder.filter(x => x !== g);
+      if (e.target.checked) { triOrder.push(g); if (triOrder.length > 2) { const drop = triOrder.shift(); boxes.find(b => b.dataset.g === drop).checked = false; } }
+    }
+    boxes.forEach(b => b.parentElement.classList.toggle('on', b.checked));
+    const key = [...triOrder].sort().join(',');
+    if (triOrder.length < 2) { $('triOut').innerHTML = 'Choose two goals.'; return; }
+    const [a, b2, c] = TRI[key];
+    $('triOut').innerHTML = `<b>${a}</b> ${b2}<br><span style="color:var(--muted)">Examples: ${c}</span>`;
+  }
+  $('tri').querySelectorAll('input').forEach(b => b.addEventListener('change', tri));
+
+  /* speculative attack */
+  function sp() {
+    const mu = +$('spM').value, a = +$('spA').value, R0 = +$('spR').value;
+    $('spMo').textContent = f(mu, 1); $('spAo').textContent = f(a, 1); $('spRo').textContent = R0 + '%';
+    const thr = a * mu, T = mu > 0 ? Math.max(0, (R0 - thr) / mu) : Infinity, Tz = mu > 0 ? R0 / mu : Infinity;
+    const H = 20, ts = range(0, H, 0.05);
+    const R = t => t < T ? R0 - mu * t : 0, shadow = t => t < T ? thr - (R0 - mu * t) : mu * (t - T);
+    const svg = $('spSvg');
+    const lo = -Math.ceil(R0 / 10) * 10, hi = Math.max(R0, 40);
+    const s = frame(svg, { W: 640, H: 300, x0: 0, x1: H, y0: lo, y1: hi, xt: range(0, H, 4), yt: range(lo, hi, 20), yf: t => sg(t, 0), xl: 'Years', yl: 'Percent of money supply' });
+    el('line', { x1: s.X(0), x2: s.X(H), y1: s.Y(0), y2: s.Y(0), class: 's-amber', 'stroke-width': 2.4 }, svg);
+    el('text', { x: s.X(H) - 4, y: s.Y(0) + 16, class: 'lbl f-amber halo', 'text-anchor': 'end' }, svg, 'peg');
+    el('path', { d: path(ts.map(t => [s.X(t), s.Y(Math.min(hi, R(t)))])), fill: 'none', class: 's-teal', 'stroke-width': 3 }, svg);
+    el('path', { d: path(ts.map(t => [s.X(t), s.Y(Math.max(lo, Math.min(hi, shadow(t))))])), fill: 'none', class: 's-rose', 'stroke-width': 2.4 }, svg);
+    if (isFinite(T) && T <= H) {
+      el('line', { x1: s.X(T), x2: s.X(T), y1: s.p.t, y2: s.H - s.p.b, class: 's-ink dash', 'stroke-width': 1.2 }, svg);
+      el('text', { x: s.X(T) + 6, y: s.p.t + 12, class: 'lbl f-ink halo' }, svg, 'attack');
+    }
+    $('spOut').innerHTML = !isFinite(T) ? '<span class="k">no credit growth</span>: reserves stay constant and the peg is never attacked' :
+      `<span class="k">attack threshold</span>: reserves = α x μ = ${f(thr, 1)}%; <span class="k">attack after</span> <b>${f(T, 1)} years</b>` + (T === 0 ? ' (immediately: reserves are already too low)' : '') +
+      `<br><span class="k">reserves would have lasted</span> ${f(Tz, 1)} years without an attack`;
+  }
+  ['spM', 'spA', 'spR'].forEach(id => $(id).addEventListener('input', sp));
+
+  /* real exchange rate under a peg */
+  function rx() {
+    const pl = +$('rxL').value / 100, pu = +$('rxU').value / 100, N = +$('rxN').value;
+    $('rxLo').textContent = f(pl * 100, 2) + '%'; $('rxUo').textContent = f(pu * 100, 2) + '%'; $('rxNo').textContent = N;
+    const idx = t => 100 * Math.pow((1 + pu) / (1 + pl), t), end = idx(N);
+    const lo = Math.min(70, Math.floor(end / 10) * 10 - 10), hi = Math.max(130, Math.ceil(end / 10) * 10 + 10);
+    const svg = $('rxSvg');
+    const s = frame(svg, { W: 640, H: 260, x0: 0, x1: N, y0: lo, y1: hi, xt: range(0, N, N > 15 ? 5 : 1), yt: range(lo, hi, 10), xl: 'Years', yl: 'Real exchange rate (start = 100)' });
+    el('line', { x1: s.X(0), x2: s.X(N), y1: s.Y(100), y2: s.Y(100), stroke: 'var(--muted)', class: 'dash', 'stroke-width': 1.2 }, svg);
+    el('path', { d: path(range(0, N, N / 200).map(t => [s.X(t), s.Y(idx(t))])), fill: 'none', class: end < 100 ? 's-rose' : 's-teal', 'stroke-width': 3 }, svg);
+    $('rxOut').innerHTML = `<span class="k">after ${N} years</span>: real exchange rate = <b>${f(end, 1)}</b>; ` +
+      (Math.abs(end - 100) < 0.05 ? 'competitiveness unchanged' : end < 100 ? `a ${f(100 - end, 1)}% real appreciation: local goods have become relatively more expensive` : `a ${f(end - 100, 1)}% real depreciation: local goods have become relatively cheaper`);
+  }
+  ['rxL', 'rxU', 'rxN'].forEach(id => $(id).addEventListener('input', rx));
+
+  /* ---------- quick checks ---------- */
+  document.querySelectorAll('.check').forEach(c => {
+    const ans = c.dataset.answer;
+    c.querySelectorAll('.opts button').forEach(b => b.addEventListener('click', () => {
+      c.querySelectorAll('.opts button').forEach(x => x.classList.remove('right', 'wrong'));
+      const ok = b.dataset.k === ans;
+      b.classList.add(ok ? 'right' : 'wrong');
+      if (!ok) c.querySelector(`.opts [data-k="${ans}"]`).classList.add('right');
+      const fb = c.querySelector('.fb'); fb.hidden = false;
+      fb.querySelector('.verdict').textContent = ok ? 'Correct.' : 'Not quite.';
+    }));
+  });
+
+  /* ---------- nav highlight ---------- */
+  const links = [...document.querySelectorAll('nav.toc a')];
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+    }), { rootMargin: '-30% 0px -60% 0px' });
+    document.querySelectorAll('section.block').forEach(s => io.observe(s));
+  }
+
+  hero(); er(); bp(); jc(); ip(); mfDraw(); tri(); sp(); rx();
+})();
+</script>
+</body>
+</html>
