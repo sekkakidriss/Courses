@@ -88,6 +88,15 @@ footer code{font-family:var(--mono);font-size:12.5px;background:rgba(15,122,131,
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<!-- PLAYGROUND KIT:HEAD -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&family=Press+Start+2P&display=swap">
+<style id="kit-skin">
+:root{--ink:#15222f;--paper:#edf1f5;--panel:#ffffff;--line:#d2dbe4;--line-strong:#8c9aab;--muted:#536375;--teal:#2b59c3;--amber:#c97f06;--rose:#cf4732;--violet:#7547b0;--display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;--body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;--mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;--kit-ink:#15222f;--kit-muted:#536375;--kit-surface:#ffffff;--kit-line:#d2dbe4;--kit-accent:#2b59c3;--kit-soft:#dfe7fa;}
+body{background-image:linear-gradient(rgba(43,89,195,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(43,89,195,.065) 1px,transparent 1px)!important;background-size:24px 24px!important}
+h1,h2,h3{font-variation-settings:normal!important;letter-spacing:-.015em}
+.tag:first-child{background:#dfe7fa;color:#2b59c3;font-weight:600}
+</style>
+<!-- /PLAYGROUND KIT:HEAD -->
 </head>
 <body>
 
@@ -131,6 +140,24 @@ footer code{font-family:var(--mono);font-size:12.5px;background:rgba(15,122,131,
    ========================================================= */
 const LECTURES = [
   {
+    title:"Macro Playground: the full course",
+    subject:"70 interactive lessons across six units, with Quiz Quest adventures for every quiz",
+    href:"macro-platform/index.html",
+    status:"ready",
+    field:"Economics",
+    parts:[
+      "Micro foundations and national accounting: supply and demand, elasticity, GDP",
+      "Aggregate demand, aggregate supply and long-run growth, including AI and productivity",
+      "Business cycles, unemployment and inflation",
+      "Money, banking and monetary policy, with CBDCs, QE and QT",
+      "Fiscal policy, taxes and national debt, with the green transition",
+      "International trade and the balance of payments",
+      "Quiz Quest: a pixel-art world per unit, with buildings, secrets and a treasure vault"
+    ],
+    tags:["full course","Quiz Quest game","notes board","six units"],
+    motif:"islm"
+  },
+  {
     title:"Graph Theory: Introduction 1/2",
     subject:"Vertices, families of graphs, representation, traversal",
     href:"graph-theory-lecture.html",
@@ -145,7 +172,7 @@ const LECTURES = [
       "WHERE clause versus traversal, with complexity",
       "Quiz: 35 questions, scored, with Sommet the vertex"
     ],
-    tags:["networks","DFS and BFS","adjacency matrix","quiz"],
+    tags:["Game: Vertex Hopper","networks","DFS and BFS","adjacency matrix","quiz"],
     motif:"graph"
   },
   {
@@ -164,7 +191,7 @@ const LECTURES = [
       "Structure and matching: Kosaraju, bridges and articulation points, augmenting paths, Welsh-Powell",
       "Quiz: 48 questions, scored, with Ar\u00eate the edge"
     ],
-    tags:["Dijkstra and A*","MST","max flow","topological sort","quiz"],
+    tags:["Game: Maze Runner","Dijkstra and A*","MST","max flow","topological sort","quiz"],
     motif:"algo"
   },
   {
@@ -181,7 +208,7 @@ const LECTURES = [
       "Word embeddings: one-hot, co-occurrence, neural embeddings",
       "Quiz: 35 questions, scored, with Tok the token"
     ],
-    tags:["NLP","TF-IDF","cosine similarity","quiz"],
+    tags:["Game: Token Snake","NLP","TF-IDF","cosine similarity","quiz"],
     motif:"text"
   },
   {
@@ -203,7 +230,7 @@ const LECTURES = [
       "Evaluation: did retrieval actually work?",
       "Check your understanding"
     ],
-    tags:["BM25","dense retrieval","reranking","RAG"],
+    tags:["Game: Retrieval Fishing","BM25","dense retrieval","reranking","RAG"],
     motif:"rag"
   },
   {
@@ -226,7 +253,7 @@ const LECTURES = [
       "The cross entropy derivative",
       "Backpropagation, end to end"
     ],
-    tags:["choose your field","board in every block","full derivations","quick checks"],
+    tags:["Game: Neuron Invaders","choose your field","board in every block","full derivations","quick checks"],
     motif:"net"
   },
   {
@@ -242,7 +269,7 @@ const LECTURES = [
       "Note 03 - Trouble in the data: ridge and LASSO, robust fits, mixed models, time, instrumental variables",
       "A decision helper: answer three questions, get the model and its formula"
     ],
-    tags:["four notes","GLM","ridge and LASSO","live fitting"],
+    tags:["Game: Regression Slalom","four notes","GLM","ridge and LASSO","live fitting"],
     motif:"reg"
   },
   {
@@ -261,7 +288,7 @@ const LECTURES = [
       "Technology",
       "Growth accounting"
     ],
-    tags:["long run","steady state","golden rule","growth accounting"],
+    tags:["Game: Growth Runner","long run","steady state","golden rule","growth accounting"],
     motif:"solow"
   },
   {
@@ -280,7 +307,7 @@ const LECTURES = [
       "Shocks and adjustment",
       "Links and limits"
     ],
-    tags:["short run","fiscal and monetary policy","shocks"],
+    tags:["Game: Curve Archery","short run","fiscal and monetary policy","shocks"],
     motif:"islm"
   },
   {
@@ -299,7 +326,7 @@ const LECTURES = [
       "Around the world",
       "Putting it to work"
     ],
-    tags:["output gap","unemployment","estimation"],
+    tags:["Game: Gap Whacker","output gap","unemployment","estimation"],
     motif:"okun"
   },
   {
@@ -318,7 +345,7 @@ const LECTURES = [
       "Estimating it",
       "The cost of disinflation"
     ],
-    tags:["inflation","expectations","sacrifice ratio"],
+    tags:["Game: Phillips Breakout","inflation","expectations","sacrifice ratio"],
     motif:"phillips"
   },
   {
@@ -337,7 +364,7 @@ const LECTURES = [
       "Why r* fell",
       "Fixed exchange rates"
     ],
-    tags:["monetary policy","neutral rate","central banks"],
+    tags:["Game: Rate Duel","monetary policy","neutral rate","central banks"],
     motif:"taylor"
   },
   {
@@ -356,7 +383,7 @@ const LECTURES = [
       "Pegs under pressure",
       "Pegs in practice"
     ],
-    tags:["exchange rates","Mundell-Fleming","trilemma"],
+    tags:["Game: Port Catcher","exchange rates","Mundell-Fleming","trilemma"],
     motif:"open"
   },
   {
@@ -375,7 +402,7 @@ const LECTURES = [
       "Giving it numbers",
       "Uses and limits"
     ],
-    tags:["New Keynesian","impulse responses","calibration"],
+    tags:["Game: Equilibrium Lander","New Keynesian","impulse responses","calibration"],
     motif:"dsge"
   }
 ];
